@@ -1,5 +1,5 @@
 import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { form, submit, required, pattern, min, max } from '@angular/forms/signals';
 import { httpResource } from '@angular/common/http';
 import { ModelInvocationResponse } from '../../core/services/api';
 import { API_CONFIG } from '../../core/tokens/api-config';
@@ -18,11 +18,9 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
 export class ImageModel {
   private readonly apiConfig = inject(API_CONFIG);
 
-  // Signals for state management
   selectedFile = signal<File | null>(null);
   fileError = signal<string | null>(null);
 
-  // Request signal to trigger API calls
   requestParams = signal<{
     file: File;
     params: {
@@ -34,19 +32,18 @@ export class ImageModel {
     };
   } | undefined>(undefined);
 
-  // HttpResource for reactive HTTP calls with FormData
   imageModelResource = httpResource<ModelInvocationResponse>(() => {
     const params = this.requestParams();
     if (!params) {
-      return undefined; // No request when no params
+      return undefined;
     }
-    
+
     const formData = new FormData();
     formData.append('imageFile', params.file);
     Object.entries(params.params).forEach(([key, value]) => {
       formData.append(key, String(value));
     });
-    
+
     return {
       url: `${this.apiConfig.baseUrl}/models/google-vision-ocr/invoke`,
       method: 'POST',
@@ -55,79 +52,62 @@ export class ImageModel {
     };
   });
 
-  // Reactive form
-  imageForm = new FormGroup({
-    language: new FormControl('en', [
-      Validators.required,
-      Validators.pattern(/^[a-z]{2}(-[A-Z]{2})?$/)
-    ]),
-    maxResults: new FormControl(10, [
-      Validators.min(1),
-      Validators.max(100)
-    ]),
-    confidenceThreshold: new FormControl(0.8, [
-      Validators.min(0.0),
-      Validators.max(1.0)
-    ]),
-    includeBoundingBoxes: new FormControl(true),
-    outputFormat: new FormControl('structured', [
-      Validators.required
-    ])
+  imageModel = signal({
+    language: 'en',
+    maxResults: 10,
+    confidenceThreshold: 0.8,
+    includeBoundingBoxes: true,
+    outputFormat: 'structured'
   });
 
-  /**
-   * Handle file selection
-   */
+  imageForm = form(this.imageModel, (s) => {
+    required(s.language, { message: 'Language is required' });
+    pattern(s.language, /^[a-z]{2}(-[A-Z]{2})?$/, { message: 'Language format is invalid' });
+    min(s.maxResults, 1, { message: 'Max Results must be at least 1' });
+    max(s.maxResults, 100, { message: 'Max Results must not exceed 100' });
+    min(s.confidenceThreshold, 0, { message: 'Confidence Threshold must be at least 0' });
+    max(s.confidenceThreshold, 1, { message: 'Confidence Threshold must not exceed 1' });
+    required(s.outputFormat, { message: 'Output Format is required' });
+  });
+
   onFileSelected(file: File): void {
     this.selectedFile.set(file);
     this.fileError.set(null);
   }
 
-  /**
-   * Handle file cleared
-   */
   onFileCleared(): void {
     this.selectedFile.set(null);
     this.fileError.set(null);
   }
 
-  /**
-   * Handle file upload error
-   */
   onFileError(errorMessage: string): void {
     this.fileError.set(errorMessage);
   }
 
-  /**
-   * Handle form submission
-   */
   onSubmit(): void {
-    const formValue = this.imageForm.value;
-    const file = this.selectedFile();
-    
-    if (!file) {
-      this.fileError.set('No file selected');
-      return;
-    }
-
-    // Update request params to trigger resource loading
-    this.requestParams.set({
-      file,
-      params: {
-        language: formValue.language!,
-        maxResults: formValue.maxResults!,
-        confidenceThreshold: formValue.confidenceThreshold!,
-        includeBoundingBoxes: formValue.includeBoundingBoxes!,
-        outputFormat: formValue.outputFormat!
+    submit(this.imageForm, async () => {
+      const file = this.selectedFile();
+      if (!file) {
+        this.fileError.set('No file selected');
+        return;
       }
+
+      const model = this.imageModel();
+      this.requestParams.set({
+        file,
+        params: {
+          language: model.language,
+          maxResults: model.maxResults,
+          confidenceThreshold: model.confidenceThreshold,
+          includeBoundingBoxes: model.includeBoundingBoxes,
+          outputFormat: model.outputFormat
+        }
+      });
     });
   }
 
-  /**
-   * Reset the form and clear state
-   */
   resetForm(): void {
-    this.imageForm.reset({
+    this.imageModel.set({
       language: 'en',
       maxResults: 10,
       confidenceThreshold: 0.8,
