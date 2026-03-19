@@ -1,25 +1,25 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { httpResource } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
 import { ModelInvocationResponse } from '../../core/services/api';
-import { ModelResponseComponent } from '../../shared/components/model-response/model-response';
-import { FileUploadComponent } from '../../shared/components/file-upload/file-upload';
+import { API_CONFIG } from '../../core/tokens/api-config';
+import { ModelResponse } from '../../shared/components/model-response/model-response';
+import { FileUpload } from '../../shared/components/file-upload/file-upload';
+import { getFormErrorMessage, hasFormError, markFormGroupTouched } from '../../shared/utils/form-validation';
 
 @Component({
   selector: 'app-image-generation',
   imports: [
     ReactiveFormsModule,
-    ModelResponseComponent,
-    FileUploadComponent
+    ModelResponse,
+    FileUpload
   ],
   templateUrl: './image-generation.html',
   styleUrl: './image-generation.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ImageGenerationComponent {
-  private readonly baseUrl = environment.apiUrl || 'http://localhost:3000/api';
-  private readonly apiKey = environment.apiKey || '';
+export class ImageGeneration {
+  private readonly apiConfig = inject(API_CONFIG);
 
   // Signals for state management
   selectedFiles = signal<File[]>([]);
@@ -41,14 +41,13 @@ export class ImageGenerationComponent {
       return undefined; // No request when no params
     }
     
-    console.log('Gemini Image Generation request:', params);
     return {
-      url: `${this.baseUrl}/models/gemini-image-gen/invoke`,
+      url: `${this.apiConfig.baseUrl}/models/gemini-image-gen/invoke`,
       method: 'POST',
       body: params,
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': this.apiKey
+        'X-API-Key': this.apiConfig.apiKey
       }
     };
   });
@@ -172,14 +171,8 @@ export class ImageGenerationComponent {
     });
   }
 
-  /**
-   * Mark all form controls as touched
-   */
   private markFormGroupTouched(): void {
-    Object.keys(this.imageGenForm.controls).forEach(key => {
-      const control = this.imageGenForm.get(key);
-      control?.markAsTouched();
-    });
+    markFormGroupTouched(this.imageGenForm);
   }
 
   /**
@@ -204,26 +197,11 @@ export class ImageGenerationComponent {
     this.imageGenForm.patchValue({ prompt: example });
   }
 
-  /**
-   * Get error message for form control
-   */
   getErrorMessage(controlName: string): string | null {
-    const control = this.imageGenForm.get(controlName);
-    
-    if (control?.errors && control.touched) {
-      if (control.errors['required']) return `${controlName} is required`;
-      if (control.errors['minlength']) return `Minimum ${control.errors['minlength'].requiredLength} characters`;
-      if (control.errors['maxlength']) return `Maximum ${control.errors['maxlength'].requiredLength} characters`;
-    }
-    
-    return null;
+    return getFormErrorMessage(this.imageGenForm, controlName);
   }
 
-  /**
-   * Check if form control has error
-   */
   hasError(controlName: string): boolean {
-    const control = this.imageGenForm.get(controlName);
-    return !!(control?.errors && control.touched);
+    return hasFormError(this.imageGenForm, controlName);
   }
 }

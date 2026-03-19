@@ -1,22 +1,21 @@
-import { Component, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { httpResource } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
 import { ModelInvocationResponse } from '../../core/services/api';
-import { TextModelFormComponent } from './components/text-model-form/text-model-form';
-import { TextModelResponseComponent } from './components/text-model-response/text-model-response';
-import { ModelResponseComponent } from '../../shared/components/model-response/model-response';
+import { API_CONFIG } from '../../core/tokens/api-config';
+import { TextModelForm } from './components/text-model-form/text-model-form';
+import { TextModelResponse } from './components/text-model-response/text-model-response';
+import { ModelResponse } from '../../shared/components/model-response/model-response';
 
 @Component({
   selector: 'app-text-model',
-  imports: [TextModelFormComponent, TextModelResponseComponent, ModelResponseComponent],
+  imports: [TextModelForm, TextModelResponse, ModelResponse],
   templateUrl: './text-model.html',
   styleUrl: './text-model.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TextModelComponent {
-  private readonly baseUrl = environment.apiUrl || 'http://localhost:3000/api';
-  private readonly apiKey = environment.apiKey || '';
+export class TextModel {
+  private readonly apiConfig = inject(API_CONFIG);
 
   // Request signal to trigger API calls
   requestParams = signal<{
@@ -34,14 +33,13 @@ export class TextModelComponent {
       return undefined; // No request when no params
     }
     
-    console.log('Text model request:', params);
     return {
-      url: `${this.baseUrl}/models/google-text-bison/invoke`,
+      url: `${this.apiConfig.baseUrl}/models/google-text-bison/invoke`,
       method: 'POST',
       body: params,
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': this.apiKey
+        'X-API-Key': this.apiConfig.apiKey
       }
     };
   });

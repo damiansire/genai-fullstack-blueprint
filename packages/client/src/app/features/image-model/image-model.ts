@@ -1,23 +1,22 @@
-import { Component, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { httpResource } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
 import { ModelInvocationResponse } from '../../core/services/api';
-import { FileUploadComponent } from '../../shared/components/file-upload/file-upload';
-import { ImageModelFormComponent } from './components/image-model-form/image-model-form';
-import { ImageModelResponseComponent } from './components/image-model-response/image-model-response';
-import { ModelResponseComponent } from '../../shared/components/model-response/model-response';
+import { API_CONFIG } from '../../core/tokens/api-config';
+import { FileUpload } from '../../shared/components/file-upload/file-upload';
+import { ImageModelForm } from './components/image-model-form/image-model-form';
+import { ImageModelResponse } from './components/image-model-response/image-model-response';
+import { ModelResponse } from '../../shared/components/model-response/model-response';
 
 @Component({
   selector: 'app-image-model',
-  imports: [FileUploadComponent, ImageModelFormComponent, ImageModelResponseComponent, ModelResponseComponent],
+  imports: [FileUpload, ImageModelForm, ImageModelResponse, ModelResponse],
   templateUrl: './image-model.html',
   styleUrl: './image-model.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ImageModelComponent {
-  private readonly baseUrl = environment.apiUrl || 'http://localhost:3000/api';
-  private readonly apiKey = environment.apiKey || '';
+export class ImageModel {
+  private readonly apiConfig = inject(API_CONFIG);
 
   // Signals for state management
   selectedFile = signal<File | null>(null);
@@ -42,12 +41,6 @@ export class ImageModelComponent {
       return undefined; // No request when no params
     }
     
-    console.log('Image model request:', {
-      fileName: params.file.name,
-      params: params.params
-    });
-
-    // Create FormData for file upload
     const formData = new FormData();
     formData.append('imageFile', params.file);
     Object.entries(params.params).forEach(([key, value]) => {
@@ -55,12 +48,11 @@ export class ImageModelComponent {
     });
     
     return {
-      url: `${this.baseUrl}/models/google-vision-ocr/invoke`,
+      url: `${this.apiConfig.baseUrl}/models/google-vision-ocr/invoke`,
       method: 'POST',
       body: formData,
       headers: {
-        'X-API-Key': this.apiKey
-        // Don't set Content-Type for FormData - browser sets it with boundary
+        'X-API-Key': this.apiConfig.apiKey
       }
     };
   });
@@ -91,12 +83,6 @@ export class ImageModelComponent {
   onFileSelected(file: File): void {
     this.selectedFile.set(file);
     this.fileError.set(null);
-    
-    console.log('File selected:', {
-      name: file.name,
-      size: file.size,
-      type: file.type
-    });
   }
 
   /**
