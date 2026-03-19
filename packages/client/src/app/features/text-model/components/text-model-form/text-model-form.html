@@ -102,7 +102,7 @@
         [disabled]="loading() || form().invalid"
       >
         @if (loading()) {
-          <span class="spinner"></span>
+          <span class="spinner" role="status" aria-label="Loading"></span>
           Processing...
         } @else {
           Generate Text

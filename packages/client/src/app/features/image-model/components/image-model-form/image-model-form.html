@@ -104,7 +104,7 @@
         [disabled]="loading() || form().invalid || !hasFile()"
       >
         @if (loading()) {
-          <span class="spinner"></span>
+          <span class="spinner" role="status" aria-label="Loading"></span>
           Processing...
         } @else {
           Extract Text
