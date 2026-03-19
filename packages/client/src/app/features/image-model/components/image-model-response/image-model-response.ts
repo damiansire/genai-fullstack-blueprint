@@ -8,7 +8,7 @@ import { ModelInvocationResponse } from '../../../../core/services/api';
   styleUrl: './image-model-response.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ImageModelResponseComponent {
+export class ImageModelResponse {
   response = input<ModelInvocationResponse | null>(null);
 
   // Computed signal for image size

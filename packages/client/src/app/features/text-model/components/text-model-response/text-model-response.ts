@@ -8,7 +8,7 @@ import { ModelInvocationResponse } from '../../../../core/services/api';
   styleUrl: './text-model-response.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TextModelResponseComponent {
+export class TextModelResponse {
   response = input<ModelInvocationResponse | null>(null);
 }
 

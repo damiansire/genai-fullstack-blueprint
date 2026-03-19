@@ -9,7 +9,7 @@ import { ModelInvocationResponse } from '../../../core/services/api';
   styleUrl: './model-response.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ModelResponseComponent {
+export class ModelResponse {
   loading = input(false);
   error = input<string | null>(null);
   response = input<ModelInvocationResponse | null>(null);

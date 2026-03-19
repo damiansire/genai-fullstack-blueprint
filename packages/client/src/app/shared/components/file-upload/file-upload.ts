@@ -7,7 +7,7 @@ import { Component, input, output, viewChild, ElementRef, ChangeDetectionStrateg
   styleUrl: './file-upload.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class FileUploadComponent {
+export class FileUpload {
   accept = input('image/*');
   maxSizeMB = input(10);
   allowedTypes = input<string[]>(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']);
