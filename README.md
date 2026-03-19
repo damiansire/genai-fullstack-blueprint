@@ -1,3 +1,23 @@
+> **⚠️ AVISO IMPORTANTE**
+>
+> | | |
+> |---|---|
+> | **Fecha de última modificación** | 19 de marzo de 2026 |
+> | **Estado** | En proceso de mejora |
+> | **Disclaimer** | Estoy llevando la app a Angular 21 y aplicando ciertas mejoras. Por favor, tener en cuenta que mientras veas este mensaje en el README, la aplicación puede estar fallando. |
+>
+> ### Resumen de cambios en curso
+>
+> - **Migración a Angular 21**: Actualización de todos los paquetes `@angular/*` de v20 a v21.2.
+> - **Signal Forms**: Reemplazo de Reactive Forms (`FormGroup`/`FormControl`/`Validators`) por la nueva API de Signal Forms (`form()`, `signal()`, `FormField`, `submit()`).
+> - **Vitest en lugar de Karma/Jasmine**: Migración del test runner a Vitest con el builder `@angular/build:unit-test`.
+> - **Zoneless Change Detection**: Eliminación completa de `zone.js`, uso de `provideZonelessChangeDetection()`.
+> - **Design Tokens y SCSS**: Centralización de colores y estilos en CSS custom properties, extracción de estilos compartidos a clases globales.
+> - **Accesibilidad (ARIA)**: Decorative emojis envueltos en `aria-hidden`, spinners con `role="status"`, atributos `aria-invalid` y `aria-describedby` en formularios.
+> - **Limpieza de configuración**: Eliminación de `apiKey` del cliente, alineación de versiones de dependencias, eliminación de `experimentalDecorators`.
+
+---
+
 # 🚀 Full-Stack Multimodal AI Application: A Production Blueprint
 
 This repository serves as a **production-ready blueprint** for building modern, scalable, and high-performance web applications using a cutting-edge tech stack: **Angular** for the frontend, **Node.js** for the backend, and **Google Gemini API** for multimodal AI capabilities.
@@ -36,7 +56,7 @@ The Angular app abandons NgModules in favor of a **100% Standalone Component arc
 
 | Area           | Technology         | Description                                                                                                                                                |
 | -------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**   | **Angular 20+**    | Modern framework for building UIs using Standalone Components, Signals for state management, and `ChangeDetectionStrategy.OnPush` for optimal performance. |
+| **Frontend**   | **Angular 21**     | Modern framework for building UIs using Standalone Components, Signal Forms, Signals for state management, and `ChangeDetectionStrategy.OnPush` for optimal performance. |
 | **Backend**    | **Node.js**        | JavaScript runtime environment for the server side.                                                                                                        |
 |                | **Express.js**     | Minimalist framework for building RESTful APIs.                                                                                                            |
 |                | **Multer**         | Middleware for handling file uploads (multipart/form-data).                                                                                                |
@@ -191,9 +211,10 @@ Optimized for scalability and clarity:
 ```
 /GenAI-Scaffold/
 ├── packages/               # Monorepo packages
-│   ├── client/            # Angular Application
+│   ├── client/            # Angular 21 Application
 │   │   ├── src/app/
-│   │   │   ├── core/       # Singleton services, interceptors
+│   │   │   ├── core/       # Singleton services, DI tokens
+│   │   │   ├── shared/     # Reusable components (file-upload, navigation)
 │   │   │   └── features/   # Functional components (text-model, image-model)
 │   │   └── package.json
 │   └── api/               # Node.js API
@@ -228,15 +249,19 @@ Optimized for scalability and clarity:
 - **File Uploads**: `multer` configured per route to efficiently and securely handle multipart/form-data.
 - **Strict CORS Policy**: Only trusted origins are allowed in production.
 
-### Frontend (Angular)
+### Frontend (Angular 21)
 
 - **100% Standalone Components**: No NgModules — less boilerplate, simpler dependency management.
-- **Reactive State with Signals**: Uses `signal()` and `computed()` for high-performance state management.
-- **OnPush Change Detection**: Minimizes unnecessary re-rendering.
+- **Signal Forms**: Uses Angular 21's `form()` / `FormField` API from `@angular/forms/signals` for type-safe, model-driven forms.
+- **Reactive State with Signals**: Uses `signal()`, `computed()`, and `httpResource()` for high-performance state management.
+- **Zoneless Change Detection**: Runs without `zone.js` via `provideZonelessChangeDetection()` for smaller bundles and better performance.
+- **OnPush Change Detection**: All components use `ChangeDetectionStrategy.OnPush`.
+- **Vitest Test Runner**: Unit tests run with Vitest via `@angular/build:unit-test` for fast, modern testing.
+- **Design Tokens**: Centralized CSS custom properties in `:root` for consistent theming across components.
+- **Accessibility (ARIA)**: Decorative emojis wrapped in `aria-hidden`, form inputs with `aria-invalid` / `aria-describedby`, spinners with `role="status"`.
 - **Lazy Loading with `loadComponent`**: Reduces initial bundle size and improves performance.
-- **Modern Dependency Injection**: Uses `inject()` instead of constructor injection.
-- **Functional Interceptors**: Uses `withInterceptors()` for a more composable HTTP pipeline.
-- **Native Control Flow**: Leverages new `@if` and `@for` syntax for cleaner, faster templates.
+- **Modern Dependency Injection**: Uses `inject()` with `InjectionToken` for API configuration.
+- **Native Control Flow**: Leverages `@if`, `@for`, and `@switch` syntax for cleaner, faster templates.
 
 ---
 
