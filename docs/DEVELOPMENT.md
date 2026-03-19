@@ -8,7 +8,7 @@ Esta guía te ayudará a configurar y desarrollar el proyecto AI Gateway de mane
 
 - **Node.js** (v18 o superior)
 - **npm** (v8 o superior)
-- **Angular CLI** (v20 o superior)
+- **Angular CLI** (v21 o superior)
 - **Docker** (opcional, para contenedores)
 - **Git** (para control de versiones)
 
@@ -17,7 +17,7 @@ Esta guía te ayudará a configurar y desarrollar el proyecto AI Gateway de mane
 ```bash
 node --version    # Debe ser v18+
 npm --version     # Debe ser v8+
-ng version        # Debe ser v20+
+ng version        # Debe ser v21+
 docker --version  # Opcional
 git --version
 ```
@@ -123,9 +123,11 @@ docker-compose down
 
 #### Frontend:
 
-- **Service Pattern**: `ApiService` para comunicación con backend
-- **Component Pattern**: Componentes standalone de Angular
-- **Signal Pattern**: Gestión de estado reactivo
+- **Signal Forms Pattern**: Formularios tipo-seguros con `form()` / `FormField` de `@angular/forms/signals`
+- **Component Pattern**: Componentes standalone con `OnPush` change detection
+- **Signal Pattern**: Gestión de estado reactivo con `signal()`, `computed()`, `httpResource()`
+- **Zoneless Pattern**: Sin `zone.js`, usando `provideZonelessChangeDetection()`
+- **DI Token Pattern**: Configuración centralizada con `InjectionToken` e `inject()`
 
 ## 🔌 Desarrollo de Plugins
 
@@ -204,30 +206,27 @@ export class ModelStrategy implements IModelStrategy<any, any> {
 
 ```bash
 # Ejecutar tests del backend
-cd ai-gateway/packages/api
+cd packages/api
 npm test
 
 # Tests con coverage
 npm run test:coverage
 ```
 
-### Frontend:
+### Frontend (Vitest):
+
+El frontend usa **Vitest** como test runner (migrado desde Karma/Jasmine en Angular 21).
 
 ```bash
 # Ejecutar tests del frontend
-cd ai-gateway/packages/client
+cd packages/client
 npm test
 
-# Tests e2e
-npm run e2e
+# Tests con watch mode (interactivo)
+npx ng test
 ```
 
-### Integración:
-
-```bash
-# Test completo del sistema
-npm run test:integration
-```
+El builder `@angular/build:unit-test` ejecuta Vitest automáticamente. Los tests usan `jsdom` como entorno DOM y las funciones globales de Vitest (`describe`, `it`, `expect`).
 
 ## 🔧 Scripts Disponibles
 
@@ -257,8 +256,7 @@ npm test                 # Ejecutar tests
 npm run build            # Build de producción
 npm run build:prod       # Build optimizado
 npm start                # Servidor de desarrollo
-npm test                 # Tests unitarios
-npm run e2e              # Tests e2e
+npm test                 # Tests unitarios (Vitest)
 ```
 
 ## 📊 Monitoreo y Debugging
@@ -388,7 +386,7 @@ docker-compose ps
 
 ### Enlaces útiles:
 
-- [Angular Documentation](https://angular.io/docs)
+- [Angular Documentation](https://angular.dev/)
 - [Express.js Documentation](https://expressjs.com/)
 - [Docker Documentation](https://docs.docker.com/)
 - [Google Gemini API](https://ai.google.dev/docs)

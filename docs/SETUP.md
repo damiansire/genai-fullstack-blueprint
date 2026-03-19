@@ -36,7 +36,7 @@
 
 ### Paso 2: Configura el Archivo .env
 
-En la raíz del proyecto (`/Users/personal/Desktop/GenAI-Scaffold/`), crea o edita el archivo `.env`:
+En la raíz del proyecto, crea o edita el archivo `.env`:
 
 ```bash
 # Copia el ejemplo si no existe
@@ -148,7 +148,7 @@ is serene and masterful.
 
 **Solución:**
 
-1. Verifica que `.env` existe en `/Users/personal/Desktop/GenAI-Scaffold/`
+1. Verifica que `.env` existe en la raíz del proyecto
 2. Verifica que contiene `GEMINI_API_KEY=...`
 3. Reinicia el servidor (Ctrl+C y luego `npm run dev`)
 

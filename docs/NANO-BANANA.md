@@ -14,7 +14,7 @@
 Edita tu archivo `.env` (o créalo desde `env.example`):
 
 ```bash
-# En /Users/personal/Desktop/GenAI-Scaffold/.env
+# En la raíz del proyecto (.env)
 GEMINI_API_KEY=tu-api-key-aquí
 ```
 

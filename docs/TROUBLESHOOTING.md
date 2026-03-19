@@ -180,7 +180,7 @@ Error: Cannot find module 'express'
 1. **Reinstalar dependencias:**
 
    ```bash
-   cd ai-gateway
+   cd GenAI-Scaffold
    rm -rf node_modules package-lock.json
    npm install
    ```
@@ -278,7 +278,7 @@ error TS2307: Cannot find module
 2. **Verificar tsconfig.json:**
    ```bash
    # Verificar configuración TypeScript
-   cat ai-gateway/packages/api/tsconfig.json
+   cat packages/api/tsconfig.json
    ```
 
 ### Error: "Angular build failed"
@@ -294,7 +294,7 @@ ERROR in Cannot read property 'length' of undefined
 1. **Limpiar caché de Angular:**
 
    ```bash
-   cd ai-gateway/packages/client
+   cd packages/client
    rm -rf .angular/cache
    npm run build
    ```
@@ -333,7 +333,7 @@ ls -la .env
 cat .env
 
 # Verificar package.json
-cat ai-gateway/package.json
+cat package.json
 
 # Verificar docker-compose
 cat docker-compose.yml
@@ -379,7 +379,7 @@ killall node
 docker system prune -f
 
 # Reinstalar dependencias
-cd ai-gateway
+cd GenAI-Scaffold
 rm -rf node_modules package-lock.json
 npm install
 
@@ -391,7 +391,7 @@ docker-compose up --build
 
 ```bash
 # Si Docker falla, usar desarrollo local
-cd ai-gateway
+cd GenAI-Scaffold
 npm run dev
 ```
 
