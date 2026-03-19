@@ -1,5 +1,6 @@
 import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { getFormErrorMessage, hasFormError, markFormGroupTouched } from '../../../../shared/utils/form-validation';
 
 @Component({
   selector: 'app-text-model-form',
@@ -8,7 +9,7 @@ import { ReactiveFormsModule, FormGroup } from '@angular/forms';
   styleUrl: './text-model-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TextModelFormComponent {
+export class TextModelForm {
   form = input.required<FormGroup>();
   loading = input(false);
   submitForm = output<void>();
@@ -18,7 +19,7 @@ export class TextModelFormComponent {
     if (this.form().valid) {
       this.submitForm.emit();
     } else {
-      this.markFormGroupTouched();
+      markFormGroupTouched(this.form());
     }
   }
 
@@ -26,49 +27,11 @@ export class TextModelFormComponent {
     this.resetForm.emit();
   }
 
-  /**
-   * Mark all form controls as touched to show validation errors
-   */
-  private markFormGroupTouched(): void {
-    Object.keys(this.form().controls).forEach(key => {
-      const control = this.form().get(key);
-      control?.markAsTouched();
-    });
-  }
-
-  /**
-   * Get validation error message for a form control
-   */
   getErrorMessage(controlName: string): string | null {
-    const control = this.form().get(controlName);
-    
-    if (control?.errors && control.touched) {
-      if (control.errors['required']) {
-        return `${controlName} is required`;
-      }
-      if (control.errors['minlength']) {
-        return `${controlName} must be at least ${control.errors['minlength'].requiredLength} characters`;
-      }
-      if (control.errors['maxlength']) {
-        return `${controlName} must not exceed ${control.errors['maxlength'].requiredLength} characters`;
-      }
-      if (control.errors['min']) {
-        return `${controlName} must be at least ${control.errors['min'].min}`;
-      }
-      if (control.errors['max']) {
-        return `${controlName} must not exceed ${control.errors['max'].max}`;
-      }
-    }
-    
-    return null;
+    return getFormErrorMessage(this.form(), controlName);
   }
 
-  /**
-   * Check if a form control has validation errors
-   */
   hasError(controlName: string): boolean {
-    const control = this.form().get(controlName);
-    return !!(control?.errors && control.touched);
+    return hasFormError(this.form(), controlName);
   }
 }
-

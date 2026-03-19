@@ -1,5 +1,6 @@
 import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { getFormErrorMessage, hasFormError, markFormGroupTouched } from '../../../../shared/utils/form-validation';
 
 @Component({
   selector: 'app-image-model-form',
@@ -8,7 +9,7 @@ import { ReactiveFormsModule, FormGroup } from '@angular/forms';
   styleUrl: './image-model-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ImageModelFormComponent {
+export class ImageModelForm {
   form = input.required<FormGroup>();
   loading = input(false);
   hasFile = input(false);
@@ -19,7 +20,7 @@ export class ImageModelFormComponent {
     if (this.form().valid && this.hasFile()) {
       this.submitForm.emit();
     } else {
-      this.markFormGroupTouched();
+      markFormGroupTouched(this.form());
     }
   }
 
@@ -27,46 +28,11 @@ export class ImageModelFormComponent {
     this.resetForm.emit();
   }
 
-  /**
-   * Mark all form controls as touched to show validation errors
-   */
-  private markFormGroupTouched(): void {
-    Object.keys(this.form().controls).forEach(key => {
-      const control = this.form().get(key);
-      control?.markAsTouched();
-    });
-  }
-
-  /**
-   * Get validation error message for a form control
-   */
   getErrorMessage(controlName: string): string | null {
-    const control = this.form().get(controlName);
-    
-    if (control?.errors && control.touched) {
-      if (control.errors['required']) {
-        return `${controlName} is required`;
-      }
-      if (control.errors['pattern']) {
-        return `${controlName} format is invalid`;
-      }
-      if (control.errors['min']) {
-        return `${controlName} must be at least ${control.errors['min'].min}`;
-      }
-      if (control.errors['max']) {
-        return `${controlName} must not exceed ${control.errors['max'].max}`;
-      }
-    }
-    
-    return null;
+    return getFormErrorMessage(this.form(), controlName);
   }
 
-  /**
-   * Check if a form control has validation errors
-   */
   hasError(controlName: string): boolean {
-    const control = this.form().get(controlName);
-    return !!(control?.errors && control.touched);
+    return hasFormError(this.form(), controlName);
   }
 }
-
