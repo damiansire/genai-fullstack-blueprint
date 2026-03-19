@@ -1,19 +1,19 @@
 <section class="form-section">
-  <form [formGroup]="form()" (ngSubmit)="onSubmit()" class="text-form">
+  <form (submit)="onSubmit(); $event.preventDefault()" class="text-form">
     <div class="form-group">
       <label for="prompt" class="form-label">Prompt *</label>
       <textarea
         id="prompt"
-        formControlName="prompt"
+        [formField]="form().prompt"
         class="form-control"
-        [class.error]="hasError('prompt')"
-        [attr.aria-invalid]="hasError('prompt')"
+        [class.error]="form().prompt().touched() && form().prompt().errors().length"
+        [attr.aria-invalid]="form().prompt().touched() && form().prompt().errors().length ? true : null"
         aria-describedby="prompt-error"
         placeholder="Enter your prompt here..."
         rows="4"
       ></textarea>
-      @if (hasError('prompt')) {
-        <div id="prompt-error" class="error-message" role="alert">{{ getErrorMessage('prompt') }}</div>
+      @if (form().prompt().touched() && form().prompt().errors().length) {
+        <div id="prompt-error" class="error-message" role="alert">{{ form().prompt().errors()[0].message }}</div>
       }
     </div>
 
@@ -23,16 +23,14 @@
         <input
           type="number"
           id="maxTokens"
-          formControlName="maxTokens"
+          [formField]="form().maxTokens"
           class="form-control"
-          [class.error]="hasError('maxTokens')"
-          [attr.aria-invalid]="hasError('maxTokens')"
+          [class.error]="form().maxTokens().touched() && form().maxTokens().errors().length"
+          [attr.aria-invalid]="form().maxTokens().touched() && form().maxTokens().errors().length ? true : null"
           aria-describedby="maxTokens-error"
-          min="1"
-          max="1024"
         />
-        @if (hasError('maxTokens')) {
-          <div id="maxTokens-error" class="error-message" role="alert">{{ getErrorMessage('maxTokens') }}</div>
+        @if (form().maxTokens().touched() && form().maxTokens().errors().length) {
+          <div id="maxTokens-error" class="error-message" role="alert">{{ form().maxTokens().errors()[0].message }}</div>
         }
       </div>
 
@@ -41,17 +39,15 @@
         <input
           type="number"
           id="temperature"
-          formControlName="temperature"
+          [formField]="form().temperature"
           class="form-control"
-          [class.error]="hasError('temperature')"
-          [attr.aria-invalid]="hasError('temperature')"
+          [class.error]="form().temperature().touched() && form().temperature().errors().length"
+          [attr.aria-invalid]="form().temperature().touched() && form().temperature().errors().length ? true : null"
           aria-describedby="temperature-error"
-          min="0.0"
-          max="1.0"
           step="0.1"
         />
-        @if (hasError('temperature')) {
-          <div id="temperature-error" class="error-message" role="alert">{{ getErrorMessage('temperature') }}</div>
+        @if (form().temperature().touched() && form().temperature().errors().length) {
+          <div id="temperature-error" class="error-message" role="alert">{{ form().temperature().errors()[0].message }}</div>
         }
       </div>
     </div>
@@ -62,17 +58,15 @@
         <input
           type="number"
           id="topP"
-          formControlName="topP"
+          [formField]="form().topP"
           class="form-control"
-          [class.error]="hasError('topP')"
-          [attr.aria-invalid]="hasError('topP')"
+          [class.error]="form().topP().touched() && form().topP().errors().length"
+          [attr.aria-invalid]="form().topP().touched() && form().topP().errors().length ? true : null"
           aria-describedby="topP-error"
-          min="0.0"
-          max="1.0"
           step="0.1"
         />
-        @if (hasError('topP')) {
-          <div id="topP-error" class="error-message" role="alert">{{ getErrorMessage('topP') }}</div>
+        @if (form().topP().touched() && form().topP().errors().length) {
+          <div id="topP-error" class="error-message" role="alert">{{ form().topP().errors()[0].message }}</div>
         }
       </div>
 
@@ -81,16 +75,14 @@
         <input
           type="number"
           id="topK"
-          formControlName="topK"
+          [formField]="form().topK"
           class="form-control"
-          [class.error]="hasError('topK')"
-          [attr.aria-invalid]="hasError('topK')"
+          [class.error]="form().topK().touched() && form().topK().errors().length"
+          [attr.aria-invalid]="form().topK().touched() && form().topK().errors().length ? true : null"
           aria-describedby="topK-error"
-          min="1"
-          max="100"
         />
-        @if (hasError('topK')) {
-          <div id="topK-error" class="error-message" role="alert">{{ getErrorMessage('topK') }}</div>
+        @if (form().topK().touched() && form().topK().errors().length) {
+          <div id="topK-error" class="error-message" role="alert">{{ form().topK().errors()[0].message }}</div>
         }
       </div>
     </div>
@@ -99,7 +91,7 @@
       <button
         type="submit"
         class="btn btn-primary"
-        [disabled]="loading() || form().invalid"
+        [disabled]="loading() || form()().invalid()"
       >
         @if (loading()) {
           <span class="spinner" role="status" aria-label="Loading"></span>
@@ -108,7 +100,7 @@
           Generate Text
         }
       </button>
-      
+
       <button
         type="button"
         class="btn btn-secondary"
@@ -120,4 +112,3 @@
     </div>
   </form>
 </section>
-
