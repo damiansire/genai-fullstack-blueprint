@@ -12,14 +12,14 @@
     
     @if (!selectedFile()) {
       <div class="file-upload-placeholder">
-        <div class="upload-icon">📁</div>
+        <div class="upload-icon" aria-hidden="true">📁</div>
         <p>Click to select a file</p>
         <small>Supports {{ allowedTypesString() }} (max {{ maxSizeMB() }}MB)</small>
       </div>
     } @else {
       <div class="file-selected">
         <div class="file-info">
-          <span class="file-icon">{{ fileTypeIcon() }}</span>
+          <span class="file-icon" aria-hidden="true">{{ fileTypeIcon() }}</span>
           <div class="file-details">
             <div class="file-name">{{ selectedFile()!.name }}</div>
             <div class="file-size">{{ fileSize() }}</div>

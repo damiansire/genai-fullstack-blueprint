@@ -1,18 +1,18 @@
-<div class="image-gen-container">
-  <header class="header">
-    <h1>🍌 Nano Banana - Image Generation</h1>
+<div class="feature-container feature-container--wide">
+  <header class="feature-header">
+    <h1 class="gradient-title"><span aria-hidden="true">🍌</span> Nano Banana - Image Generation</h1>
     <p>Generate and edit images with Gemini 2.5 Flash</p>
   </header>
 
-  <div class="content">
+  <div class="feature-content feature-content--wide">
     <div class="left-column">
       <!-- Mode Indicator -->
       <div class="mode-section">
         <span class="mode-badge" [class.text-mode]="generationMode() === 'text-to-image'" [class.edit-mode]="generationMode() === 'image-editing'">
           @if (generationMode() === 'text-to-image') {
-            <span>📝 Text-to-Image Mode</span>
+            <span><span aria-hidden="true">📝</span> Text-to-Image Mode</span>
           } @else {
-            <span>✏️ Image Editing Mode</span>
+            <span><span aria-hidden="true">✏️</span> Image Editing Mode</span>
           }
         </span>
       </div>
@@ -20,7 +20,7 @@
       <!-- File Upload for Image Editing -->
       @if (generationMode() === 'image-editing' || selectedFiles().length > 0) {
         <div class="upload-section">
-          <h3>📸 Input Images (For Editing/Composition)</h3>
+          <h3><span aria-hidden="true">📸</span> Input Images (For Editing/Composition)</h3>
           <app-file-upload
             [selectedFile]="selectedFiles()[0] || null"
             (fileSelected)="onFileSelected($event)"
@@ -49,7 +49,7 @@
               <div id="prompt-error" class="error-message" role="alert">{{ getErrorMessage('prompt') }}</div>
             }
             <div class="prompt-tip">
-              💡 <strong>Tip:</strong> Describe the scene in detail, not just keywords. Include lighting, style, camera angles for best results.
+              <span aria-hidden="true">💡</span> <strong>Tip:</strong> Describe the scene in detail, not just keywords. Include lighting, style, camera angles for best results.
             </div>
           </div>
 
@@ -70,7 +70,7 @@
 
           <!-- Example Prompts -->
           <div class="examples-section">
-            <h4>📋 Example Prompts</h4>
+            <h4><span aria-hidden="true">📋</span> Example Prompts</h4>
             <div class="examples-grid">
               @for (example of examples; track example.category) {
                 <button
@@ -93,10 +93,10 @@
               [disabled]="imageGenResource.isLoading() || imageGenForm.invalid"
             >
               @if (imageGenResource.isLoading()) {
-                <span class="spinner"></span>
+                <span class="spinner" role="status" aria-label="Loading"></span>
                 Generating...
               } @else {
-                🎨 Generate Image
+                <span aria-hidden="true">🎨</span> Generate Image
               }
             </button>
             
@@ -123,18 +123,18 @@
       >
         @if (imageGenResource.value()?.data?.result) {
           <div class="image-gen-response">
-            <h3>✨ Generated Image</h3>
+            <h3><span aria-hidden="true">✨</span> Generated Image</h3>
             
             @if (imageGenResource.value()?.data?.result?.text) {
               <div class="description-box">
-                <h4>📝 Description</h4>
+                <h4><span aria-hidden="true">📝</span> Description</h4>
                 <p>{{ imageGenResource.value()?.data?.result?.text }}</p>
               </div>
             }
 
             @if (imageGenResource.value()?.data?.result?.images && imageGenResource.value()!.data.result.images.length > 0) {
               <div class="images-container">
-                <h4>🖼️ Generated Images</h4>
+                <h4><span aria-hidden="true">🖼️</span> Generated Images</h4>
                 <div class="images-grid">
                   @for (image of imageGenResource.value()!.data.result.images; track $index) {
                     <div class="image-card">
@@ -149,7 +149,7 @@
                           [download]="'gemini-generated-' + ($index + 1) + '.png'"
                           class="btn-download"
                         >
-                          💾 Download
+                          <span aria-hidden="true">💾</span> Download
                         </a>
                       </div>
                     </div>
