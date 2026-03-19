@@ -7,6 +7,8 @@
         formControlName="language"
         class="form-control"
         [class.error]="hasError('language')"
+        [attr.aria-invalid]="hasError('language')"
+        aria-describedby="language-error"
       >
         <option value="en">English</option>
         <option value="es">Spanish</option>
@@ -20,7 +22,7 @@
         <option value="ko">Korean</option>
       </select>
       @if (hasError('language')) {
-        <div class="error-message">{{ getErrorMessage('language') }}</div>
+        <div id="language-error" class="error-message" role="alert">{{ getErrorMessage('language') }}</div>
       }
     </div>
 
@@ -33,11 +35,13 @@
           formControlName="maxResults"
           class="form-control"
           [class.error]="hasError('maxResults')"
+          [attr.aria-invalid]="hasError('maxResults')"
+          aria-describedby="maxResults-error"
           min="1"
           max="100"
         />
         @if (hasError('maxResults')) {
-          <div class="error-message">{{ getErrorMessage('maxResults') }}</div>
+          <div id="maxResults-error" class="error-message" role="alert">{{ getErrorMessage('maxResults') }}</div>
         }
       </div>
 
@@ -49,12 +53,14 @@
           formControlName="confidenceThreshold"
           class="form-control"
           [class.error]="hasError('confidenceThreshold')"
+          [attr.aria-invalid]="hasError('confidenceThreshold')"
+          aria-describedby="confidenceThreshold-error"
           min="0.0"
           max="1.0"
           step="0.1"
         />
         @if (hasError('confidenceThreshold')) {
-          <div class="error-message">{{ getErrorMessage('confidenceThreshold') }}</div>
+          <div id="confidenceThreshold-error" class="error-message" role="alert">{{ getErrorMessage('confidenceThreshold') }}</div>
         }
       </div>
     </div>
@@ -78,13 +84,15 @@
           formControlName="outputFormat"
           class="form-control"
           [class.error]="hasError('outputFormat')"
+          [attr.aria-invalid]="hasError('outputFormat')"
+          aria-describedby="outputFormat-error"
         >
           <option value="structured">Structured</option>
           <option value="text">Text Only</option>
           <option value="json">JSON</option>
         </select>
         @if (hasError('outputFormat')) {
-          <div class="error-message">{{ getErrorMessage('outputFormat') }}</div>
+          <div id="outputFormat-error" class="error-message" role="alert">{{ getErrorMessage('outputFormat') }}</div>
         }
       </div>
     </div>

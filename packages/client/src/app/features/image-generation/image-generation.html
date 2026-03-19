@@ -40,11 +40,13 @@
               formControlName="prompt"
               class="form-control"
               [class.error]="hasError('prompt')"
+              [attr.aria-invalid]="hasError('prompt')"
+              aria-describedby="prompt-error"
               placeholder="Describe the image you want to generate or how to edit it..."
               rows="5"
             ></textarea>
             @if (hasError('prompt')) {
-              <div class="error-message">{{ getErrorMessage('prompt') }}</div>
+              <div id="prompt-error" class="error-message" role="alert">{{ getErrorMessage('prompt') }}</div>
             }
             <div class="prompt-tip">
               💡 <strong>Tip:</strong> Describe the scene in detail, not just keywords. Include lighting, style, camera angles for best results.

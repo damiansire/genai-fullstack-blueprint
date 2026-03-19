@@ -7,11 +7,13 @@
         formControlName="prompt"
         class="form-control"
         [class.error]="hasError('prompt')"
+        [attr.aria-invalid]="hasError('prompt')"
+        aria-describedby="prompt-error"
         placeholder="Enter your prompt here..."
         rows="4"
       ></textarea>
       @if (hasError('prompt')) {
-        <div class="error-message">{{ getErrorMessage('prompt') }}</div>
+        <div id="prompt-error" class="error-message" role="alert">{{ getErrorMessage('prompt') }}</div>
       }
     </div>
 
@@ -24,11 +26,13 @@
           formControlName="maxTokens"
           class="form-control"
           [class.error]="hasError('maxTokens')"
+          [attr.aria-invalid]="hasError('maxTokens')"
+          aria-describedby="maxTokens-error"
           min="1"
           max="1024"
         />
         @if (hasError('maxTokens')) {
-          <div class="error-message">{{ getErrorMessage('maxTokens') }}</div>
+          <div id="maxTokens-error" class="error-message" role="alert">{{ getErrorMessage('maxTokens') }}</div>
         }
       </div>
 
@@ -40,12 +44,14 @@
           formControlName="temperature"
           class="form-control"
           [class.error]="hasError('temperature')"
+          [attr.aria-invalid]="hasError('temperature')"
+          aria-describedby="temperature-error"
           min="0.0"
           max="1.0"
           step="0.1"
         />
         @if (hasError('temperature')) {
-          <div class="error-message">{{ getErrorMessage('temperature') }}</div>
+          <div id="temperature-error" class="error-message" role="alert">{{ getErrorMessage('temperature') }}</div>
         }
       </div>
     </div>
@@ -59,12 +65,14 @@
           formControlName="topP"
           class="form-control"
           [class.error]="hasError('topP')"
+          [attr.aria-invalid]="hasError('topP')"
+          aria-describedby="topP-error"
           min="0.0"
           max="1.0"
           step="0.1"
         />
         @if (hasError('topP')) {
-          <div class="error-message">{{ getErrorMessage('topP') }}</div>
+          <div id="topP-error" class="error-message" role="alert">{{ getErrorMessage('topP') }}</div>
         }
       </div>
 
@@ -76,11 +84,13 @@
           formControlName="topK"
           class="form-control"
           [class.error]="hasError('topK')"
+          [attr.aria-invalid]="hasError('topK')"
+          aria-describedby="topK-error"
           min="1"
           max="100"
         />
         @if (hasError('topK')) {
-          <div class="error-message">{{ getErrorMessage('topK') }}</div>
+          <div id="topK-error" class="error-message" role="alert">{{ getErrorMessage('topK') }}</div>
         }
       </div>
     </div>
