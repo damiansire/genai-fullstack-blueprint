@@ -1,13 +1,13 @@
 <section class="response-section">
   @if (loading()) {
-    <div class="loading-state">
-      <div class="spinner-large"></div>
+    <div class="loading-state" role="status" aria-live="polite">
+      <div class="spinner-large" aria-hidden="true"></div>
       <p>{{ loadingMessage() }}</p>
     </div>
   }
 
   @if (error()) {
-    <div class="error-state">
+    <div class="error-state" role="alert">
       <h3>❌ Error</h3>
       <p>{{ error() }}</p>
     </div>
