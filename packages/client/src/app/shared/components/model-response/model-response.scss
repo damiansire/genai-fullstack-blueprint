@@ -1,8 +1,12 @@
+:host {
+  display: block;
+}
+
 .response-section {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-white);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
 }
 
 .loading-state {
@@ -10,77 +14,62 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
-  color: #666;
-  
+  padding: 3rem 1.5rem;
+  color: var(--color-text-secondary);
+
   p {
-    margin-top: 16px;
-    font-size: 16px;
+    margin-top: 1rem;
+    font-size: 1rem;
   }
-}
-
-.spinner-large {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #4285f4;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .error-state {
-  padding: 24px;
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  color: #c33;
-  
+  padding: 1.5rem;
+  background: var(--color-bg-error);
+  border: 1px solid var(--color-bg-error-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-error);
+
   h3 {
-    margin: 0 0 12px 0;
-    font-size: 18px;
+    margin: 0 0 0.75rem 0;
+    font-size: 1.125rem;
   }
-  
+
   p {
     margin: 0;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 }
 
 .response-state {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .response-meta {
   display: flex;
-  gap: 24px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
   flex-wrap: wrap;
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .meta-label {
-  font-size: 12px;
-  color: #666;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .meta-value {
-  font-size: 14px;
-  color: #333;
+  font-size: 0.875rem;
+  color: var(--color-text);
   font-weight: 600;
 }
-

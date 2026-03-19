@@ -1,69 +1,34 @@
+:host {
+  display: block;
+}
+
 .text-response {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.25rem;
 
   h3 {
     margin: 0;
-    font-size: 20px;
-    color: #333;
+    font-size: 1.25rem;
+    color: var(--color-text);
   }
 
   h4 {
-    margin: 0 0 12px 0;
-    font-size: 16px;
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
     font-weight: 600;
-    color: #555;
+    color: var(--color-heading-secondary);
   }
 }
 
-.response-content {
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
-
-.text-output {
-  padding: 16px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #333;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  min-height: 100px;
-}
-
 .usage-info {
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  padding: 1rem;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
 }
 
 .usage-stats {
   display: flex;
-  gap: 24px;
+  gap: 1.5rem;
   flex-wrap: wrap;
 }
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 120px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #666;
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 18px;
-  color: #4285f4;
-  font-weight: 600;
-}
-

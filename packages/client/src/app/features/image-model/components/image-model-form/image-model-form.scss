@@ -1,55 +1,11 @@
-.form-section {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+:host {
+  display: block;
 }
 
 .image-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-}
-
-.form-control {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #4285f4;
-    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
-  }
-
-  &.error {
-    border-color: #c33;
-  }
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  gap: 1.25rem;
 }
 
 .checkbox-group {
@@ -60,86 +16,18 @@
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   cursor: pointer;
   user-select: none;
 }
 
 .checkbox-input {
-  width: 18px;
-  height: 18px;
+  width: 1.125rem;
+  height: 1.125rem;
   cursor: pointer;
 }
 
 .checkbox-text {
-  font-size: 14px;
-  color: #333;
+  font-size: 0.875rem;
+  color: var(--color-text);
 }
-
-.error-message {
-  font-size: 12px;
-  color: #c33;
-  margin-top: 4px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  padding-top: 8px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.btn-primary {
-  background: #4285f4;
-  color: white;
-
-  &:hover:not(:disabled) {
-    background: #3367d6;
-  }
-}
-
-.btn-secondary {
-  background: #f1f3f4;
-  color: #333;
-
-  &:hover:not(:disabled) {
-    background: #e8eaed;
-  }
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-

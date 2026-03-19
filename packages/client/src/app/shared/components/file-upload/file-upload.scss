@@ -1,33 +1,31 @@
+:host {
+  display: block;
+}
+
 .file-upload-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.form-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
+  gap: 0.5rem;
 }
 
 .file-upload-area {
   position: relative;
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  padding: 24px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
   background: #fafafa;
   cursor: pointer;
   transition: all 0.3s;
 
   &:hover {
-    border-color: #4285f4;
+    border-color: var(--color-blue);
     background: #f5f9ff;
   }
 
   &.has-file {
     border-style: solid;
-    border-color: #4285f4;
-    background: white;
+    border-color: var(--color-blue);
+    background: var(--color-bg-white);
   }
 }
 
@@ -45,23 +43,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   pointer-events: none;
 
   .upload-icon {
-    font-size: 48px;
+    font-size: 3rem;
   }
 
   p {
     margin: 0;
-    font-size: 16px;
-    color: #333;
+    font-size: 1rem;
+    color: var(--color-text);
     font-weight: 500;
   }
 
   small {
-    font-size: 12px;
-    color: #666;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
   }
 }
 
@@ -69,48 +67,48 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 1rem;
   pointer-events: none;
 }
 
 .file-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   flex: 1;
 }
 
 .file-icon {
-  font-size: 32px;
+  font-size: 2rem;
 }
 
 .file-details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .file-name {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   word-break: break-all;
 }
 
 .file-size {
-  font-size: 12px;
-  color: #666;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
 .btn-remove-file {
   pointer-events: auto;
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   border: none;
   border-radius: 50%;
-  background: #fee;
-  color: #c33;
-  font-size: 18px;
+  background: var(--color-bg-error);
+  color: var(--color-error);
+  font-size: 1.125rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -119,8 +117,7 @@
   flex-shrink: 0;
 
   &:hover {
-    background: #fcc;
+    background: var(--color-bg-error-border);
     transform: scale(1.1);
   }
 }
-
