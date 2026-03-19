@@ -1,20 +1,20 @@
-> **⚠️ AVISO IMPORTANTE**
+> **⚠️ IMPORTANT NOTICE**
 >
 > | | |
 > |---|---|
-> | **Fecha de última modificación** | 19 de marzo de 2026 |
-> | **Estado** | En proceso de mejora |
-> | **Disclaimer** | Estoy llevando la app a Angular 21 y aplicando ciertas mejoras. Por favor, tener en cuenta que mientras veas este mensaje en el README, la aplicación puede estar fallando. |
+> | **Last modified** | March 19, 2026 |
+> | **Status** | Under active improvement |
+> | **Disclaimer** | The app is being migrated to Angular 21 with several improvements applied. Please note that while this message remains in the README, the application may be unstable. |
 >
-> ### Resumen de cambios en curso
+> ### Ongoing changes summary
 >
-> - **Migración a Angular 21**: Actualización de todos los paquetes `@angular/*` de v20 a v21.2.
-> - **Signal Forms**: Reemplazo de Reactive Forms (`FormGroup`/`FormControl`/`Validators`) por la nueva API de Signal Forms (`form()`, `signal()`, `FormField`, `submit()`).
-> - **Vitest en lugar de Karma/Jasmine**: Migración del test runner a Vitest con el builder `@angular/build:unit-test`.
-> - **Zoneless Change Detection**: Eliminación completa de `zone.js`, uso de `provideZonelessChangeDetection()`.
-> - **Design Tokens y SCSS**: Centralización de colores y estilos en CSS custom properties, extracción de estilos compartidos a clases globales.
-> - **Accesibilidad (ARIA)**: Decorative emojis envueltos en `aria-hidden`, spinners con `role="status"`, atributos `aria-invalid` y `aria-describedby` en formularios.
-> - **Limpieza de configuración**: Eliminación de `apiKey` del cliente, alineación de versiones de dependencias, eliminación de `experimentalDecorators`.
+> - **Angular 21 migration**: All `@angular/*` packages upgraded from v20 to v21.2.
+> - **Signal Forms**: Replaced Reactive Forms (`FormGroup`/`FormControl`/`Validators`) with the new Signal Forms API (`form()`, `signal()`, `FormField`, `submit()`).
+> - **Vitest instead of Karma/Jasmine**: Test runner migrated to Vitest using the `@angular/build:unit-test` builder.
+> - **Zoneless Change Detection**: Complete removal of `zone.js`, now using `provideZonelessChangeDetection()`.
+> - **Design Tokens & SCSS**: Colors and styles centralized into CSS custom properties, shared styles extracted to global utility classes.
+> - **Accessibility (ARIA)**: Decorative emojis wrapped in `aria-hidden`, spinners with `role="status"`, `aria-invalid` and `aria-describedby` attributes on forms.
+> - **Configuration cleanup**: Removed `apiKey` from client, aligned dependency versions, removed `experimentalDecorators`.
 
 ---
 
