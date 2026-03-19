@@ -1,5 +1,5 @@
 import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { form, submit, required, minLength, maxLength, min, max } from '@angular/forms/signals';
 import { httpResource } from '@angular/common/http';
 import { ModelInvocationResponse } from '../../core/services/api';
 import { API_CONFIG } from '../../core/tokens/api-config';
@@ -17,7 +17,6 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
 export class TextModel {
   private readonly apiConfig = inject(API_CONFIG);
 
-  // Request signal to trigger API calls
   requestParams = signal<{
     prompt: string;
     maxTokens: number;
@@ -26,13 +25,12 @@ export class TextModel {
     topK: number;
   } | undefined>(undefined);
 
-  // HttpResource for reactive HTTP calls
   textModelResource = httpResource<ModelInvocationResponse>(() => {
     const params = this.requestParams();
     if (!params) {
-      return undefined; // No request when no params
+      return undefined;
     }
-    
+
     return {
       url: `${this.apiConfig.baseUrl}/models/google-text-bison/invoke`,
       method: 'POST',
@@ -43,52 +41,43 @@ export class TextModel {
     };
   });
 
-  // Reactive form
-  textForm = new FormGroup({
-    prompt: new FormControl('', [
-      Validators.required,
-      Validators.minLength(1),
-      Validators.maxLength(8192)
-    ]),
-    maxTokens: new FormControl(256, [
-      Validators.min(1),
-      Validators.max(1024)
-    ]),
-    temperature: new FormControl(0.7, [
-      Validators.min(0.0),
-      Validators.max(1.0)
-    ]),
-    topP: new FormControl(0.9, [
-      Validators.min(0.0),
-      Validators.max(1.0)
-    ]),
-    topK: new FormControl(40, [
-      Validators.min(1),
-      Validators.max(100)
-    ])
+  textModel = signal({
+    prompt: '',
+    maxTokens: 256,
+    temperature: 0.7,
+    topP: 0.9,
+    topK: 40
   });
 
-  /**
-   * Handle form submission
-   */
+  textForm = form(this.textModel, (s) => {
+    required(s.prompt, { message: 'Prompt is required' });
+    minLength(s.prompt, 1);
+    maxLength(s.prompt, 8192, { message: 'Prompt must not exceed 8192 characters' });
+    min(s.maxTokens, 1, { message: 'Max Tokens must be at least 1' });
+    max(s.maxTokens, 1024, { message: 'Max Tokens must not exceed 1024' });
+    min(s.temperature, 0, { message: 'Temperature must be at least 0' });
+    max(s.temperature, 1, { message: 'Temperature must not exceed 1' });
+    min(s.topP, 0, { message: 'Top P must be at least 0' });
+    max(s.topP, 1, { message: 'Top P must not exceed 1' });
+    min(s.topK, 1, { message: 'Top K must be at least 1' });
+    max(s.topK, 100, { message: 'Top K must not exceed 100' });
+  });
+
   onSubmit(): void {
-    const formValue = this.textForm.value;
-    
-    // Update request params to trigger resource loading
-    this.requestParams.set({
-      prompt: formValue.prompt!,
-      maxTokens: formValue.maxTokens!,
-      temperature: formValue.temperature!,
-      topP: formValue.topP!,
-      topK: formValue.topK!
+    submit(this.textForm, async () => {
+      const model = this.textModel();
+      this.requestParams.set({
+        prompt: model.prompt,
+        maxTokens: model.maxTokens,
+        temperature: model.temperature,
+        topP: model.topP,
+        topK: model.topK
+      });
     });
   }
 
-  /**
-   * Reset the form and clear state
-   */
   resetForm(): void {
-    this.textForm.reset({
+    this.textModel.set({
       prompt: '',
       maxTokens: 256,
       temperature: 0.7,
