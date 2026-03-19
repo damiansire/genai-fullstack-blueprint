@@ -38,8 +38,7 @@ export class TextModel {
       method: 'POST',
       body: params,
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': this.apiConfig.apiKey
+        'Content-Type': 'application/json'
       }
     };
   });

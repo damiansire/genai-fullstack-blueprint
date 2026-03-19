@@ -51,9 +51,7 @@ export class ImageModel {
       url: `${this.apiConfig.baseUrl}/models/google-vision-ocr/invoke`,
       method: 'POST',
       body: formData,
-      headers: {
-        'X-API-Key': this.apiConfig.apiKey
-      }
+      headers: {}
     };
   });
 
