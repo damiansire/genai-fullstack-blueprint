@@ -32,21 +32,21 @@
 
       <!-- Form Section -->
       <section class="form-section">
-        <form [formGroup]="imageGenForm" (ngSubmit)="onSubmit()" class="image-gen-form">
+        <form (submit)="onSubmit(); $event.preventDefault()" class="image-gen-form">
           <div class="form-group">
             <label for="prompt" class="form-label">Prompt *</label>
             <textarea
               id="prompt"
-              formControlName="prompt"
+              [formField]="imageGenForm.prompt"
               class="form-control"
-              [class.error]="hasError('prompt')"
-              [attr.aria-invalid]="hasError('prompt')"
+              [class.error]="imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length"
+              [attr.aria-invalid]="imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length ? true : null"
               aria-describedby="prompt-error"
               placeholder="Describe the image you want to generate or how to edit it..."
               rows="5"
             ></textarea>
-            @if (hasError('prompt')) {
-              <div id="prompt-error" class="error-message" role="alert">{{ getErrorMessage('prompt') }}</div>
+            @if (imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length) {
+              <div id="prompt-error" class="error-message" role="alert">{{ imageGenForm.prompt().errors()[0].message }}</div>
             }
             <div class="prompt-tip">
               <span aria-hidden="true">💡</span> <strong>Tip:</strong> Describe the scene in detail, not just keywords. Include lighting, style, camera angles for best results.
@@ -58,7 +58,7 @@
               <label for="aspectRatio" class="form-label">Aspect Ratio</label>
               <select
                 id="aspectRatio"
-                formControlName="aspectRatio"
+                [formField]="imageGenForm.aspectRatio"
                 class="form-control"
               >
                 @for (ratio of aspectRatios; track ratio.value) {
@@ -90,7 +90,7 @@
             <button
               type="submit"
               class="btn btn-primary"
-              [disabled]="imageGenResource.isLoading() || imageGenForm.invalid"
+              [disabled]="imageGenResource.isLoading() || imageGenForm().invalid()"
             >
               @if (imageGenResource.isLoading()) {
                 <span class="spinner" role="status" aria-label="Loading"></span>
@@ -99,7 +99,7 @@
                 <span aria-hidden="true">🎨</span> Generate Image
               }
             </button>
-            
+
             <button
               type="button"
               class="btn btn-secondary"
@@ -124,7 +124,7 @@
         @if (imageGenResource.value()?.data?.result) {
           <div class="image-gen-response">
             <h3><span aria-hidden="true">✨</span> Generated Image</h3>
-            
+
             @if (imageGenResource.value()?.data?.result?.text) {
               <div class="description-box">
                 <h4><span aria-hidden="true">📝</span> Description</h4>
@@ -138,14 +138,14 @@
                 <div class="images-grid">
                   @for (image of imageGenResource.value()!.data.result.images; track $index) {
                     <div class="image-card">
-                      <img 
-                        [src]="'data:' + image.mimeType + ';base64,' + image.data" 
+                      <img
+                        [src]="'data:' + image.mimeType + ';base64,' + image.data"
                         [alt]="'Generated image ' + ($index + 1)"
                         class="generated-image"
                       />
                       <div class="image-actions">
-                        <a 
-                          [href]="'data:' + image.mimeType + ';base64,' + image.data" 
+                        <a
+                          [href]="'data:' + image.mimeType + ';base64,' + image.data"
                           [download]="'gemini-generated-' + ($index + 1) + '.png'"
                           class="btn-download"
                         >

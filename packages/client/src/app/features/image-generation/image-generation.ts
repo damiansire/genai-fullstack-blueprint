@@ -1,16 +1,15 @@
 import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
-import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { form, FormField, submit, required, minLength, maxLength } from '@angular/forms/signals';
 import { httpResource } from '@angular/common/http';
 import { ModelInvocationResponse } from '../../core/services/api';
 import { API_CONFIG } from '../../core/tokens/api-config';
 import { ModelResponse } from '../../shared/components/model-response/model-response';
 import { FileUpload } from '../../shared/components/file-upload/file-upload';
-import { getFormErrorMessage, hasFormError, markFormGroupTouched } from '../../shared/utils/form-validation';
 
 @Component({
   selector: 'app-image-generation',
   imports: [
-    ReactiveFormsModule,
+    FormField,
     ModelResponse,
     FileUpload
   ],
@@ -21,12 +20,10 @@ import { getFormErrorMessage, hasFormError, markFormGroupTouched } from '../../s
 export class ImageGeneration {
   private readonly apiConfig = inject(API_CONFIG);
 
-  // Signals for state management
   selectedFiles = signal<File[]>([]);
   fileError = signal<string | null>(null);
   generationMode = signal<'text-to-image' | 'image-editing'>('text-to-image');
 
-  // Request signal to trigger API calls
   requestParams = signal<{
     prompt: string;
     aspectRatio: string;
@@ -34,13 +31,12 @@ export class ImageGeneration {
     inputImages?: Array<{ data: string; mimeType: string }>;
   } | undefined>(undefined);
 
-  // HttpResource for reactive HTTP calls
   imageGenResource = httpResource<ModelInvocationResponse>(() => {
     const params = this.requestParams();
     if (!params) {
-      return undefined; // No request when no params
+      return undefined;
     }
-    
+
     return {
       url: `${this.apiConfig.baseUrl}/models/gemini-image-gen/invoke`,
       method: 'POST',
@@ -51,15 +47,18 @@ export class ImageGeneration {
     };
   });
 
-  // Reactive form
-  imageGenForm = new FormGroup({
-    prompt: new FormControl('', [
-      Validators.required,
-      Validators.minLength(10),
-      Validators.maxLength(8192)
-    ]),
-    aspectRatio: new FormControl('1:1', [Validators.required]),
-    responseModalities: new FormControl(['Image', 'Text'])
+  imageGenModel = signal({
+    prompt: '',
+    aspectRatio: '1:1'
+  });
+
+  private readonly responseModalities = ['Image', 'Text'];
+
+  imageGenForm = form(this.imageGenModel, (s) => {
+    required(s.prompt, { message: 'Prompt is required' });
+    minLength(s.prompt, 10, { message: 'Prompt must be at least 10 characters' });
+    maxLength(s.prompt, 8192, { message: 'Prompt must not exceed 8192 characters' });
+    required(s.aspectRatio, { message: 'Aspect Ratio is required' });
   });
 
   aspectRatios = [
@@ -95,72 +94,48 @@ export class ImageGeneration {
     }
   ];
 
-  /**
-   * Handle file selection for image editing
-   */
   onFileSelected(file: File): void {
     this.selectedFiles.update(files => [...files, file]);
     this.fileError.set(null);
     this.generationMode.set('image-editing');
   }
 
-  /**
-   * Handle file cleared
-   */
   onFileCleared(): void {
     this.selectedFiles.set([]);
     this.fileError.set(null);
     this.generationMode.set('text-to-image');
   }
 
-  /**
-   * Handle file upload error
-   */
   onFileError(errorMessage: string): void {
     this.fileError.set(errorMessage);
   }
 
-  /**
-   * Handle form submission
-   */
-  async onSubmit(): Promise<void> {
-    if (this.imageGenForm.invalid) {
-      this.markFormGroupTouched();
-      return;
-    }
+  onSubmit(): void {
+    submit(this.imageGenForm, async () => {
+      const model = this.imageGenModel();
+      const inputImages = await this.convertFilesToBase64(this.selectedFiles());
 
-    const formValue = this.imageGenForm.value;
-    
-    // Convert uploaded images to base64 if any
-    const inputImages = await this.convertFilesToBase64(this.selectedFiles());
-
-    // Update request params to trigger resource loading
-    this.requestParams.set({
-      prompt: formValue.prompt!,
-      aspectRatio: formValue.aspectRatio!,
-      responseModalities: formValue.responseModalities!,
-      inputImages: inputImages.length > 0 ? inputImages : undefined
+      this.requestParams.set({
+        prompt: model.prompt,
+        aspectRatio: model.aspectRatio,
+        responseModalities: this.responseModalities,
+        inputImages: inputImages.length > 0 ? inputImages : undefined
+      });
     });
   }
 
-  /**
-   * Convert files to base64 for API
-   */
   private async convertFilesToBase64(files: File[]): Promise<Array<{ data: string; mimeType: string }>> {
     const promises = files.map(async (file) => {
       const base64 = await this.fileToBase64(file);
       return {
-        data: base64.split(',')[1], // Remove data:image/png;base64, prefix
+        data: base64.split(',')[1],
         mimeType: file.type
       };
     });
-    
+
     return Promise.all(promises);
   }
 
-  /**
-   * Convert file to base64 string
-   */
   private fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -170,18 +145,10 @@ export class ImageGeneration {
     });
   }
 
-  private markFormGroupTouched(): void {
-    markFormGroupTouched(this.imageGenForm);
-  }
-
-  /**
-   * Reset the form and clear state
-   */
   resetForm(): void {
-    this.imageGenForm.reset({
+    this.imageGenModel.set({
       prompt: '',
-      aspectRatio: '1:1',
-      responseModalities: ['Image', 'Text']
+      aspectRatio: '1:1'
     });
     this.selectedFiles.set([]);
     this.fileError.set(null);
@@ -189,18 +156,7 @@ export class ImageGeneration {
     this.generationMode.set('text-to-image');
   }
 
-  /**
-   * Set example prompt
-   */
   setExamplePrompt(example: string): void {
-    this.imageGenForm.patchValue({ prompt: example });
-  }
-
-  getErrorMessage(controlName: string): string | null {
-    return getFormErrorMessage(this.imageGenForm, controlName);
-  }
-
-  hasError(controlName: string): boolean {
-    return hasFormError(this.imageGenForm, controlName);
+    this.imageGenModel.update(m => ({ ...m, prompt: example }));
   }
 }
