@@ -1,6 +1,13 @@
 <div class="file-upload-group">
   <label for="fileInput" class="form-label">Image File *</label>
-  <div class="file-upload-area" [class.has-file]="selectedFile()" [class.processing]="isProcessing()" [attr.aria-busy]="isProcessing()">
+  <div class="file-upload-area" 
+       [class.has-file]="file()" 
+       [class.processing]="isProcessing()" 
+       [class.is-dragging]="isDragging()"
+       [attr.aria-busy]="isProcessing()"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event)">
     <input
       #fileInput
       type="file"
@@ -11,7 +18,7 @@
       [disabled]="isProcessing()"
     />
     
-    @if (!selectedFile()) {
+    @if (!file()) {
       <div class="file-upload-placeholder">
         <div class="upload-icon" aria-hidden="true">
           @if (isProcessing()) {
@@ -24,23 +31,32 @@
           @if (isProcessing()) {
             Processing...
           } @else {
-            Click to select a file
+            Click or drag & drop a file
           }
         </p>
         <small>Supports {{ allowedTypesString() }} (max {{ maxSizeMB() }}MB)</small>
       </div>
     } @else {
       <div class="file-selected">
+
         <div class="file-info">
-          <span class="file-icon" aria-hidden="true">
-            @if (isProcessing()) {
-              ⏳
+          @defer (on viewport) {
+            @if (previewUrl()) {
+              <img [src]="previewUrl()" [alt]="file()!.name" class="image-preview" />
             } @else {
-              {{ fileTypeIcon() }}
+              <span class="file-icon" aria-hidden="true">
+                @if (isProcessing()) {
+                  ⏳
+                } @else {
+                  {{ fileTypeIcon() }}
+                }
+              </span>
             }
-          </span>
+          } @placeholder {
+            <span class="file-icon" aria-hidden="true">⏳</span>
+          }
           <div class="file-details">
-            <div class="file-name">{{ selectedFile()!.name }}</div>
+            <div class="file-name">{{ file()!.name }}</div>
             <div class="file-size">{{ fileSize() }}</div>
           </div>
         </div>
