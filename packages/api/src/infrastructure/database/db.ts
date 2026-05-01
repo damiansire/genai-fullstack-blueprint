@@ -78,6 +78,25 @@ export class DatabaseService extends EventEmitter {
           );
       `);
 
+      // Try to load sqlite-vec extension (graceful degradation if not compiled)
+      try {
+        // En Node v22.5.0+ db.loadExtension existe. 
+        if (typeof (this.db as any).loadExtension === 'function') {
+          // Asumimos que el binario de sqlite-vec está en el entorno
+          (this.db as any).loadExtension('vec0');
+          logger.info('[DB] sqlite-vec extension loaded natively.');
+          
+          this.proxiedDb.exec(`
+            CREATE VIRTUAL TABLE IF NOT EXISTS semantic_vectors USING vec0(
+              id INTEGER PRIMARY KEY,
+              embedding float[1536]
+            );
+          `);
+        }
+      } catch (err) {
+        logger.warn('[DB] Could not load sqlite-vec extension. Vector search will be disabled.', {}, err instanceof Error ? err : new Error(String(err)));
+      }
+
       this.insertLogStmt = this.proxiedDb.prepare('INSERT INTO request_logs (trace_id, timestamp, method, path, duration_ms) VALUES (?, ?, ?, ?, ?)');
       this.selectLogsStmt = this.proxiedDb.prepare('SELECT * FROM request_logs ORDER BY id DESC LIMIT ?');
       this.insertCacheStmt = this.proxiedDb.prepare('INSERT OR REPLACE INTO semantic_cache (hash, response, created_at) VALUES (?, ?, ?)');
@@ -140,6 +159,34 @@ export class DatabaseService extends EventEmitter {
       this.insertCacheStmt.run(hash, JSON.stringify(response), new Date().toISOString());
     } catch (error) {
       logger.error('Failed to set cache', {}, error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  /**
+   * Native Semantic Similarity Search using sqlite-vec
+   */
+  public searchSimilarVectors(embedding: Float32Array, limit: number = 5): any[] {
+    try {
+      const stmt = this.proxiedDb.prepare(`
+        SELECT id, distance 
+        FROM semantic_vectors 
+        WHERE embedding MATCH ? 
+        ORDER BY distance 
+        LIMIT ?
+      `);
+      return stmt.all(embedding, limit);
+    } catch (error) {
+      logger.error('Vector search failed', {}, error instanceof Error ? error : new Error(String(error)));
+      return [];
+    }
+  }
+
+  public storeVector(id: number, embedding: Float32Array): void {
+    try {
+      const stmt = this.proxiedDb.prepare('INSERT INTO semantic_vectors (id, embedding) VALUES (?, ?)');
+      stmt.run(id, embedding);
+    } catch (error) {
+      logger.error('Store vector failed', {}, error instanceof Error ? error : new Error(String(error)));
     }
   }
 }
