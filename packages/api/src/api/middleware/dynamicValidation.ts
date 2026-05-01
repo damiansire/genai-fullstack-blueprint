@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { SchemaRegistry } from '../../models/registry.js';
+import { SchemaRegistry } from '../../infrastructure/ai/registry.js';
 import { ApiError } from '../../core/ApiError.js';
+import { logger } from '../../core/logger.js';
 
 /**
  * Interface for validation error details
@@ -44,7 +45,7 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
     keyword: 'errorMessage',
     type: 'object',
     schemaType: 'object',
-    compile: (schema: any) => (data: any) => {
+    compile: (_schema: any) => (_data: any) => {
       // This is handled by the custom error formatting below
       return true;
     }
@@ -53,7 +54,7 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       // Extract modelId from request parameters
-      const modelId = req.params.modelId;
+      const modelId = req.params['modelId'];
 
       if (!modelId) {
         throw ApiError.badRequest('Model ID is required in request parameters');
@@ -83,7 +84,7 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
           }
         };
 
-        console.warn(`❌ Validation failed for model ${modelId}:`, {
+        logger.warn(`❌ Validation failed for model ${modelId}`, {
           errors: validationResult.errors,
           body: req.body,
           timestamp: new Date().toISOString()
@@ -94,7 +95,7 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
       }
 
       // Validation successful, continue to next middleware
-      console.log(`✅ Validation passed for model ${modelId}`);
+      logger.info(`✅ Validation passed for model ${modelId}`);
       next();
     } catch (error) {
       next(error);
@@ -127,11 +128,12 @@ function validateRequestBody(body: any, schema: any, ajv: Ajv): ValidationResult
   const errors: ValidationErrorDetail[] = validate.errors?.map(error => {
     const field = error.instancePath ? error.instancePath.substring(1) : error.schemaPath;
     
+    const allowedValues = getAllowedValues(error);
     return {
       field: field || 'root',
       message: formatErrorMessage(error),
       value: error.data,
-      allowedValues: getAllowedValues(error)
+      ...(allowedValues !== undefined ? { allowedValues } : {})
     };
   }) || [];
 
@@ -210,19 +212,13 @@ export function validateField(fieldPath: string, schema: any) {
   const ajv = new Ajv({ allErrors: true });
   addFormats(ajv);
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       const fieldValue = getNestedValue(req.body, fieldPath);
       const validate = ajv.compile(schema);
       const isValid = validate(fieldValue);
 
       if (!isValid) {
-        const errors = validate.errors?.map(error => ({
-          field: fieldPath,
-          message: formatErrorMessage(error),
-          value: fieldValue
-        })) || [];
-
         throw ApiError.validation(`Validation failed for field '${fieldPath}'`);
       }
 
@@ -252,18 +248,12 @@ export function validateQuery(schema: any) {
   const ajv = new Ajv({ allErrors: true });
   addFormats(ajv);
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       const validate = ajv.compile(schema);
       const isValid = validate(req.query);
 
       if (!isValid) {
-        const errors = validate.errors?.map(error => ({
-          field: error.instancePath?.substring(1) || 'query',
-          message: formatErrorMessage(error),
-          value: error.data
-        })) || [];
-
         throw ApiError.validation('Query parameters validation failed');
       }
 

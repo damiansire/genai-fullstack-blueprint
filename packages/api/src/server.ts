@@ -1,28 +1,73 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { modelFactory } from './models/factory.js';
-import { schemaRegistry } from './models/registry.js';
-import { loadPlugins } from './models/loader.js';
+// Stability: 2 - Stable (node:util)
+import { parseArgs } from 'node:util';
+// Stability: 2 - Stable (node:events)
+import { EventEmitter } from 'node:events';
+import { modelFactory } from './infrastructure/ai/factory.js';
+import { schemaRegistry } from './infrastructure/ai/registry.js';
+import { loadPlugins } from './infrastructure/ai/loader.js';
 import { createModelRoutes } from './api/routes/modelRoutes.js';
+import { errorHandler } from './api/middleware/errorHandler.js';
+import { dbService, logRequest } from './infrastructure/database/db.js';
+// Stability: 2 - Stable (node:perf_hooks)
+import { performance } from 'node:perf_hooks';
+// Stability: 2 - Stable (node:crypto)
+import { randomUUID } from 'node:crypto';
+import { requestContext } from './core/async-context.js';
+// Stability: 2 - Stable (node:http)
+import type { Server as HttpServer } from 'node:http';
+import { logger } from './core/logger.js';
+import { config } from './core/config.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables using Node.js native API
+// Stability: 2 - Stable (process.loadEnvFile is stable in Node v22+)
+try {
+  process.loadEnvFile();
+} catch (err) {
+  // Ignore if .env file is not found
+}
+
+type ServerState = 'STOPPED' | 'STARTING' | 'RUNNING' | 'STOPPING';
 
 /**
  * Main Express server configuration
- * Sets up middleware, loads plugins, and defines routes
+ * Implements State Pattern, Observer Pattern (EventEmitter), and Graceful Shutdown
  */
-class Server {
+class Server extends EventEmitter {
   private app: express.Application;
   private port: number;
+  private state: ServerState = 'STOPPED';
+  private httpServer: HttpServer | null = null;
 
   constructor() {
+    super();
     this.app = express();
-    this.port = parseInt(process.env['PORT'] || '3000', 10);
+
+    // Use native util.parseArgs for command-line arguments
+    const { values } = parseArgs({
+      options: {
+        port: {
+          type: 'string',
+          short: 'p',
+        },
+      },
+      strict: false,
+    });
+
+    const portArg = typeof values.port === 'string' ? values.port : undefined;
+    this.port = parseInt(portArg || process.env['PORT'] || config.server.port.toString(), 10);
     
     this.setupMiddleware();
     this.setupRoutes();
+
+    // Observe Database events (Observer Pattern)
+    dbService.on('query', (data) => {
+      // Basic query observation hook
+      if (process.env['NODE_ENV'] === 'development') {
+        logger.info(`[DB] executed ${data.method}`);
+      }
+    });
   }
 
   /**
@@ -31,7 +76,7 @@ class Server {
   private setupMiddleware(): void {
     // CORS configuration
     this.app.use(cors({
-      origin: process.env['ALLOWED_ORIGINS']?.split(',') || ['http://localhost:4200'],
+      origin: config.server.allowedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key']
@@ -41,10 +86,23 @@ class Server {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // Request logging middleware
+    // Request logging middleware using native SQLite and trace ID
     this.app.use((req, res, next) => {
-      console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-      next();
+      const traceId = randomUUID();
+      const start = performance.now();
+      
+      // Set trace ID in response headers
+      res.setHeader('X-Trace-Id', traceId);
+      
+      res.on('finish', () => {
+        const duration = Math.round(performance.now() - start);
+        logger.info(`${req.method} ${req.path}`, { duration, method: req.method, path: req.path, traceId });
+        logRequest(req.method, req.path, duration, traceId);
+      });
+      
+      requestContext.run({ traceId }, () => {
+        next();
+      });
     });
   }
 
@@ -53,19 +111,19 @@ class Server {
    */
   private setupRoutes(): void {
     // Health check endpoint
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (_req, res) => {
       res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env['NODE_ENV'] || 'development',
+        environment: config.env,
         registeredModels: modelFactory.getRegisteredModels(),
         registeredSchemas: schemaRegistry.getRegisteredModels()
       });
     });
 
     // API info endpoint
-    this.app.get('/api/info', (req, res) => {
+    this.app.get('/api/info', (_req, res) => {
       res.json({
         name: 'AI Gateway API',
         version: '1.0.0',
@@ -90,51 +148,90 @@ class Server {
     });
 
     // Global error handler
-    this.app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.error('Unhandled error:', err);
-      res.status(500).json({
-        error: 'Internal server error',
-        message: process.env['NODE_ENV'] === 'development' ? err.message : 'Something went wrong',
-        timestamp: new Date().toISOString()
-      });
-    });
+    this.app.use(errorHandler);
+  }
+
+  private changeState(newState: ServerState) {
+    this.state = newState;
+    this.emit('stateChange', this.state);
   }
 
   /**
    * Initialize the server and load plugins
    */
   public async initialize(): Promise<void> {
+    if (this.state !== 'STOPPED') return;
+    this.changeState('STARTING');
+
     try {
-      console.log('🚀 Initializing AI Gateway Server...');
+      logger.info('Initializing AI Gateway Server...');
       
+      dbService.initialize();
+
       // Load all plugins
-      console.log('📦 Loading plugins...');
+      logger.info('Loading plugins...');
       await loadPlugins(modelFactory, schemaRegistry);
       
-      console.log('✅ Server initialization completed successfully');
+      logger.info('Server initialization completed successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize server:', error);
+      logger.error('Failed to initialize server', {}, error);
+      this.changeState('STOPPED');
       throw error;
     }
   }
 
-  /**
-   * Start the server
-   */
   public async start(): Promise<void> {
     try {
-      await this.initialize();
+      if (this.state === 'STOPPED') {
+        await this.initialize();
+      }
       
-      this.app.listen(this.port, () => {
-        console.log(`🌟 AI Gateway Server running on port ${this.port}`);
-        console.log(`📊 Health check available at: http://localhost:${this.port}/health`);
-        console.log(`📋 API info available at: http://localhost:${this.port}/api/info`);
-        console.log(`🔌 Registered models: ${modelFactory.getRegisteredModels().join(', ') || 'None'}`);
+      const { createServer } = await import('node:http');
+      
+      // Node.js Security Best Practices: Mitigate CWE-444 (HTTP Request Smuggling)
+      this.httpServer = createServer({ insecureHTTPParser: false }, this.app);
+      
+      // Node.js Security Best Practices: Mitigate CWE-400 (Denial of Service)
+      this.httpServer.headersTimeout = 60000; // 60 seconds
+      this.httpServer.requestTimeout = 300000; // 5 minutes
+      this.httpServer.timeout = 300000; // 5 minutes
+      this.httpServer.keepAliveTimeout = 5000; // 5 seconds
+      
+      this.httpServer.listen(this.port, () => {
+        this.changeState('RUNNING');
+        logger.info(`AI Gateway Server running on port ${this.port}`, {
+          port: this.port,
+          registeredModels: modelFactory.getRegisteredModels()
+        });
       });
     } catch (error) {
-      console.error('❌ Failed to start server:', error);
+      logger.error('Failed to start server', {}, error);
       process.exit(1);
     }
+  }
+
+  public async stop(): Promise<void> {
+    if (this.state !== 'RUNNING' && this.state !== 'STARTING') return;
+    this.changeState('STOPPING');
+    logger.info('Shutting down Server Gracefully...');
+
+    return new Promise((resolve) => {
+      const finishShutdown = () => {
+        dbService.close();
+        this.changeState('STOPPED');
+        logger.info('Server shutdown complete.');
+        resolve();
+      };
+
+      if (this.httpServer) {
+        this.httpServer.close((err) => {
+          if (err) logger.error('Error closing HTTP server', {}, err);
+          finishShutdown();
+        });
+      } else {
+        finishShutdown();
+      }
+    });
   }
 
   /**
@@ -148,20 +245,19 @@ class Server {
 // Create and start the server
 const server = new Server();
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM received, shutting down gracefully...');
+// Graceful Shutdown Handler Pattern
+const handleGracefulShutdown = async (signal: string) => {
+  logger.info(`${signal} received. Initiating graceful shutdown sequence...`);
+  await server.stop();
   process.exit(0);
-});
+};
 
-process.on('SIGINT', () => {
-  console.log('🛑 SIGINT received, shutting down gracefully...');
-  process.exit(0);
-});
+process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
 
 // Start the server
 server.start().catch((error) => {
-  console.error('💥 Fatal error starting server:', error);
+  logger.error('Fatal error starting server', {}, error);
   process.exit(1);
 });
 

@@ -1,15 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
-import { ModelFactory } from '../../models/factory.js';
-import { ProcessContext, ModelMetadata } from '../../models/strategy.interface.js';
-import { ApiError, ApiResponse } from '../../core/ApiError.js';
+import { performance } from 'node:perf_hooks';
+import { ModelFactory } from '../../infrastructure/ai/factory.js';
+import { ProcessContext, ModelMetadata } from '../../domain/ai/strategy.interface.js';
+import { ApiResponse } from '../../core/ApiError.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
+import { logger } from '../../core/logger.js';
 
-/**
- * Interface for model invocation request body
- */
-interface ModelInvocationRequest {
-  [key: string]: any;
-}
+import { InvokeModelUseCase, InvokeModelDTO } from '../../application/useCases/invoke-model.usecase.js';
+import { GetModelInfoUseCase, GetModelInfoDTO } from '../../application/useCases/get-model-info.usecase.js';
+import { ListModelsUseCase } from '../../application/useCases/list-models.usecase.js';
 
 /**
  * Create the model controller with ModelFactory dependency
@@ -17,39 +16,27 @@ interface ModelInvocationRequest {
  * @returns Express controller function
  */
 export function createModelController(modelFactory: ModelFactory) {
-  /**
-   * Controller for invoking AI models
-   * @param req - Express request object
-   * @param res - Express response object
-   * @param next - Express next function
-   */
-  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const startTime = Date.now();
+  const invokeModelUseCase = new InvokeModelUseCase(modelFactory);
+
+  return asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const startTime = performance.now();
+    const modelId = req.params['modelId'] || '';
     
     try {
-      // Extract modelId from request parameters
-      const modelId = req.params.modelId;
-      
-      if (!modelId) {
-        throw ApiError.badRequest('Model ID is required in request parameters');
-      }
-
-      // Check if model is registered
-      if (!modelFactory.isRegistered(modelId)) {
-        throw ApiError.notFound(`Model '${modelId}' is not available`);
-      }
-
-      // Create model strategy instance
-      const strategy = modelFactory.create(modelId);
-
-      // Prepare request data
-      const requestData: ModelInvocationRequest = {
-        ...req.body
+      // 1. Prepare DTO (Map HTTP Request to Use Case DTO)
+      const context: ProcessContext = {
+        apiKey: req.user?.apiKeyId,
+        userId: req.user?.apiKeyId // Using API key ID as user identifier
       };
 
-      // Add file information if uploaded
+      const dto: InvokeModelDTO = {
+        modelId,
+        body: req.body,
+        context
+      };
+
       if (req.file) {
-        requestData.file = {
+        dto.file = {
           fieldname: req.file.fieldname,
           originalname: req.file.originalname,
           encoding: req.file.encoding,
@@ -60,10 +47,9 @@ export function createModelController(modelFactory: ModelFactory) {
         };
       }
 
-      // Add multiple files if uploaded
       if (req.files) {
         if (Array.isArray(req.files)) {
-          requestData.files = req.files.map(file => ({
+          dto.files = req.files.map(file => ({
             fieldname: file.fieldname,
             originalname: file.originalname,
             encoding: file.encoding,
@@ -73,8 +59,7 @@ export function createModelController(modelFactory: ModelFactory) {
             path: file.path
           }));
         } else {
-          // Handle multiple files with different field names
-          requestData.files = Object.keys(req.files).reduce((acc, fieldname) => {
+          dto.files = Object.keys(req.files).reduce((acc, fieldname) => {
             const files = (req.files as any)[fieldname];
             acc[fieldname] = Array.isArray(files) ? files : [files];
             return acc;
@@ -82,29 +67,21 @@ export function createModelController(modelFactory: ModelFactory) {
         }
       }
 
-      // Prepare processing context
-      const context: ProcessContext = {
-        apiKey: req.user?.apiKeyId,
-        userId: req.user?.apiKeyId // Using API key ID as user identifier
-      };
-
-      // Log model invocation
-      console.log(`🚀 Invoking model '${modelId}'`, {
+      // Log model invocation intent
+      logger.info(`Controller: Dispatching Use Case for '${modelId}'`, {
         hasFile: !!req.file,
         hasFiles: !!req.files,
         bodyKeys: Object.keys(req.body),
-        timestamp: new Date().toISOString(),
         userAgent: req.get('User-Agent'),
         ip: req.ip
       });
 
-      // Invoke the model strategy
-      const result = await strategy.process(requestData, context);
+      // 2. Execute Use Case
+      const result = await invokeModelUseCase.execute(dto);
 
-      // Calculate processing time
-      const processingTime = Date.now() - startTime;
-
-      // Prepare response
+      // 3. Format HTTP Response
+      const processingTime = Math.round(performance.now() - startTime);
+      
       const response: ApiResponse<any, ModelMetadata> = {
         success: true,
         data: result,
@@ -115,25 +92,18 @@ export function createModelController(modelFactory: ModelFactory) {
         }
       };
 
-      // Log successful invocation
-      console.log(`✅ Model '${modelId}' completed successfully`, {
-        processingTime: `${processingTime}ms`,
-        timestamp: new Date().toISOString()
+      logger.info(`Controller: Use Case '${modelId}' completed successfully`, {
+        processingTime: `${processingTime}ms`
       });
 
       res.status(200).json(response);
 
     } catch (error) {
-      const processingTime = Date.now() - startTime;
-      
-      // Log error
-      console.error(`❌ Model '${req.params.modelId}' invocation failed`, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        processingTime: `${processingTime}ms`,
-        timestamp: new Date().toISOString()
-      });
-
-      // Re-throw the error to be handled by error middleware
+      const processingTime = Math.round(performance.now() - startTime);
+      logger.error(`Controller: Use Case '${modelId}' failed`, {
+        processingTime: `${processingTime}ms`
+      }, error);
+      // Re-throw the error to be handled by the global error middleware
       throw error;
     }
   });
@@ -145,24 +115,18 @@ export function createModelController(modelFactory: ModelFactory) {
  * @returns Express controller function
  */
 export function createModelInfoController(modelFactory: ModelFactory) {
-  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const modelId = req.params.modelId;
-    
-    if (!modelId) {
-      throw ApiError.badRequest('Model ID is required in request parameters');
-    }
+  const getModelInfoUseCase = new GetModelInfoUseCase(modelFactory);
 
-    if (!modelFactory.isRegistered(modelId)) {
-      throw ApiError.notFound(`Model '${modelId}' is not available`);
-    }
-
-    // Get model information (this would need to be extended based on your needs)
-    const modelInfo = {
-      modelId,
-      available: true,
-      registeredAt: new Date().toISOString()
+  return asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    // 1. Prepare DTO
+    const dto: GetModelInfoDTO = {
+      modelId: req.params['modelId'] || ''
     };
 
+    // 2. Execute Use Case
+    const modelInfo = await getModelInfoUseCase.execute(dto);
+
+    // 3. Send Response
     res.json({
       success: true,
       data: modelInfo
@@ -176,21 +140,16 @@ export function createModelInfoController(modelFactory: ModelFactory) {
  * @returns Express controller function
  */
 export function createModelListController(modelFactory: ModelFactory) {
-  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const registeredModels = modelFactory.getRegisteredModels();
-    
-    const models = registeredModels.map(modelId => ({
-      modelId,
-      available: true,
-      registeredAt: new Date().toISOString()
-    }));
+  const listModelsUseCase = new ListModelsUseCase(modelFactory);
 
+  return asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
+    // 1. Execute Use Case (no DTO needed)
+    const result = await listModelsUseCase.execute();
+
+    // 2. Send Response
     res.json({
       success: true,
-      data: {
-        models,
-        total: models.length
-      }
+      data: result
     });
   });
 }

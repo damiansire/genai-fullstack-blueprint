@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../core/ApiError.js';
+import { getSystemErrorName } from 'node:util';
+import { getTraceId } from '../../core/async-context.js';
+import { logger } from '../../core/logger.js';
+import { config } from '../../core/config.js';
 
 /**
  * Global error handler middleware for Express
@@ -13,30 +17,31 @@ export function errorHandler(
   err: Error | ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
-  // Log the error for debugging
-  console.error('Error occurred:', {
-    message: err.message,
-    stack: err.stack,
+  const traceId = getTraceId();
+
+  // Log the error for debugging using structured logger
+  logger.error(err.message, {
     url: req.url,
     method: req.method,
-    timestamp: new Date().toISOString(),
     userAgent: req.get('User-Agent'),
-    ip: req.ip || req.connection.remoteAddress
-  });
+    ip: req.ip || req.connection.remoteAddress,
+    traceId
+  }, err);
 
   // Handle ApiError instances
   if (err instanceof ApiError) {
     const errorResponse = {
       error: {
+        traceId,
         name: err.name,
         message: err.message,
         statusCode: err.statusCode,
         timestamp: err.timestamp,
         path: req.path,
         method: req.method,
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+        ...(config.isDevelopment && { stack: err.stack })
       }
     };
 
@@ -48,6 +53,7 @@ export function errorHandler(
   if (err.name === 'ValidationError') {
     const errorResponse = {
       error: {
+        traceId,
         name: 'ValidationError',
         message: err.message,
         statusCode: 422,
@@ -65,6 +71,7 @@ export function errorHandler(
   if (err instanceof SyntaxError && 'body' in err) {
     const errorResponse = {
       error: {
+        traceId,
         name: 'SyntaxError',
         message: 'Invalid JSON in request body',
         statusCode: 400,
@@ -82,6 +89,7 @@ export function errorHandler(
   if (err.name === 'MulterError') {
     const errorResponse = {
       error: {
+        traceId,
         name: 'MulterError',
         message: err.message,
         statusCode: 400,
@@ -95,21 +103,38 @@ export function errorHandler(
     return;
   }
 
-  // Handle generic errors
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Handle Node.js System Errors and generic errors
+  // Stability: 2 - Stable (node:errors)
+  // System errors wrap OS system calls (e.g. read, open). Note that node.js links to Unix man pages for these underlying behaviors.
+  const isSystemError = err !== null && typeof err === 'object' && 'code' in err;
+
+  if (isSystemError) {
+    const sysErr = err as any;
+    const sysErrorName = typeof sysErr.code === 'number' ? getSystemErrorName(sysErr.code) : sysErr.code;
+    logger.error(`Node.js System Error [${sysErrorName || sysErr.code}]`, {
+      syscall: sysErr.syscall, // Directly maps to Unix system calls (see related man pages)
+      path: sysErr.path,
+      address: sysErr.address,
+      port: sysErr.port,
+      traceId
+    }, sysErr);
+  }
+
   const errorResponse = {
     error: {
-      name: 'InternalServerError',
-      message: isDevelopment ? err.message : 'Internal Server Error',
-    statusCode: 500,
-    timestamp: new Date().toISOString(),
-    path: req.path,
-    method: req.method,
-    ...(isDevelopment && { stack: err.stack })
-  }
-};
+      traceId,
+      name: isSystemError ? 'SystemError' : 'InternalServerError',
+      code: isSystemError ? (err as any).code : undefined,
+      message: config.isDevelopment ? err.message : 'Internal Server Error',
+      statusCode: 500,
+      timestamp: new Date().toISOString(),
+      path: req.path,
+      method: req.method,
+      ...(config.isDevelopment && { stack: err.stack })
+    }
+  };
 
-res.status(500).json(errorResponse);
+  res.status(500).json(errorResponse);
 }
 
 /**
@@ -131,7 +156,7 @@ export function asyncHandler(fn: Function) {
  * @param res - Express response object
  * @param next - Express next function
  */
-export function notFoundHandler(req: Request, res: Response, next: NextFunction): void {
+export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
   const error = ApiError.notFound(`Route ${req.method} ${req.originalUrl} not found`);
   next(error);
 }

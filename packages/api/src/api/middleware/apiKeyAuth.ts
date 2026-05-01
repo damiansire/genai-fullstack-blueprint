@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import { timingSafeEqual } from 'node:crypto';
 import { ApiError } from '../../core/ApiError.js';
+import { logger } from '../../core/logger.js';
 
 /**
  * Interface for API key validation result
@@ -17,7 +19,7 @@ interface ApiKeyValidationResult {
  * @param res - Express response object
  * @param next - Express next function
  */
-export function apiKeyAuth(req: Request, res: Response, next: NextFunction): void {
+export function apiKeyAuth(req: Request, _res: Response, next: NextFunction): void {
   try {
     // Extract API key from header
     const apiKey = req.headers['x-api-key'] as string;
@@ -36,18 +38,18 @@ export function apiKeyAuth(req: Request, res: Response, next: NextFunction): voi
 
     // Add API key information to request object for use in controllers
     req.user = {
-      apiKeyId: validation.keyId,
-      permissions: validation.permissions || [],
+      ...(validation.keyId ? { apiKeyId: validation.keyId } : {}),
+      ...(validation.permissions ? { permissions: validation.permissions } : { permissions: [] }),
       authenticated: true
     };
 
     // Log successful authentication (optional, for monitoring)
-    console.log(`✅ API key authenticated: ${validation.keyId} - ${req.method} ${req.path}`);
+    logger.info(`✅ API key authenticated: ${validation.keyId} - ${req.method} ${req.path}`);
 
     next();
   } catch (error) {
     // Log failed authentication attempt
-    console.warn(`❌ API key authentication failed: ${req.ip} - ${req.method} ${req.path}`, {
+    logger.warn(`❌ API key authentication failed: ${req.ip} - ${req.method} ${req.path}`, {
       userAgent: req.get('User-Agent'),
       timestamp: new Date().toISOString()
     });
@@ -55,7 +57,6 @@ export function apiKeyAuth(req: Request, res: Response, next: NextFunction): voi
     next(error);
   }
 }
-
 /**
  * Validate API key against environment variables
  * @param apiKey - The API key to validate
@@ -65,8 +66,17 @@ function validateApiKey(apiKey: string): ApiKeyValidationResult {
   // Get valid API keys from environment variables
   const validKeys = getValidApiKeys();
   
-  // Check if the provided key exists in the valid keys
-  const keyEntry = validKeys.find(entry => entry.key === apiKey);
+  // Check if the provided key exists in the valid keys using constant-time comparison
+  const apiKeyBuffer = Buffer.from(apiKey);
+  
+  const keyEntry = validKeys.find(entry => {
+    const entryKeyBuffer = Buffer.from(entry.key);
+    // timingSafeEqual requires buffers of the same length
+    if (entryKeyBuffer.length !== apiKeyBuffer.length) {
+      return false;
+    }
+    return timingSafeEqual(entryKeyBuffer, apiKeyBuffer);
+  });
   
   if (!keyEntry) {
     return { isValid: false };
@@ -118,7 +128,7 @@ function getValidApiKeys(): Array<{ id: string; key: string; permissions: string
       permissions: ['read', 'write']
     });
     
-    console.warn('⚠️  No API keys configured in environment variables. Using default key. This is not recommended for production.');
+    logger.warn('⚠️  No API keys configured in environment variables. Using default key. This is not recommended for production.');
   }
 
   return validKeys;
@@ -130,7 +140,7 @@ function getValidApiKeys(): Array<{ id: string; key: string; permissions: string
  * @returns Middleware function
  */
 export function requirePermissions(requiredPermissions: string[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user || !req.user.permissions) {
         throw ApiError.unauthorized('User permissions not found.');
@@ -159,7 +169,7 @@ export function requirePermissions(requiredPermissions: string[]) {
  * @param res - Express response object
  * @param next - Express next function
  */
-export function optionalApiKeyAuth(req: Request, res: Response, next: NextFunction): void {
+export function optionalApiKeyAuth(req: Request, _res: Response, next: NextFunction): void {
   try {
     const apiKey = req.headers['x-api-key'] as string;
 
@@ -168,8 +178,8 @@ export function optionalApiKeyAuth(req: Request, res: Response, next: NextFuncti
       
       if (validation.isValid) {
         req.user = {
-          apiKeyId: validation.keyId,
-          permissions: validation.permissions || [],
+          ...(validation.keyId ? { apiKeyId: validation.keyId } : {}),
+          ...(validation.permissions ? { permissions: validation.permissions } : { permissions: [] }),
           authenticated: true
         };
       } else {

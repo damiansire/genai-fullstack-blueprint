@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { ModelFactory } from '../../models/factory.js';
-import { SchemaRegistry } from '../../models/registry.js';
+import { ModelFactory } from '../../infrastructure/ai/factory.js';
+import { SchemaRegistry } from '../../infrastructure/ai/registry.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
 import { createDynamicValidationMiddleware } from '../middleware/dynamicValidation.js';
 import { 
@@ -42,7 +42,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
       
       if (!hasFileRequirements) {
         // No file requirements, return a pass-through middleware
-        return (req: any, res: any, next: any) => next();
+        return (_req: any, _res: any, next: any) => next();
       }
 
       // Configure multer for file uploads
@@ -54,7 +54,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
           fileSize: 10 * 1024 * 1024, // 10MB limit
           files: 5 // Maximum 5 files
         },
-        fileFilter: (req, file, cb) => {
+        fileFilter: (_req, file, cb) => {
           // Basic file type validation
           const allowedTypes = [
             'image/jpeg',
@@ -77,7 +77,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
       return upload.any(); // Accept any number of files with any field name
     } catch (error) {
       // If schema not found, assume no file requirements
-      return (req: any, res: any, next: any) => next();
+      return (_req: any, _res: any, next: any) => next();
     }
   }
 
@@ -164,7 +164,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
     apiKeyAuth,
     (req, res, next) => {
       // Apply dynamic multer middleware based on model requirements
-      const modelId = req.params.modelId || '';
+      const modelId = req.params['modelId'] || '';
       const multerMiddleware = createDynamicMulterMiddleware(modelId);
       multerMiddleware(req, res, next);
     },
