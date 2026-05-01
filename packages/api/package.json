@@ -8,7 +8,7 @@
     "build:prod": "tsc -p tsconfig.prod.json",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --import tsx --test src/**/*.test.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +19,6 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "multer": "^2.0.2"
   },

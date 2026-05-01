@@ -101,7 +101,7 @@ export class ApiError extends Error {
    * Convert the error to a JSON-serializable object
    * @param includeStack - Whether to include the stack trace (default: false in production)
    */
-  toJSON(includeStack: boolean = process.env.NODE_ENV === 'development') {
+  toJSON(includeStack: boolean = process.env['NODE_ENV'] === 'development') {
     const errorObject: any = {
       name: this.name,
       message: this.message,
