@@ -115,51 +115,53 @@
 
     <!-- Response Section -->
     <div class="right-column">
-      <app-model-response
-        [loading]="imageGenResource.isLoading()"
-        [error]="fileError() || imageGenResource.error()?.message || null"
-        [response]="imageGenResource.value() ?? null"
-        loadingMessage="🎨 Generating your masterpiece with Gemini..."
-      >
-        @if (imageGenResource.value()?.data?.result) {
-          <div class="image-gen-response">
-            <h3><span aria-hidden="true">✨</span> Generated Image</h3>
+      @defer (when imageGenResource.hasValue() || imageGenResource.isLoading() || imageGenResource.error() || fileError()) {
+        <app-model-response
+          [loading]="imageGenResource.isLoading()"
+          [error]="fileError() || imageGenResource.error()?.message || null"
+          [response]="imageGenResource.value() ?? null"
+          loadingMessage="🎨 Generating your masterpiece with Gemini..."
+        >
+          @if (imageGenResource.value()?.data?.result) {
+            <div class="image-gen-response">
+              <h3><span aria-hidden="true">✨</span> Generated Image</h3>
 
-            @if (imageGenResource.value()?.data?.result?.text) {
-              <div class="description-box">
-                <h4><span aria-hidden="true">📝</span> Description</h4>
-                <p>{{ imageGenResource.value()?.data?.result?.text }}</p>
-              </div>
-            }
-
-            @if (imageGenResource.value()?.data?.result?.images && imageGenResource.value()!.data.result.images.length > 0) {
-              <div class="images-container">
-                <h4><span aria-hidden="true">🖼️</span> Generated Images</h4>
-                <div class="images-grid">
-                  @for (image of imageGenResource.value()!.data.result.images; track $index) {
-                    <div class="image-card">
-                      <img
-                        [src]="'data:' + image.mimeType + ';base64,' + image.data"
-                        [alt]="'Generated image ' + ($index + 1)"
-                        class="generated-image"
-                      />
-                      <div class="image-actions">
-                        <a
-                          [href]="'data:' + image.mimeType + ';base64,' + image.data"
-                          [download]="'gemini-generated-' + ($index + 1) + '.png'"
-                          class="btn-download"
-                        >
-                          <span aria-hidden="true">💾</span> Download
-                        </a>
-                      </div>
-                    </div>
-                  }
+              @if (imageGenResource.value()?.data?.result?.text) {
+                <div class="description-box">
+                  <h4><span aria-hidden="true">📝</span> Description</h4>
+                  <p>{{ imageGenResource.value()?.data?.result?.text }}</p>
                 </div>
-              </div>
-            }
-          </div>
-        }
-      </app-model-response>
+              }
+
+              @if (imageGenResource.value()?.data?.result?.images && imageGenResource.value()!.data.result.images.length > 0) {
+                <div class="images-container">
+                  <h4><span aria-hidden="true">🖼️</span> Generated Images</h4>
+                  <div class="images-grid">
+                    @for (image of imageGenResource.value()!.data.result.images; track $index) {
+                      <div class="image-card">
+                        <img
+                          [src]="'data:' + image.mimeType + ';base64,' + image.data"
+                          [alt]="'Generated image ' + ($index + 1)"
+                          class="generated-image"
+                        />
+                        <div class="image-actions">
+                          <a
+                            [href]="'data:' + image.mimeType + ';base64,' + image.data"
+                            [download]="'gemini-generated-' + ($index + 1) + '.png'"
+                            class="btn-download"
+                          >
+                            <span aria-hidden="true">💾</span> Download
+                          </a>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </app-model-response>
+      }
     </div>
   </div>
 </div>

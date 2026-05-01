@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { API_CONFIG } from './core/tokens/api-config';
 
@@ -10,8 +10,12 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideRouter(routes),
-    provideHttpClient(),
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withViewTransitions()
+    ),
+    provideHttpClient(withFetch()),
     {
       provide: API_CONFIG,
       useValue: {

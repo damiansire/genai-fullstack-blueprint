@@ -12,13 +12,15 @@
       (resetForm)="resetForm()"
     />
 
-    <app-model-response
-      [loading]="textModelResource.isLoading()"
-      [error]="textModelResource.error()?.message || null"
-      [response]="textModelResource.value() ?? null"
-      loadingMessage="Generating text response..."
-    >
-      <app-text-model-response [response]="textModelResource.value() ?? null" />
-    </app-model-response>
+    @defer (when textModelResource.hasValue() || textModelResource.isLoading() || textModelResource.error()) {
+      <app-model-response
+        [loading]="textModelResource.isLoading()"
+        [error]="textModelResource.error()?.message || null"
+        [response]="textModelResource.value() ?? null"
+        loadingMessage="Generating text response..."
+      >
+        <app-text-model-response [response]="textModelResource.value() ?? null" />
+      </app-model-response>
+    }
   </div>
 </div>

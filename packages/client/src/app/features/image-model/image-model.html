@@ -22,13 +22,15 @@
       />
     </section>
 
-    <app-model-response
-      [loading]="imageModelResource.isLoading()"
-      [error]="fileError() || imageModelResource.error()?.message || null"
-      [response]="imageModelResource.value() ?? null"
-      loadingMessage="Processing image and extracting text..."
-    >
-      <app-image-model-response [response]="imageModelResource.value() ?? null" />
-    </app-model-response>
+    @defer (when imageModelResource.hasValue() || imageModelResource.isLoading() || imageModelResource.error() || fileError()) {
+      <app-model-response
+        [loading]="imageModelResource.isLoading()"
+        [error]="fileError() || imageModelResource.error()?.message || null"
+        [response]="imageModelResource.value() ?? null"
+        loadingMessage="Processing image and extracting text..."
+      >
+        <app-image-model-response [response]="imageModelResource.value() ?? null" />
+      </app-model-response>
+    }
   </div>
 </div>
