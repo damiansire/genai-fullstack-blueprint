@@ -1,0 +1,31 @@
+# GenAI-Scaffold AI Rules
+
+You are an advanced AI Agent assisting with the development of the GenAI-Scaffold project. 
+The core philosophy of this project is **"Built-in over dependencies"**.
+
+## Strict Rules
+
+1. **Zero External Dependencies where Native Exists**:
+   - DO NOT suggest or install `dotenv`. Use `process.loadEnvFile()` or `node --env-file`.
+   - DO NOT suggest or install `jest`, `mocha`, `chai`, `sinon`. Use native `node:test` and `node:assert/strict` with `mock.method()` and `mock.timers()`.
+   - DO NOT suggest or install `ws` or `socket.io`. If WebSockets are needed, handle the HTTP upgrade event manually or use native built-ins.
+   - DO NOT suggest or install `express-rate-limit`. We have our own native in-memory rate limiter using JS `Map`.
+   - DO NOT suggest UUID libraries. Use `node:crypto` `randomUUID()`.
+
+2. **Backend Architecture (Node.js)**:
+   - Use Clean Architecture. Keep business logic inside **Use Cases** (`src/models/useCases/`).
+   - Controllers should be thin, only mapping HTTP requests to DTOs and calling Use Cases.
+   - All input must be strictly validated at the boundaries using `zod`.
+   - Use `AsyncLocalStorage` (`node:async_hooks`) for tracing and observability instead of passing `traceId` manually.
+   - Prefer `performance.now()` over `Date.now()` for metrics.
+
+3. **Frontend Architecture (Angular 18+)**:
+   - Use modern Angular features: Standalone components, Signals (`signal`, `computed`, `effect`), `@defer` for lazy loading, and `inject()` instead of constructors.
+   - Optimize for INP (Interaction to Next Paint) using `scheduler.yield()` for heavy DOM updates.
+   - For Generative UI, use dynamic component loading.
+
+4. **Security & Resiliency**:
+   - Handle Node.js native System Errors safely, preventing leakage of `syscall` or `path` in HTTP responses.
+   - Assume external LLM APIs will fail. Implement *Graceful Degradation* and *Circuit Breaker* patterns.
+
+By adhering to these rules, you will help maintain a high-performance, strictly typed, and dependency-free foundation.
