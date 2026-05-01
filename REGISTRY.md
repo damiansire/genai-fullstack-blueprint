@@ -116,3 +116,10 @@
     - **Generative UI via Dynamic Injection**: Developed `dynamic-tool-renderer.ts` to dynamically render standalone Angular components on-the-fly based on AI tool responses, enabling a rich, decoupled AI-driven UI.
     - **INP Optimization & Main-Thread Yielding**: Incorporated `scheduler.yield()` strategies within heavy UI update cycles to free the main thread, directly optimizing the Interaction to Next Paint (INP) core web vital.
     - **Native CSS Render Optimizations**: Adopted `content-visibility: auto` in component stylesheets to defer rendering of off-screen elements. Modernized accessibility and overlays using native `focus-visible` and the HTML Popover API, eliminating the need for heavy UI libraries.
+
+- **Friday, May 1 (AI Model Selection Strategy)**: Defined the model routing strategy for the AI Gateway to optimize TTFT (Time To First Token), strict JSON schema compliance, and cost-efficiency.
+  - **Implemented Practices in the AI Gateway (`packages/api`)**:
+    - **Frontier Models (Generative UI & Orchestration)**: Selected **Claude 3.5 Sonnet** as the primary engine for dynamically generating Angular UI components due to its superior JSON structuring. Selected **Gemini 1.5 Flash** as the core recursive orchestrator to aggressively reduce latency and costs via its native *Context Caching* during long tool-calling loops.
+    - **Local SLMs (Edge Routing & Validation)**: Designated **Llama 3.1 (8B)** for zero-latency initial routing and **Phi-3.5 Mini** for asynchronous background validation (e.g., prompt injection detection) running directly in Node.js *Worker Threads* to protect paid API quotas.
+    - **Embeddings & RAG**: Prioritized **Nomic Embed Text** running locally via WebAssembly/C++ bindings to populate the `node:sqlite` semantic cache without external network calls.
+    - **Multimodal Inputs**: Planned integration of **Whisper-v3/Turbo** over the native WebSocket layer for real-time Voice-to-Text, and Vision models (Claude/Gemini) to support *Wireframe-to-UI* generation directly from the Angular client.
