@@ -41,9 +41,7 @@ test('Mocking API responses with node:test', async (t) => {
 
 test('Mocking network timeouts using node:test mock.timers', async (t) => {
   // 2. Timer Mocking: mock.timers
-  // This allows us to advance time instantaneously instead of waiting
-  mock.timers.enable({ apis: ['setTimeout', 'clearTimeout'] });
-  
+  mock.timers.enable({ apis: ['setTimeout'] });
   const service = new ExternalAIService();
   
   // We set a 50ms timeout. The function takes 100ms.
@@ -57,6 +55,5 @@ test('Mocking network timeouts using node:test mock.timers', async (t) => {
     (err: Error) => err.message === 'Timeout',
     'Should throw Timeout error because time was advanced beyond 50ms'
   );
-  
-  mock.timers.disable();
+  mock.timers.reset();
 });
