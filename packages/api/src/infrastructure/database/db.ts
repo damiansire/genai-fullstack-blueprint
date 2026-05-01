@@ -31,6 +31,8 @@ export class DatabaseService extends EventEmitter {
 
   private insertLogStmt: any = null;
   private selectLogsStmt: any = null;
+  private insertCacheStmt: any = null;
+  private selectCacheStmt: any = null;
 
   public initialize(): void {
     if (this.db) return;
@@ -68,11 +70,18 @@ export class DatabaseService extends EventEmitter {
             method TEXT NOT NULL,
             path TEXT NOT NULL,
             duration_ms INTEGER
-          )
+          );
+          CREATE TABLE IF NOT EXISTS semantic_cache (
+            hash TEXT PRIMARY KEY,
+            response TEXT NOT NULL,
+            created_at TEXT NOT NULL
+          );
       `);
 
       this.insertLogStmt = this.proxiedDb.prepare('INSERT INTO request_logs (trace_id, timestamp, method, path, duration_ms) VALUES (?, ?, ?, ?, ?)');
       this.selectLogsStmt = this.proxiedDb.prepare('SELECT * FROM request_logs ORDER BY id DESC LIMIT ?');
+      this.insertCacheStmt = this.proxiedDb.prepare('INSERT OR REPLACE INTO semantic_cache (hash, response, created_at) VALUES (?, ?, ?)');
+      this.selectCacheStmt = this.proxiedDb.prepare('SELECT response FROM semantic_cache WHERE hash = ?');
       
       this.emit('connected');
     } catch (err) {
@@ -88,6 +97,8 @@ export class DatabaseService extends EventEmitter {
       this.proxiedDb = null;
       this.insertLogStmt = null;
       this.selectLogsStmt = null;
+      this.insertCacheStmt = null;
+      this.selectCacheStmt = null;
       this.emit('closed');
     }
   }
@@ -111,8 +122,30 @@ export class DatabaseService extends EventEmitter {
       return [];
     }
   }
+
+  public getCachedResponse(hash: string): any | null {
+    if (!this.selectCacheStmt) return null;
+    try {
+      const row = this.selectCacheStmt.get(hash);
+      return row ? JSON.parse(row.response) : null;
+    } catch (error) {
+      logger.error('Failed to get cache', {}, error instanceof Error ? error : new Error(String(error)));
+      return null;
+    }
+  }
+
+  public setCachedResponse(hash: string, response: any): void {
+    if (!this.insertCacheStmt) return;
+    try {
+      this.insertCacheStmt.run(hash, JSON.stringify(response), new Date().toISOString());
+    } catch (error) {
+      logger.error('Failed to set cache', {}, error instanceof Error ? error : new Error(String(error)));
+    }
+  }
 }
 
 export const dbService = DatabaseService.getInstance();
 export const logRequest = dbService.logRequest.bind(dbService);
 export const getRecentLogs = dbService.getRecentLogs.bind(dbService);
+export const getCachedResponse = dbService.getCachedResponse.bind(dbService);
+export const setCachedResponse = dbService.setCachedResponse.bind(dbService);

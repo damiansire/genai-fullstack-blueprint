@@ -12,12 +12,12 @@ export class CPUWorkerService {
    */
   public static runCpuIntensiveTask(payload: any, iterations?: number): Promise<any> {
     return new Promise((resolve, reject) => {
-      // In a real TS environment we point to the compiled .js or use tsx 
-      // For simplicity in this scaffold, we point to cpuWorker.ts and let tsx/loader handle it.
-      const workerPath = join(__dirname, 'cpuWorker.js'); 
+      const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
+      const workerPath = join(__dirname, `cpuWorker${ext}`); 
       
       const worker = new Worker(workerPath, {
-        workerData: { payload, iterations }
+        workerData: { payload, iterations },
+        execArgv: __filename.endsWith('.ts') ? ['--experimental-strip-types'] : []
       });
 
       worker.on('message', resolve);
@@ -26,6 +26,21 @@ export class CPUWorkerService {
         if (code !== 0) {
           reject(new Error(`Worker stopped with exit code ${code}`));
         }
+      });
+    });
+  }
+
+  public static executeTool(toolName: string, args: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const workerPath = join(__dirname, 'toolWorker.js');
+      const worker = new Worker(workerPath, {
+        workerData: { toolName, args },
+        execArgv: __filename.endsWith('.ts') ? ['--experimental-strip-types'] : []
+      });
+      worker.on('message', resolve);
+      worker.on('error', reject);
+      worker.on('exit', (code) => {
+        if (code !== 0) reject(new Error(`Tool worker stopped with exit code ${code}`));
       });
     });
   }

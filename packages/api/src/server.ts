@@ -14,7 +14,7 @@ import { dbService, logRequest } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:perf_hooks)
 import { performance } from 'node:perf_hooks';
 // Stability: 2 - Stable (node:crypto)
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { requestContext } from './core/async-context.js';
 // Stability: 2 - Stable (node:http)
 import type { Server as HttpServer } from 'node:http';
@@ -220,6 +220,53 @@ class Server extends EventEmitter {
           port: this.port,
           registeredModels: modelFactory.getRegisteredModels()
         });
+      });
+
+      // Native WebSocket Implementation (No 'ws' or 'socket.io' libraries)
+      this.httpServer.on('upgrade', (req, socket, _head) => {
+        if (req.url !== '/api/ws') {
+          socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+
+        const key = req.headers['sec-websocket-key'];
+        if (!key) {
+          socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+
+        // Standard WebSocket Handshake per RFC 6455
+        const magicString = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+        const acceptKey = createHash('sha1').update(key + magicString).digest('base64');
+
+        const responseHeaders = [
+          'HTTP/1.1 101 Switching Protocols',
+          'Upgrade: websocket',
+          'Connection: Upgrade',
+          `Sec-WebSocket-Accept: ${acceptKey}`,
+          '\r\n'
+        ].join('\r\n');
+
+        socket.write(responseHeaders);
+        logger.info('Native WebSocket connection established on /api/ws');
+
+        socket.on('data', (_buffer) => {
+          // In a real implementation we would parse WebSocket frames here.
+          // For now, we echo back a simple text frame showing we received data.
+          // Native frame construction for a text message:
+          const message = 'Acknowledged native frame';
+          const msgBuffer = Buffer.from(message);
+          const frame = Buffer.alloc(2 + msgBuffer.length);
+          frame[0] = 0x81; // FIN + Text Frame
+          frame[1] = msgBuffer.length;
+          msgBuffer.copy(frame, 2);
+          socket.write(frame);
+        });
+
+        socket.on('error', (err) => logger.error('WebSocket Error', {}, err));
+        socket.on('close', () => logger.info('WebSocket connection closed'));
       });
     } catch (error) {
       logger.error('Failed to start server', {}, error);

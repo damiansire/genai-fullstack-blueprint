@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { performance } from 'node:perf_hooks';
 import { ModelFactory } from '../../infrastructure/ai/factory.js';
 import { ProcessContext, ModelMetadata } from '../../domain/ai/strategy.interface.js';
-import { ApiResponse } from '../../core/ApiError.js';
+import { ApiResponse } from '../../core/types.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { logger } from '../../core/logger.js';
 

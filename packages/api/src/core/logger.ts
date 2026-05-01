@@ -11,6 +11,28 @@ interface LogPayload {
   [key: string]: any;
 }
 
+// OTLP Telemetry Exporter Simulator (Native fetch, no opentelemetry SDK)
+const telemetryBatch: LogPayload[] = [];
+const OTLP_ENDPOINT = process.env['OTLP_ENDPOINT'] || 'http://localhost:4318/v1/logs';
+
+function flushTelemetry() {
+  if (telemetryBatch.length === 0) return;
+  const batchToSend = [...telemetryBatch];
+  telemetryBatch.length = 0;
+
+  // Fire and forget native fetch
+  fetch(OTLP_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ logs: batchToSend })
+  }).catch(() => {
+    // Silently ignore telemetry export errors so they don't loop back into the logger
+  });
+}
+
+// Flush every 5 seconds
+setInterval(flushTelemetry, 5000).unref();
+
 function writeLog(level: LogLevel, message: string, meta: Record<string, any> = {}, error?: Error | unknown) {
   const payload: LogPayload = {
     level,
@@ -31,6 +53,9 @@ function writeLog(level: LogLevel, message: string, meta: Record<string, any> = 
   }
 
   const output = JSON.stringify(payload);
+  
+  // Push to telemetry batch
+  telemetryBatch.push(payload);
 
   switch (level) {
     case 'error':
