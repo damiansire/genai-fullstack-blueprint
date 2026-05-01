@@ -9,6 +9,7 @@ import { schemaRegistry } from './infrastructure/ai/registry.js';
 import { loadPlugins } from './infrastructure/ai/loader.js';
 import { createModelRoutes } from './api/routes/modelRoutes.js';
 import { errorHandler } from './api/middleware/errorHandler.js';
+import { rateLimiter } from './api/middleware/rateLimiter.js';
 import { dbService, logRequest } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:perf_hooks)
 import { performance } from 'node:perf_hooks';
@@ -110,15 +111,25 @@ class Server extends EventEmitter {
    * Setup application routes
    */
   private setupRoutes(): void {
-    // Health check endpoint
-    this.app.get('/health', (_req, res) => {
+    // Health check endpoints (Liveness & Readiness probes)
+    this.app.get('/health/live', (_req, res) => {
+      res.status(200).json({ status: 'live', state: this.state });
+    });
+
+    this.app.get('/health/ready', (_req, res) => {
+      // If server is not fully running, or DB is not initialized, we are not ready
+      if (this.state !== 'RUNNING') {
+        res.status(503).json({ status: 'not_ready', state: this.state });
+        return;
+      }
+      
+      // In a real app we might do `dbService.ping()` here
       res.status(200).json({
-        status: 'healthy',
+        status: 'ready',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: config.env,
-        registeredModels: modelFactory.getRegisteredModels(),
-        registeredSchemas: schemaRegistry.getRegisteredModels()
+        registeredModels: modelFactory.getRegisteredModels()
       });
     });
 
@@ -133,9 +144,15 @@ class Server extends EventEmitter {
       });
     });
 
+    // Apply Rate Limiter globally for /api routes
+    const apiLimiter = rateLimiter({
+      windowMs: 60 * 1000, // 1 minute
+      max: 100 // limit each IP/API Key to 100 requests per windowMs
+    });
+
     // Model routes (authentication, validation, controllers)
     const modelRoutes = createModelRoutes(modelFactory, schemaRegistry);
-    this.app.use('/api', modelRoutes);
+    this.app.use('/api', apiLimiter, modelRoutes);
 
     // 404 handler for undefined routes
     this.app.use((req, res) => {
