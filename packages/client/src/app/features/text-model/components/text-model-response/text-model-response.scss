@@ -1,10 +1,11 @@
 :host {
-  display: block;
+  display: grid;
+  grid-template-columns: 1fr;
 }
 
 .text-response {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: subgrid;
   gap: 1.5rem;
   padding: 1.5rem;
   background: rgba(255, 255, 255, 0.4);

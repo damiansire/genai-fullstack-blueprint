@@ -1,5 +1,5 @@
 <div class="text-response">
-  <h3><span aria-hidden="true">✅</span> Response</h3>
+  <h3><span aria-hidden="true">{{ icons.success }}</span> Response</h3>
   
   <div class="response-content">
     <h4>Generated Text:</h4>
@@ -8,7 +8,7 @@
     </div>
     
     <div class="ai-disclosure">
-      <small>✨ AI-generated content. May contain inaccuracies. Verify important information.</small>
+      <small>{{ icons.magic }} AI-generated content. May contain inaccuracies. Verify important information.</small>
     </div>
   </div>
 
@@ -20,7 +20,7 @@
           <app-dynamic-tool-renderer [toolCall]="tool"></app-dynamic-tool-renderer>
         } @placeholder {
           <div class="tool-loading-placeholder">
-            <span aria-hidden="true">⚙️</span> Loading tool interface...
+            <span aria-hidden="true">{{ icons.settings }}</span> Loading tool interface...
           </div>
         }
       }
@@ -29,12 +29,12 @@
 
   @if (response()?.data?.result?.usage) {
     <div class="usage-info-container">
-      <button class="btn-secondary" [attr.popovertarget]="'usagePopover-' + uniqueId">ℹ️ Show AI Usage Stats</button>
+      <button class="btn-secondary" [attr.popovertarget]="'usagePopover-' + uniqueId">{{ icons.info }} Show AI Usage Stats</button>
       
       <div [id]="'usagePopover-' + uniqueId" popover class="usage-popover">
         <div class="popover-header">
           <h4>Usage Information</h4>
-          <button class="btn-close" [attr.popovertarget]="'usagePopover-' + uniqueId" popovertargetaction="hide">✕</button>
+          <button class="btn-close" [attr.popovertarget]="'usagePopover-' + uniqueId" popovertargetaction="hide">{{ icons.close }}</button>
         </div>
         <div class="usage-stats">
           <div class="stat">

@@ -24,6 +24,19 @@ export class ImageGeneration {
   fileError = signal<string | null>(null);
   generationMode = signal<'text-to-image' | 'image-editing'>('text-to-image');
 
+  icons = {
+    banana: '🍌',
+    text: '📝',
+    edit: '✏️',
+    camera: '📸',
+    bulb: '💡',
+    clipboard: '📋',
+    palette: '🎨',
+    sparkles: '✨',
+    image: '🖼️',
+    save: '💾'
+  };
+
   requestParams = signal<{
     prompt: string;
     aspectRatio: string;

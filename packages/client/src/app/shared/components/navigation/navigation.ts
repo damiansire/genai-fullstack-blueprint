@@ -8,5 +8,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   styleUrl: './navigation.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Navigation {}
+export class Navigation {
+  icons = {
+    ai: '🤖',
+    text: '📝',
+    ocr: '🔍',
+    generation: '🎨'
+  };
+}
 

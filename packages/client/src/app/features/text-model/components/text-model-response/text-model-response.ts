@@ -15,5 +15,13 @@ export class TextModelResponse {
   
   // Unique ID for popover accessibility and targeting
   uniqueId = crypto.randomUUID();
+
+  icons = {
+    success: '✅',
+    magic: '✨',
+    settings: '⚙️',
+    info: 'ℹ️',
+    close: '✕'
+  };
 }
 

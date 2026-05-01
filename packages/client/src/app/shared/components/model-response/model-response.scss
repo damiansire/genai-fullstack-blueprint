@@ -1,8 +1,11 @@
 :host {
-  display: block;
+  display: grid;
+  grid-template-columns: 1fr;
 }
 
 .response-section {
+  display: grid;
+  grid-template-columns: subgrid;
   background: var(--color-bg-white);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
@@ -38,6 +41,25 @@
   p {
     margin: 0;
     font-size: 0.875rem;
+  }
+
+  .btn-retry {
+    margin-top: 1rem;
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    
+    &:hover {
+      opacity: 0.8;
+    }
   }
 }
 

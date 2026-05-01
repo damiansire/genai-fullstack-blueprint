@@ -18,6 +18,10 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
 export class ImageModel {
   private readonly apiConfig = inject(API_CONFIG);
 
+  icons = {
+    search: '🔍'
+  };
+
   selectedFile = signal<File | null>(null);
   fileError = signal<string | null>(null);
 

@@ -17,6 +17,10 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
 export class TextModel {
   private readonly apiConfig = inject(API_CONFIG);
 
+  icons = {
+    robot: '🤖'
+  };
+
   requestParams = signal<{
     prompt: string;
     maxTokens: number;

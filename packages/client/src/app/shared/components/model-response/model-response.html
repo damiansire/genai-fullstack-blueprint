@@ -8,8 +8,11 @@
 
   @if (error()) {
     <div class="error-state" role="alert">
-      <h3><span aria-hidden="true">❌</span> Error</h3>
+      <h3><span aria-hidden="true">{{ icons.error }}</span> Error</h3>
       <p>{{ error() }}</p>
+      <button class="btn-retry" (click)="retry.emit()">
+        <span aria-hidden="true">{{ icons.retry }}</span> Click to retry
+      </button>
     </div>
   }
 

@@ -1,6 +1,6 @@
 <div class="feature-container">
   <header class="feature-header">
-    <h1><span aria-hidden="true">🔍</span> Image Model - Google Vision OCR</h1>
+    <h1><span aria-hidden="true">{{ icons.search }}</span> Image Model - Google Vision OCR</h1>
     <p>Extract text from images using Google's Vision OCR model</p>
   </header>
 
@@ -29,6 +29,7 @@
         [error]="fileError() || imageModelResource.error()?.message || null"
         [response]="imageModelResource.value() ?? null"
         loadingMessage="Processing image and extracting text..."
+        (retry)="imageModelResource.reload()"
       >
         <app-image-model-response [response]="imageModelResource.value() ?? null" />
       </app-model-response>

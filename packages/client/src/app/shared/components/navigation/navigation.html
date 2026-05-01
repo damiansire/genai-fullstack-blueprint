@@ -1,26 +1,26 @@
 <nav class="navigation">
   <div class="nav-container">
     <div class="nav-brand">
-      <h1><span aria-hidden="true">🤖</span> AI Gateway</h1>
+      <h1><span aria-hidden="true">{{ icons.ai }}</span> AI Gateway</h1>
       <p>Multimodal AI Platform</p>
     </div>
     
     <ul class="nav-links">
       <li>
         <a routerLink="/text-model" routerLinkActive="active" #rlaText="routerLinkActive" [attr.aria-current]="rlaText.isActive ? 'page' : null" class="nav-link">
-          <span class="nav-icon" aria-hidden="true">📝</span>
+          <span class="nav-icon" aria-hidden="true">{{ icons.text }}</span>
           <span class="nav-label">Text Generation</span>
         </a>
       </li>
       <li>
         <a routerLink="/image-ocr" routerLinkActive="active" #rlaOcr="routerLinkActive" [attr.aria-current]="rlaOcr.isActive ? 'page' : null" class="nav-link">
-          <span class="nav-icon" aria-hidden="true">🔍</span>
+          <span class="nav-icon" aria-hidden="true">{{ icons.ocr }}</span>
           <span class="nav-label">Image OCR</span>
         </a>
       </li>
       <li>
         <a routerLink="/image-generation" routerLinkActive="active" #rlaGen="routerLinkActive" [attr.aria-current]="rlaGen.isActive ? 'page' : null" class="nav-link">
-          <span class="nav-icon" aria-hidden="true">🎨</span>
+          <span class="nav-icon" aria-hidden="true">{{ icons.generation }}</span>
           <span class="nav-label">Image Generation</span>
         </a>
       </li>

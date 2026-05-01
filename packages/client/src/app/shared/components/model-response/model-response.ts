@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ModelInvocationResponse } from '../../../core/services/api';
 
@@ -14,5 +14,12 @@ export class ModelResponse {
   error = input<string | null>(null);
   response = input<ModelInvocationResponse | null>(null);
   loadingMessage = input('Processing...');
+
+  retry = output<void>();
+
+  icons = {
+    error: '❌',
+    retry: '🔄'
+  };
 }
 
