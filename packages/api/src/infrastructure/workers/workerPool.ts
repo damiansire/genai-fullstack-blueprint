@@ -44,4 +44,34 @@ export class CPUWorkerService {
       });
     });
   }
+
+  /**
+   * Executes zero-copy JSON parsing and Zod validation using a worker thread.
+   * Passes the ArrayBuffer ownership to the worker thread via transferList.
+   */
+  public static parseJsonZeroCopy(buffer: ArrayBuffer, schemaName: string = 'Any'): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
+      const workerPath = join(__dirname, `jsonWorker${ext}`);
+      
+      const worker = new Worker(workerPath, {
+        workerData: { schemaName },
+        execArgv: __filename.endsWith('.ts') ? ['--experimental-strip-types'] : []
+      });
+
+      worker.on('message', (msg) => {
+        if (msg.success) resolve(msg.data);
+        else reject(new Error(msg.error));
+        worker.terminate();
+      });
+      
+      worker.on('error', reject);
+      worker.on('exit', (code) => {
+        if (code !== 0) reject(new Error(`JSON worker stopped with exit code ${code}`));
+      });
+
+      // Transfer ownership of the ArrayBuffer to the worker
+      worker.postMessage({ buffer }, [buffer]);
+    });
+  }
 }

@@ -1,5 +1,4 @@
 import { Component, input, effect, ViewContainerRef, inject, Type } from '@angular/core';
-import { ChartWidgetComponent } from './chart-widget.component';
 
 @Component({
   selector: 'app-dynamic-tool-renderer',
@@ -17,24 +16,30 @@ export class DynamicToolRenderer {
       
       if (!call || !call.name) return;
 
-      // Map tool names to components
-      let componentType: Type<any> | null = null;
+      // Map tool names to components and dynamically load them
       let inputs: Record<string, any> = {};
 
-      if (call.name === 'render_chart') {
-        componentType = ChartWidgetComponent;
-        inputs = { 
-          data: call.args?.data || [50, 80, 20, 100], 
-          label: call.args?.label || 'AI Generated Data' 
-        };
-      }
+      const loadComponent = async () => {
+        let componentType: Type<any> | null = null;
+        
+        if (call.name === 'render_chart') {
+          const { ChartWidgetComponent } = await import('./chart-widget.component');
+          componentType = ChartWidgetComponent;
+          inputs = { 
+            data: call.args?.data || [50, 80, 20, 100], 
+            label: call.args?.label || 'AI Generated Data' 
+          };
+        }
 
-      if (componentType) {
-        const ref = this.vcr.createComponent(componentType);
-        Object.keys(inputs).forEach(key => {
-          ref.setInput(key, inputs[key]);
-        });
-      }
+        if (componentType) {
+          const ref = this.vcr.createComponent(componentType);
+          Object.keys(inputs).forEach(key => {
+            ref.setInput(key, inputs[key]);
+          });
+        }
+      };
+
+      loadComponent();
     });
   }
 }
