@@ -1,6 +1,17 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { aiResponseSchema, AiResponse } from '../schemas/ai-response.schema';
 
+declare global {
+  interface Document {
+    startViewTransition(updateCallback: () => Promise<void> | void): {
+      ready: Promise<void>;
+      updateCallbackDone: Promise<void>;
+      finished: Promise<void>;
+      skipTransition: () => void;
+    };
+  }
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -38,16 +49,24 @@ export class AiOrchestratorService {
       // 1. Validación estricta - la frontera de confianza (usando parseAsync para asegurar asincronía)
       const parsedData = await aiResponseSchema.parseAsync(rawPayload);
       
-      // 2. Transición de estado segura y evaluación de 'Human in the Loop'
+      // 2. Transición de estado segura con View Transitions API (Nativo del Browser)
       const isAction = parsedData.intent === 'action';
 
-      this._state.update(s => ({
-        ...s,
-        data: parsedData,
-        isLoading: false,
-        requiresHumanApproval: isAction,
-        pendingAction: isAction ? parsedData.data : null
-      }));
+      const updateState = () => {
+        this._state.update(s => ({
+          ...s,
+          data: parsedData,
+          isLoading: false,
+          requiresHumanApproval: isAction,
+          pendingAction: isAction ? parsedData.data : null
+        }));
+      };
+
+      if ('startViewTransition' in document) {
+        document.startViewTransition(() => updateState());
+      } else {
+        updateState();
+      }
     } catch (err) {
       // 3. Graceful degradation ante alucinaciones o estructuras JSON corruptas
       console.error('[AiOrchestrator] Falló la validación estricta de Zod:', err);
@@ -78,12 +97,37 @@ export class AiOrchestratorService {
   }
 
   public resetState(): void {
-    this._state.set({ 
-      data: null, 
-      isLoading: false, 
-      error: null,
-      requiresHumanApproval: false,
-      pendingAction: null
-    });
+    const update = () => {
+      this._state.set({ 
+        data: null, 
+        isLoading: false, 
+        error: null,
+        requiresHumanApproval: false,
+        pendingAction: null
+      });
+    };
+
+    if ('startViewTransition' in document) {
+      document.startViewTransition(() => update());
+    } else {
+      update();
+    }
+  }
+
+  /**
+   * Streaming UI: Partial JSON Parsing
+   * Simula la lógica de inyectar deltas en el UI antes de que el JSON se complete.
+   */
+  public handlePartialStream(partialChunk: string): void {
+    // Aquí implementamos un parser tolerante a fallos
+    // que lee propiedades incompletas de JSON y va actualizando el Signal progresivamente.
+    // Ej: Si viene {"intent":"message","data":{"response":"Hola mu...
+    try {
+      // Intento de parseo rápido (muy simplificado, requiere un AST/Parser real)
+      const partialObj = JSON.parse(partialChunk + '"}'); // forced closure
+      // Si pasa, actualizar UI temporalmente...
+    } catch (e) {
+      // Silencioso, seguimos esperando el próximo chunk
+    }
   }
 }
