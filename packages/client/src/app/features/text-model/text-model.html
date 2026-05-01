@@ -12,16 +12,32 @@
       (resetForm)="resetForm()"
     />
 
-    @defer (when isStreaming() || streamResponse() || textModelResource.hasValue() || textModelResource.isLoading() || textModelResource.error()) {
-      <app-model-response
-        [loading]="isStreaming() || textModelResource.isLoading()"
-        [error]="textModelResource.error()?.message || null"
-        [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)"
-        loadingMessage="Generating text response..."
-        (retry)="textModelResource.reload()"
-      >
-        <app-text-model-response [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)" />
-      </app-model-response>
-    }
+    <section class="ai-module-viewport-trigger">
+      @defer (when isStreaming() || streamResponse() || textModelResource.hasValue() || textModelResource.isLoading() || textModelResource.error()) {
+        <app-model-response
+          [loading]="isStreaming() || textModelResource.isLoading()"
+          [error]="textModelResource.error()?.message || null"
+          [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)"
+          loadingMessage="Generating text response..."
+          (retry)="textModelResource.reload()"
+        >
+          <app-text-model-response [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)" />
+        </app-model-response>
+      } @placeholder (minimum 400ms) {
+        <div class="native-skeletal-proxy" aria-hidden="true">
+          <div class="skeleton-header-strip"></div>
+          <div class="skeleton-content-block"></div>
+        </div>
+      } @loading (after 150ms; minimum 1s) {
+        <div class="native-skeletal-proxy is-loading-active" aria-hidden="true">
+          <div class="skeleton-header-strip pulse-animation"></div>
+          <div class="skeleton-content-block pulse-animation"></div>
+        </div>
+      } @error {
+        <div role="alert" class="error-boundary-panel">
+          Se ha producido un error durante el ensamblado del módulo dinámico.
+        </div>
+      }
+    </section>
   </div>
 </div>

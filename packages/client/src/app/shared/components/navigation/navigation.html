@@ -24,6 +24,18 @@
           <span class="nav-label">Image Generation</span>
         </a>
       </li>
+      <li>
+        <button popovertarget="ai-settings-menu" popovertargetaction="toggle" class="nav-link btn-settings" aria-label="Open Settings">
+          <span class="nav-icon" aria-hidden="true">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </button>
+        <div id="ai-settings-menu" popover="auto" role="menu" class="settings-popover">
+          <div class="popover-header">AI Preferences</div>
+          <button role="menuitem">Model Configuration</button>
+          <button role="menuitem">API Keys</button>
+          <button role="menuitem">System Theme</button>
+        </div>
+      </li>
     </ul>
   </div>
 </nav>

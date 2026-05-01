@@ -23,16 +23,32 @@
       />
     </section>
 
-    @defer (when imageModelResource.hasValue() || imageModelResource.isLoading() || imageModelResource.error() || fileError()) {
-      <app-model-response
-        [loading]="imageModelResource.isLoading()"
-        [error]="fileError() || imageModelResource.error()?.message || null"
-        [response]="imageModelResource.value() ?? null"
-        loadingMessage="Processing image and extracting text..."
-        (retry)="imageModelResource.reload()"
-      >
-        <app-image-model-response [response]="imageModelResource.value() ?? null" />
-      </app-model-response>
-    }
+    <section class="ai-module-viewport-trigger">
+      @defer (when imageModelResource.hasValue() || imageModelResource.isLoading() || imageModelResource.error() || fileError()) {
+        <app-model-response
+          [loading]="imageModelResource.isLoading()"
+          [error]="fileError() || imageModelResource.error()?.message || null"
+          [response]="imageModelResource.value() ?? null"
+          loadingMessage="Processing image and extracting text..."
+          (retry)="imageModelResource.reload()"
+        >
+          <app-image-model-response [response]="imageModelResource.value() ?? null" />
+        </app-model-response>
+      } @placeholder (minimum 400ms) {
+        <div class="native-skeletal-proxy" aria-hidden="true">
+          <div class="skeleton-header-strip"></div>
+          <div class="skeleton-content-block"></div>
+        </div>
+      } @loading (after 150ms; minimum 1s) {
+        <div class="native-skeletal-proxy is-loading-active" aria-hidden="true">
+          <div class="skeleton-header-strip pulse-animation"></div>
+          <div class="skeleton-content-block pulse-animation"></div>
+        </div>
+      } @error {
+        <div role="alert" class="error-boundary-panel">
+          Se ha producido un error durante el ensamblado del módulo dinámico.
+        </div>
+      }
+    </section>
   </div>
 </div>
