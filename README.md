@@ -1,22 +1,3 @@
-> **⚠️ IMPORTANT NOTICE**
->
-> | | |
-> |---|---|
-> | **Last modified** | March 19, 2026 |
-> | **Status** | Under active improvement |
-> | **Disclaimer** | The app is being migrated to Angular 21 with several improvements applied. Please note that while this message remains in the README, the application may be unstable. |
->
-> ### Ongoing changes summary
->
-> - **Angular 21 migration**: All `@angular/*` packages upgraded from v20 to v21.2.
-> - **Signal Forms**: Replaced Reactive Forms (`FormGroup`/`FormControl`/`Validators`) with the new Signal Forms API (`form()`, `signal()`, `FormField`, `submit()`).
-> - **Vitest instead of Karma/Jasmine**: Test runner migrated to Vitest using the `@angular/build:unit-test` builder.
-> - **Zoneless Change Detection**: Complete removal of `zone.js`, now using `provideZonelessChangeDetection()`.
-> - **Design Tokens & SCSS**: Colors and styles centralized into CSS custom properties, shared styles extracted to global utility classes.
-> - **Accessibility (ARIA)**: Decorative emojis wrapped in `aria-hidden`, spinners with `role="status"`, `aria-invalid` and `aria-describedby` attributes on forms.
-> - **Configuration cleanup**: Removed `apiKey` from client, aligned dependency versions, removed `experimentalDecorators`.
-
----
 
 # 🚀 Full-Stack Multimodal AI Application: A Production Blueprint
 
