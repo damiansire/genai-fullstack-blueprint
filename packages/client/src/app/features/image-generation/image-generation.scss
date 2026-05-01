@@ -68,9 +68,10 @@
   gap: 1.25rem;
 }
 
-.form-control:focus {
+.form-control:focus-visible {
   border-color: var(--color-purple);
   box-shadow: 0 0 0 3px var(--color-purple-bg);
+  outline: none;
 }
 
 .prompt-tip {
@@ -98,6 +99,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.625rem;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
 }
 
 .example-card {

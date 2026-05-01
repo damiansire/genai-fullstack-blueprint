@@ -91,6 +91,12 @@
   opacity: 0;
   cursor: pointer;
   z-index: 10;
+  
+  &:focus-visible + .file-upload-placeholder {
+    outline: 3px solid var(--color-purple);
+    outline-offset: 4px;
+    border-radius: 1rem;
+  }
 }
 
 .file-upload-placeholder {
@@ -205,6 +211,11 @@
 
   &:active {
     transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ef4444;
+    outline-offset: 2px;
   }
 }
 

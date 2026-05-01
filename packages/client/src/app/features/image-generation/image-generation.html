@@ -21,12 +21,17 @@
       @if (generationMode() === 'image-editing' || selectedFiles().length > 0) {
         <div class="upload-section">
           <h3><span aria-hidden="true">📸</span> Input Images (For Editing/Composition)</h3>
-          <app-file-upload
-            [selectedFile]="selectedFiles()[0] || null"
-            (fileSelected)="onFileSelected($event)"
-            (fileCleared)="onFileCleared()"
-            (error)="onFileError($event)"
-          />
+          @defer (when generationMode() === 'image-editing') {
+            <app-file-upload
+              [file]="selectedFiles()[0] || null"
+              (fileChange)="$event ? onFileSelected($event) : onFileCleared()"
+              (error)="onFileError($event)"
+            />
+          } @placeholder {
+            <div class="file-upload-placeholder">
+              <p>Loading uploader...</p>
+            </div>
+          }
         </div>
       }
 

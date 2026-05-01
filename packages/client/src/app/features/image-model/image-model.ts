@@ -70,13 +70,8 @@ export class ImageModel {
     required(s.outputFormat, { message: 'Output Format is required' });
   });
 
-  onFileSelected(file: File): void {
+  onFileChange(file: File | null): void {
     this.selectedFile.set(file);
-    this.fileError.set(null);
-  }
-
-  onFileCleared(): void {
-    this.selectedFile.set(null);
     this.fileError.set(null);
   }
 

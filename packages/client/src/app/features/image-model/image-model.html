@@ -7,9 +7,8 @@
   <div class="feature-content">
     <section class="upload-and-form-section">
       <app-file-upload
-        [selectedFile]="selectedFile()"
-        (fileSelected)="onFileSelected($event)"
-        (fileCleared)="onFileCleared()"
+        [file]="selectedFile()"
+        (fileChange)="onFileChange($event)"
         (error)="onFileError($event)"
       />
 
