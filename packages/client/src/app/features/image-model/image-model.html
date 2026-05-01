@@ -10,7 +10,9 @@
         [file]="selectedFile()"
         (fileChange)="onFileChange($event)"
         (error)="onFileError($event)"
-      />
+      >
+        <label file-label class="form-label">Image File *</label>
+      </app-file-upload>
 
       <app-image-model-form
         [form]="imageForm"

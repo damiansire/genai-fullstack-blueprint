@@ -1,5 +1,6 @@
 :host {
-  display: block;
+  display: grid;
+  grid-template-columns: 1fr;
   --upload-bg: rgba(255, 255, 255, 0.6);
   --upload-bg-hover: rgba(255, 255, 255, 0.8);
   --upload-border: rgba(99, 102, 241, 0.3);
@@ -9,8 +10,8 @@
 }
 
 .file-upload-group {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: subgrid;
   gap: 0.75rem;
 }
 

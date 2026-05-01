@@ -46,14 +46,22 @@ export class FileUpload implements OnDestroy {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   });
 
+  icons = {
+    processing: '⏳',
+    folder: '📁',
+    document: '📄',
+    image: '🖼️',
+    close: '✕'
+  };
+
   fileTypeIcon = computed(() => {
     const file = this.file();
-    if (!file) return '📄';
+    if (!file) return this.icons.document;
     
     if (file.type.startsWith('image/')) {
-      return '🖼️';
+      return this.icons.image;
     }
-    return '📄';
+    return this.icons.document;
   });
 
   allowedTypesString = computed(() => {

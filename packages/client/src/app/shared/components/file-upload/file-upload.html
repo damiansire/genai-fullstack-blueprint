@@ -1,5 +1,5 @@
 <div class="file-upload-group">
-  <label for="fileInput" class="form-label">Image File *</label>
+  <ng-content select="label, [file-label]"></ng-content>
   <div class="file-upload-area" 
        [class.has-file]="file()" 
        [class.processing]="isProcessing()" 
@@ -22,9 +22,9 @@
       <div class="file-upload-placeholder">
         <div class="upload-icon" aria-hidden="true">
           @if (isProcessing()) {
-            ⏳
+            {{ icons.processing }}
           } @else {
-            📁
+            {{ icons.folder }}
           }
         </div>
         <p>
@@ -46,14 +46,14 @@
             } @else {
               <span class="file-icon" aria-hidden="true">
                 @if (isProcessing()) {
-                  ⏳
+                  {{ icons.processing }}
                 } @else {
                   {{ fileTypeIcon() }}
                 }
               </span>
             }
           } @placeholder {
-            <span class="file-icon" aria-hidden="true">⏳</span>
+            <span class="file-icon" aria-hidden="true">{{ icons.processing }}</span>
           }
           <div class="file-details">
             <div class="file-name">{{ file()!.name }}</div>
@@ -68,7 +68,7 @@
           aria-label="Remove file"
           [disabled]="isProcessing()"
         >
-          ✕
+          {{ icons.close }}
         </button>
       </div>
     }

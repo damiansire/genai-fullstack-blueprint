@@ -26,7 +26,9 @@
               [file]="selectedFiles()[0] || null"
               (fileChange)="$event ? onFileSelected($event) : onFileCleared()"
               (error)="onFileError($event)"
-            />
+            >
+              <label file-label class="form-label">Image File *</label>
+            </app-file-upload>
           } @placeholder {
             <div class="file-upload-placeholder">
               <p>Loading uploader...</p>
