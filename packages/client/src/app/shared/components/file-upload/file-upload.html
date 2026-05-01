@@ -1,6 +1,6 @@
 <div class="file-upload-group">
   <label for="fileInput" class="form-label">Image File *</label>
-  <div class="file-upload-area" [class.has-file]="selectedFile()">
+  <div class="file-upload-area" [class.has-file]="selectedFile()" [class.processing]="isProcessing()" [attr.aria-busy]="isProcessing()">
     <input
       #fileInput
       type="file"
@@ -8,18 +8,37 @@
       (change)="onFileSelected($event)"
       [accept]="accept()"
       class="file-input"
+      [disabled]="isProcessing()"
     />
     
     @if (!selectedFile()) {
       <div class="file-upload-placeholder">
-        <div class="upload-icon" aria-hidden="true">📁</div>
-        <p>Click to select a file</p>
+        <div class="upload-icon" aria-hidden="true">
+          @if (isProcessing()) {
+            ⏳
+          } @else {
+            📁
+          }
+        </div>
+        <p>
+          @if (isProcessing()) {
+            Processing...
+          } @else {
+            Click to select a file
+          }
+        </p>
         <small>Supports {{ allowedTypesString() }} (max {{ maxSizeMB() }}MB)</small>
       </div>
     } @else {
       <div class="file-selected">
         <div class="file-info">
-          <span class="file-icon" aria-hidden="true">{{ fileTypeIcon() }}</span>
+          <span class="file-icon" aria-hidden="true">
+            @if (isProcessing()) {
+              ⏳
+            } @else {
+              {{ fileTypeIcon() }}
+            }
+          </span>
           <div class="file-details">
             <div class="file-name">{{ selectedFile()!.name }}</div>
             <div class="file-size">{{ fileSize() }}</div>
@@ -31,6 +50,7 @@
           (click)="clearFile()"
           title="Remove file"
           aria-label="Remove file"
+          [disabled]="isProcessing()"
         >
           ✕
         </button>
@@ -38,4 +58,3 @@
     }
   </div>
 </div>
-

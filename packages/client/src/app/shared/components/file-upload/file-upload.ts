@@ -1,4 +1,4 @@
-import { Component, input, output, viewChild, ElementRef, ChangeDetectionStrategy, computed } from '@angular/core';
+import { Component, input, output, viewChild, ElementRef, ChangeDetectionStrategy, computed, signal } from '@angular/core';
 
 @Component({
   selector: 'app-file-upload',
@@ -18,6 +18,9 @@ export class FileUpload {
   error = output<string>();
   
   fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+
+  // Internal state for INP optimization (immediate visual feedback)
+  isProcessing = signal(false);
 
   // Computed signals
   fileSize = computed(() => {
@@ -50,36 +53,62 @@ export class FileUpload {
       .toUpperCase();
   });
 
-  onFileSelected(event: Event): void {
+  async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
       
-      // Validate file type
-      if (!this.allowedTypes().includes(file.type)) {
-        const allowedExtensions = this.allowedTypes().map(type => type.split('/')[1]).join(', ');
-        this.error.emit(`Please select a valid file (${allowedExtensions.toUpperCase()})`);
-        return;
-      }
+      // INP Optimization: Immediate visual feedback before blocking work
+      this.isProcessing.set(true);
 
-      // Validate file size
-      const maxSize = this.maxSizeMB() * 1024 * 1024;
-      if (file.size > maxSize) {
-        this.error.emit(`File size must not exceed ${this.maxSizeMB()}MB`);
-        return;
-      }
+      // INP Optimization: Yield to main thread.
+      // This allows the browser to paint the visual feedback before the parent component 
+      // blocks the main thread with heavy synchronous processing.
+      await new Promise(resolve => setTimeout(resolve, 0));
 
-      this.fileSelected.emit(file);
+      try {
+        // Validate file type
+        if (!this.allowedTypes().includes(file.type)) {
+          const allowedExtensions = this.allowedTypes().map(type => type.split('/')[1]).join(', ');
+          this.error.emit(`Please select a valid file (${allowedExtensions.toUpperCase()})`);
+          return;
+        }
+
+        // Validate file size
+        const maxSize = this.maxSizeMB() * 1024 * 1024;
+        if (file.size > maxSize) {
+          this.error.emit(`File size must not exceed ${this.maxSizeMB()}MB`);
+          return;
+        }
+
+        this.fileSelected.emit(file);
+      } finally {
+        this.isProcessing.set(false);
+        // Reset input value so the same file can be selected again
+        if (input) {
+          input.value = '';
+        }
+      }
     }
   }
 
-  clearFile(): void {
-    const inputEl = this.fileInput();
-    if (inputEl) {
-      inputEl.nativeElement.value = '';
+  async clearFile(): Promise<void> {
+    // INP Optimization: Immediate visual feedback for the click interaction
+    this.isProcessing.set(true);
+    
+    // Yield to main thread to ensure button click visual state is painted
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    try {
+      const inputEl = this.fileInput();
+      if (inputEl) {
+        inputEl.nativeElement.value = '';
+      }
+      this.fileCleared.emit();
+    } finally {
+      this.isProcessing.set(false);
     }
-    this.fileCleared.emit();
   }
 }
 

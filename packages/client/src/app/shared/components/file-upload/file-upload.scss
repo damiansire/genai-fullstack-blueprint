@@ -27,6 +27,14 @@
     border-color: var(--color-blue);
     background: var(--color-bg-white);
   }
+
+  &.processing {
+    opacity: 0.7;
+    pointer-events: none;
+    cursor: wait;
+    border-color: var(--color-border);
+    background: #f0f0f0;
+  }
 }
 
 .file-input {
