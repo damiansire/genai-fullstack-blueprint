@@ -8,6 +8,7 @@ import { modelFactory } from './infrastructure/ai/factory.js';
 import { schemaRegistry } from './infrastructure/ai/registry.js';
 import { loadPlugins } from './infrastructure/ai/loader.js';
 import { createModelRoutes } from './api/routes/modelRoutes.js';
+import { docsRoutes } from './api/routes/docsRoutes.js';
 import { errorHandler } from './api/middleware/errorHandler.js';
 import { rateLimiter } from './api/middleware/rateLimiter.js';
 import { dbService, logRequest } from './infrastructure/database/db.js';
@@ -20,14 +21,6 @@ import { requestContext } from './core/async-context.js';
 import type { Server as HttpServer } from 'node:http';
 import { logger } from './core/logger.js';
 import { config } from './core/config.js';
-
-// Load environment variables using Node.js native API
-// Stability: 2 - Stable (process.loadEnvFile is stable in Node v22+)
-try {
-  process.loadEnvFile();
-} catch (err) {
-  // Ignore if .env file is not found
-}
 
 type ServerState = 'STOPPED' | 'STARTING' | 'RUNNING' | 'STOPPING';
 
@@ -143,6 +136,9 @@ class Server extends EventEmitter {
         totalModels: modelFactory.getRegisteredModels().length
       });
     });
+
+    // Serve OpenAPI Documentation
+    this.app.use('/docs', docsRoutes);
 
     // Apply Rate Limiter globally for /api routes
     const apiLimiter = rateLimiter({
