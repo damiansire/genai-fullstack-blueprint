@@ -7,7 +7,8 @@ import { createDynamicValidationMiddleware } from '../middleware/dynamicValidati
 import { 
   createModelController, 
   createModelInfoController, 
-  createModelListController 
+  createModelListController,
+  createStreamController
 } from '../controllers/modelController.js';
 
 /**
@@ -26,6 +27,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
   const modelController = createModelController(modelFactory);
   const modelInfoController = createModelInfoController(modelFactory);
   const modelListController = createModelListController(modelFactory);
+  const streamController = createStreamController(modelFactory);
 
   /**
    * Create dynamic multer middleware based on schema requirements
@@ -170,6 +172,20 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
     },
     dynamicValidation,
     modelController
+  );
+
+  /**
+   * POST /models/:modelId/stream - Stream model response via SSE
+   */
+  router.post('/models/:modelId/stream',
+    apiKeyAuth,
+    (req, res, next) => {
+      const modelId = req.params['modelId'] || '';
+      const multerMiddleware = createDynamicMulterMiddleware(modelId);
+      multerMiddleware(req, res, next);
+    },
+    dynamicValidation,
+    streamController
   );
 
   return router;

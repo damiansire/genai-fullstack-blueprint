@@ -153,3 +153,70 @@ export function createModelListController(modelFactory: ModelFactory) {
     });
   });
 }
+
+/**
+ * Controller for streaming model responses using Server-Sent Events (SSE) and native streams
+ * @param modelFactory - Instance of ModelFactory
+ * @returns Express controller function
+ */
+export function createStreamController(modelFactory: ModelFactory) {
+  const invokeModelUseCase = new InvokeModelUseCase(modelFactory);
+
+  return asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const modelId = req.params['modelId'] || '';
+    
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    // Flush headers immediately
+    res.flushHeaders();
+
+    try {
+      // In a real implementation, the UseCase would return a Readable stream
+      // or an AsyncGenerator. For this scaffold, we simulate a stream from a UseCase result.
+      const dto: InvokeModelDTO = {
+        modelId,
+        body: req.body,
+        context: {
+          apiKey: req.user?.apiKeyId,
+          userId: req.user?.apiKeyId
+        }
+      };
+
+      const result = await invokeModelUseCase.execute(dto);
+      
+      // Simulate chunking the response text using a native interval (streaming behavior)
+      // Since our current models return a complete response, we mock the stream by breaking it.
+      const textToStream = result.text || JSON.stringify(result);
+      const chunkSize = 10;
+      let i = 0;
+
+      const intervalId = setInterval(() => {
+        if (i < textToStream.length) {
+          const chunk = textToStream.slice(i, i + chunkSize);
+          res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+          i += chunkSize;
+        } else {
+          clearInterval(intervalId);
+          res.write('event: done\n');
+          res.write('data: {}\n\n');
+          res.end();
+        }
+      }, 50);
+
+      // Handle client disconnect
+      req.on('close', () => {
+        clearInterval(intervalId);
+        logger.info(`Client disconnected during stream from '${modelId}'`);
+      });
+
+    } catch (error) {
+      logger.error(`Stream Controller: Use Case '${modelId}' failed`, {}, error);
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ message: 'Stream failed' })}\n\n`);
+      res.end();
+    }
+  });
+}
