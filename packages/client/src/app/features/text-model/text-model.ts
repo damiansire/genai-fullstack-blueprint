@@ -1,8 +1,9 @@
-import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy, linkedSignal, computed } from '@angular/core';
 import { form, submit, required, minLength, maxLength, min, max } from '@angular/forms/signals';
 import { httpResource } from '@angular/common/http';
 import { ModelInvocationResponse } from '../../core/services/api';
 import { API_CONFIG } from '../../core/tokens/api-config';
+import { SseService } from '../../core/services/sse.service';
 import { TextModelForm } from './components/text-model-form/text-model-form';
 import { TextModelResponse } from './components/text-model-response/text-model-response';
 import { ModelResponse } from '../../shared/components/model-response/model-response';
@@ -16,6 +17,7 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
 })
 export class TextModel {
   private readonly apiConfig = inject(API_CONFIG);
+  private readonly sseService = inject(SseService);
 
   icons = {
     robot: '🤖'
@@ -27,23 +29,30 @@ export class TextModel {
     temperature: number;
     topP: number;
     topK: number;
+    stream?: boolean;
   } | undefined>(undefined);
 
+  // Normal non-streaming fallback
   textModelResource = httpResource<ModelInvocationResponse>(() => {
     const params = this.requestParams();
-    if (!params) {
-      return undefined;
-    }
+    if (!params || params.stream) return undefined; // Don't trigger if it's a stream request
 
     return {
       url: `${this.apiConfig.baseUrl}/models/google-text-bison/invoke`,
       method: 'POST',
       body: params,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     };
   });
+
+  // Streaming accumulation using linkedSignal
+  streamTrigger = signal(0);
+  streamResponse = linkedSignal<number, string>({
+    source: this.streamTrigger,
+    computation: () => '' // Resets the accumulator when trigger changes
+  });
+  
+  isStreaming = signal(false);
 
   textModel = signal({
     prompt: '',
@@ -70,13 +79,36 @@ export class TextModel {
   onSubmit(): void {
     submit(this.textForm, async () => {
       const model = this.textModel();
-      this.requestParams.set({
+      const params = {
         prompt: model.prompt,
         maxTokens: model.maxTokens,
         temperature: model.temperature,
         topP: model.topP,
-        topK: model.topK
-      });
+        topK: model.topK,
+        stream: true // Enforce streaming based on the Deep Research recommendation
+      };
+      
+      this.requestParams.set(params);
+
+      // Execute Streaming Loop
+      if (params.stream) {
+        this.streamTrigger.update(v => v + 1); // Reset linkedSignal accumulator
+        this.isStreaming.set(true);
+        try {
+          const generator = this.sseService.streamModelResponse('google-text-bison', params);
+          for await (const chunk of generator) {
+            if (chunk.isDone) {
+              this.isStreaming.set(false);
+              break;
+            }
+            // Append incrementally to linkedSignal
+            this.streamResponse.update(current => current + chunk.text);
+          }
+        } catch (error) {
+          console.error('SSE Stream Error:', error);
+          this.isStreaming.set(false);
+        }
+      }
     });
   }
 
@@ -89,5 +121,6 @@ export class TextModel {
       topK: 40
     });
     this.requestParams.set(undefined);
+    this.streamResponse.set('');
   }
 }

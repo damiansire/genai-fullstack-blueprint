@@ -12,15 +12,15 @@
       (resetForm)="resetForm()"
     />
 
-    @defer (when textModelResource.hasValue() || textModelResource.isLoading() || textModelResource.error()) {
+    @defer (when isStreaming() || streamResponse() || textModelResource.hasValue() || textModelResource.isLoading() || textModelResource.error()) {
       <app-model-response
-        [loading]="textModelResource.isLoading()"
+        [loading]="isStreaming() || textModelResource.isLoading()"
         [error]="textModelResource.error()?.message || null"
-        [response]="textModelResource.value() ?? null"
+        [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)"
         loadingMessage="Generating text response..."
         (retry)="textModelResource.reload()"
       >
-        <app-text-model-response [response]="textModelResource.value() ?? null" />
+        <app-text-model-response [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)" />
       </app-model-response>
     }
   </div>

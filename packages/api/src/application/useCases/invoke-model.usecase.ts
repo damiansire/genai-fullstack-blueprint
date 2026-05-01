@@ -48,6 +48,25 @@ export class InvokeModelUseCase {
       requestData.files = dto.files;
     }
 
+    const { piiService } = await import('../../services/piiService.js');
+
+    // 1. PII Redaction Phase (Edge Routing & Validation)
+    // "identifica de manera estocástica todas las entidades sensibles... reemplazando criptográficamente nombres e importes"
+    let piiMapping: Record<string, string> = {};
+    if (requestData.messages) {
+      requestData.messages = requestData.messages.map((msg: any) => {
+        if (typeof msg.content === 'string') {
+          const { redactedText, mapping } = piiService.redact(msg.content);
+          Object.assign(piiMapping, mapping);
+          return { ...msg, content: redactedText };
+        }
+        return msg;
+      });
+      if (Object.keys(piiMapping).length > 0) {
+        logger.info('PII Redaction applied before external API call', { tokens: Object.keys(piiMapping).length });
+      }
+    }
+
     // Generate Hash for Caching
     const hashPayload = JSON.stringify({ modelId: dto.modelId, body: requestData });
     const hash = createHash('sha256').update(hashPayload).digest('hex');
@@ -56,6 +75,10 @@ export class InvokeModelUseCase {
     const cachedResponse = getCachedResponse(hash);
     if (cachedResponse) {
       logger.info(`Cache HIT for model ${dto.modelId}`, { hash });
+      // Unredact before returning from cache
+      if (typeof cachedResponse.text === 'string') {
+         cachedResponse.text = piiService.unredact(cachedResponse.text, piiMapping);
+      }
       return cachedResponse;
     }
 
@@ -123,6 +146,11 @@ export class InvokeModelUseCase {
     // Save to Cache (Only caching non-streaming for simplicity in this implementation)
     if (!dto.body['stream'] && !currentResponse.tool_calls) {
       setCachedResponse(hash, currentResponse);
+    }
+
+    // Unredact before returning to user
+    if (currentResponse && typeof currentResponse.text === 'string' && Object.keys(piiMapping).length > 0) {
+      currentResponse.text = piiService.unredact(currentResponse.text, piiMapping);
     }
 
     return currentResponse;
