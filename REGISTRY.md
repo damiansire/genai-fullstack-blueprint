@@ -103,3 +103,16 @@
       - *Reference*: [Kubernetes Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
     - **Native Mocking (`node:test`)**: Documented and implemented Chaos Engineering tests (`mocking.test.ts`) using built-in `node:test` features such as `t.mock.method()` and `mock.timers()`. This natively validates the Gateway's resilience against third-party network failures, timeouts, and *Graceful Degradation* scenarios without requiring `jest` or `sinon`. 
       - *Reference*: [Node.js Test Mocking API](https://nodejs.org/docs/latest/api/test.html#mocking)
+
+- **Friday, May 1 (Full-Stack Performance & Native Modernization)**: Expanded the architecture to achieve maximum performance and observability using native features.
+  - **Implemented Practices in the AI Gateway (`packages/api`):**
+    - **Recursive Agentic Tool Calling via Worker Threads**: Extracted the tool execution loop (`invoke-model.usecase.ts`) into a dedicated `toolWorker.ts` utilizing `node:worker_threads`. This prevents complex JSON parsing and parallel tool execution from blocking the main event loop, enabling highly concurrent agentic workflows.
+      - *Reference*: [Node.js Worker Threads API](https://nodejs.org/docs/latest/api/worker_threads.html)
+    - **Semantic Caching with SQLite & Crypto**: Implemented a native caching layer in `db.ts` utilizing `node:crypto` to hash LLM queries. This allows exact-match and semantic retrieval directly from the SQLite database, drastically reducing latency and external API costs.
+      - *Reference*: [Node.js Crypto API](https://nodejs.org/docs/latest/api/crypto.html)
+    - **Native OTLP Telemetry via Fetch**: Integrated OpenTelemetry span exportation natively using the built-in `fetch` API in `logger.ts`, avoiding heavy third-party auto-instrumentation SDKs while maintaining observability standards.
+
+  - **Implemented Practices in the Frontend (`packages/client`):**
+    - **Generative UI via Dynamic Injection**: Developed `dynamic-tool-renderer.ts` to dynamically render standalone Angular components on-the-fly based on AI tool responses, enabling a rich, decoupled AI-driven UI.
+    - **INP Optimization & Main-Thread Yielding**: Incorporated `scheduler.yield()` strategies within heavy UI update cycles to free the main thread, directly optimizing the Interaction to Next Paint (INP) core web vital.
+    - **Native CSS Render Optimizations**: Adopted `content-visibility: auto` in component stylesheets to defer rendering of off-screen elements. Modernized accessibility and overlays using native `focus-visible` and the HTML Popover API, eliminating the need for heavy UI libraries.
