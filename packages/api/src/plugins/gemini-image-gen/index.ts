@@ -1,5 +1,6 @@
-import { IModelStrategy, ProcessContext, ModelOutput } from '../../models/strategy.interface.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/strategy.interface.js';
+import { performance } from 'node:perf_hooks';
+import { logger } from '../../core/logger.js';
 
 /**
  * Input parameters for Gemini Image Generation
@@ -81,17 +82,12 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
   readonly modelName = 'gemini-2.5-flash-image';
   readonly description = 'Gemini 2.5 Flash Image Generation - Text-to-Image, Image Editing, Style Transfer';
   
-  private genAI: GoogleGenerativeAI;
-
   constructor() {
     const apiKey = process.env['GEMINI_API_KEY'];
     
     if (!apiKey) {
-      console.warn('⚠️ GEMINI_API_KEY not found in environment variables. Image generation will fail.');
-      console.warn('Please set GEMINI_API_KEY in your .env file');
+      logger.warn('GEMINI_API_KEY not found in environment variables. Image generation will fail. Please set GEMINI_API_KEY in your .env file');
     }
-    
-    this.genAI = new GoogleGenerativeAI(apiKey || 'dummy-key');
   }
 
   /**
@@ -101,13 +97,14 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
     params: GeminiImageGenInput,
     _context: ProcessContext
   ): Promise<ModelOutput<GeminiImageGenOutput>> {
-    const startTime = Date.now();
+    const startTime = performance.now();
 
     try {
-      console.log(`🎨 Processing Gemini Image Generation request`);
-      console.log(`📝 Prompt: ${params.prompt.substring(0, 100)}...`);
-      console.log(`📐 Aspect Ratio: ${params.aspectRatio || '1:1'}`);
-      console.log(`🖼️ Input Images: ${params.inputImages?.length || 0}`);
+      logger.info('Processing Gemini Image Generation request', {
+        prompt: `${params.prompt.substring(0, 100)}...`,
+        aspectRatio: params.aspectRatio || '1:1',
+        inputImages: params.inputImages?.length || 0
+      });
 
       // Check for API key
       if (!process.env['GEMINI_API_KEY']) {
@@ -128,32 +125,38 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
         config.responseModalities = params.responseModalities;
       }
 
-      // Get the model
-      const model = this.genAI.getGenerativeModel({ 
-        model: this.modelName 
+      // Generar contenido usando fetch nativo
+      logger.info('Calling Gemini API directly via fetch...');
+      
+      const apiKey = process.env['GEMINI_API_KEY'] || 'dummy-key';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${apiKey}`;
+
+      const apiResponse = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          generationConfig: config
+        })
       });
 
-      // Generate content
-      console.log('🚀 Calling Gemini API...');
-      const result = await model.generateContent({
-        contents: [{
-          role: 'user',
-          parts
-        }],
-        generationConfig: config
-      });
+      if (!apiResponse.ok) {
+        const errorText = await apiResponse.text();
+        throw new Error(`Gemini API Error: ${apiResponse.status} - ${errorText}`);
+      }
 
-      const response = result.response;
-      const processingTime = Date.now() - startTime;
+      const result = await apiResponse.json();
+      const response = result;
+      const processingTime = Math.round(performance.now() - startTime);
 
-      console.log(`✅ Gemini API responded in ${processingTime}ms`);
+      logger.info(`✅ Gemini API responded in ${processingTime}ms`);
 
       // Extract images and text from response
       const output = this.extractOutputFromResponse(response);
 
-      console.log(`📊 Generated ${output.images.length} image(s)`);
+      logger.info(`📊 Generated ${output.images.length} image(s)`);
       if (output.text) {
-        console.log(`📝 Text: ${output.text.substring(0, 100)}...`);
+        logger.info(`📝 Text: ${output.text.substring(0, 100)}...`);
       }
 
       return {
@@ -169,7 +172,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
         }
       };
     } catch (error) {
-      console.error('❌ Gemini Image Generation error:', error);
+      logger.error('Gemini Image Generation error', {}, error);
 
       if (error instanceof Error) {
         throw new Error(`Gemini Image Generation failed: ${error.message}`);

@@ -1,4 +1,7 @@
-import { IModelStrategy, ProcessContext, ModelOutput } from '../../models/strategy.interface.js';
+import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/strategy.interface.js';
+import { performance } from 'node:perf_hooks';
+
+import { logger } from '../../core/logger.js';
 
 /**
  * Model ID for Google Text Bison
@@ -102,7 +105,7 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
     params: GoogleTextBisonInput, 
     context: ProcessContext
   ): Promise<ModelOutput<GoogleTextBisonOutput>> {
-    const startTime = Date.now();
+    const startTime = performance.now();
 
     try {
       // Validate required parameters
@@ -126,21 +129,20 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
       };
 
       // Log the request
-      console.log(`🤖 Processing Google Text Bison request`, {
+      logger.info('Processing Google Text Bison request', {
         promptLength: params.prompt.length,
         maxTokens: requestParams.maxTokens,
         temperature: requestParams.temperature,
-        userId: context.userId,
-        timestamp: new Date().toISOString()
+        userId: context.userId
       });
 
-      // Simulate API call to Google Text Bison
-      const response = await this.simulateGoogleTextBisonCall(requestParams, context.apiKey);
+      // Llamada REAL a la API usando Node.js fetch
+      const response = await this.executeApiCall(requestParams, context.apiKey);
 
-      const processingTime = Date.now() - startTime;
+      const processingTime = Math.round(performance.now() - startTime);
 
       // Log successful response
-      console.log(`✅ Google Text Bison request completed`, {
+      logger.info('Google Text Bison request completed', {
         responseLength: response.text.length,
         processingTime: `${processingTime}ms`,
         finishReason: response.finishReason,
@@ -158,76 +160,61 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
       };
 
     } catch (error) {
-      const processingTime = Date.now() - startTime;
+      const processingTime = Math.round(performance.now() - startTime);
       
-      console.error(`❌ Google Text Bison request failed`, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        processingTime: `${processingTime}ms`,
-        timestamp: new Date().toISOString()
-      });
+      logger.error('Google Text Bison request failed', {
+        processingTime: `${processingTime}ms`
+      }, error);
 
       throw error;
     }
   }
 
   /**
-   * Simulate a call to Google Text Bison API
-   * In a real implementation, this would make an actual HTTP request
-   * @param params - Request parameters
-   * @param apiKey - Google API key
-   * @returns Simulated response
+   * Ejecuta la llamada real a la API de Google Text Bison (PaLM/Gemini)
+   * Usando el cliente Fetch nativo de Node.js v18+
    */
-  private async simulateGoogleTextBisonCall(
+  private async executeApiCall(
     params: GoogleTextBisonInput, 
     apiKey: string
   ): Promise<GoogleTextBisonOutput> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    const url = `${this.baseUrl}/${this.modelName}:generateText?key=${apiKey}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: { text: params.prompt },
+        temperature: params.temperature,
+        topK: params.topK,
+        topP: params.topP,
+        candidateCount: 1,
+        maxOutputTokens: params.maxTokens,
+        stopSequences: params.stopSequences && params.stopSequences.length > 0 ? params.stopSequences : undefined
+      })
+    });
 
-    // Simulate different response scenarios
-    const scenarios = [
-      {
-        text: `Based on your prompt: "${params.prompt}", here's a comprehensive response that demonstrates the capabilities of Google Text Bison. This model can generate creative, informative, and contextually appropriate text based on the input provided.`,
-        finishReason: 'STOP' as const,
-        usage: {
-          promptTokens: Math.ceil(params.prompt.length / 4),
-          completionTokens: Math.ceil(params.prompt.length / 3),
-          totalTokens: Math.ceil(params.prompt.length / 2)
-        }
-      },
-      {
-        text: `This is a simulated response from Google Text Bison. The model has processed your request: "${params.prompt}" and generated this response. In a real implementation, this would be the actual output from Google's API.`,
-        finishReason: 'STOP' as const,
-        usage: {
-          promptTokens: Math.ceil(params.prompt.length / 4),
-          completionTokens: Math.ceil(params.prompt.length / 3),
-          totalTokens: Math.ceil(params.prompt.length / 2)
-        }
-      },
-      {
-        text: `Here's what Google Text Bison would respond to: "${params.prompt}". This is a placeholder response that simulates the API behavior. The actual implementation would make HTTP requests to Google's Generative AI API.`,
-        finishReason: 'MAX_TOKENS' as const,
-        usage: {
-          promptTokens: Math.ceil(params.prompt.length / 4),
-          completionTokens: Math.ceil(params.prompt.length / 3),
-          totalTokens: Math.ceil(params.prompt.length / 2)
-        }
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Google API Error: ${response.status} - ${errorData}`);
+    }
+
+    const data = await response.json() as any;
+    const candidate = data.candidates?.[0];
+    
+    if (!candidate) {
+      throw new Error('La API de Google no devolvió ningún candidato válido.');
+    }
+
+    return {
+      text: candidate.output,
+      finishReason: 'STOP',
+      usage: {
+        promptTokens: 0, // PaLM API no siempre devuelve usage info preciso
+        completionTokens: 0,
+        totalTokens: 0
       }
-    ];
-
-    // Randomly select a scenario
-    const selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-
-    // Simulate occasional errors
-    if (Math.random() < 0.05) { // 5% error rate
-      throw new Error('Simulated API error: Rate limit exceeded');
-    }
-
-    if (!selectedScenario) {
-      throw new Error('No scenario selected');
-    }
-
-    return selectedScenario;
+    };
   }
 
   /**

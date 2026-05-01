@@ -1,4 +1,8 @@
-import { IModelStrategy, ProcessContext, ModelOutput } from '../../models/strategy.interface.js';
+import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/strategy.interface.js';
+import { performance } from 'node:perf_hooks';
+import { setTimeout } from 'node:timers/promises';
+import { randomInt } from 'node:crypto';
+import { logger } from '../../core/logger.js';
 
 /**
  * Model ID for Google Vision OCR
@@ -122,7 +126,6 @@ interface GoogleVisionOCROutput {
  */
 export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, ModelOutput<GoogleVisionOCROutput>> {
   private readonly modelName = 'vision-ocr-v1';
-  private readonly baseUrl = 'https://vision.googleapis.com/v1/images:annotate';
 
   /**
    * Process an OCR request
@@ -134,7 +137,7 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
     params: GoogleVisionOCRInput, 
     context: ProcessContext
   ): Promise<ModelOutput<GoogleVisionOCROutput>> {
-    const startTime = Date.now();
+    const startTime = performance.now();
 
     try {
       // Validate required parameters
@@ -168,7 +171,7 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
       };
 
       // Log the request
-      console.log(`🔍 Processing Google Vision OCR request`, {
+      logger.info(`🔍 Processing Google Vision OCR request`, {
         imageSize: params.imageFile.size,
         imageType: params.imageFile.mimetype,
         language: requestParams.language,
@@ -180,10 +183,10 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
       // Simulate API call to Google Vision OCR
       const response = await this.simulateGoogleVisionOCRCall(params, requestParams, context.apiKey);
 
-      const processingTime = Date.now() - startTime;
+      const processingTime = Math.round(performance.now() - startTime);
 
       // Log successful response
-      console.log(`✅ Google Vision OCR request completed`, {
+      logger.info(`✅ Google Vision OCR request completed`, {
         textLength: response.text.length,
         annotationsCount: response.annotations.length,
         processingTime: `${processingTime}ms`,
@@ -202,13 +205,11 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
       };
 
     } catch (error) {
-      const processingTime = Date.now() - startTime;
+      const processingTime = Math.round(performance.now() - startTime);
       
-      console.error(`❌ Google Vision OCR request failed`, {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        processingTime: `${processingTime}ms`,
-        timestamp: new Date().toISOString()
-      });
+      logger.error('Google Vision OCR request failed', {
+        processingTime: `${processingTime}ms`
+      }, error);
 
       throw error;
     }
@@ -225,19 +226,19 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
   private async simulateGoogleVisionOCRCall(
     params: GoogleVisionOCRInput,
     options: any,
-    apiKey: string
+    _apiKey: string
   ): Promise<GoogleVisionOCROutput> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
+    await setTimeout(2000 + randomInt(3000));
 
     // Simulate different OCR scenarios based on image type
     const scenarios = this.generateOCRScenarios(params.imageFile.mimetype, options);
 
     // Randomly select a scenario
-    const selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+    const selectedScenario = scenarios[randomInt(scenarios.length)];
 
     // Simulate occasional errors
-    if (Math.random() < 0.03) { // 3% error rate
+    if (randomInt(100) < 3) { // 3% error rate
       throw new Error('Simulated API error: Image processing failed');
     }
 
