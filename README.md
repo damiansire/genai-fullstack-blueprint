@@ -38,7 +38,7 @@ The Angular app abandons NgModules in favor of a **100% Standalone Component arc
 | Area           | Technology         | Description                                                                                                                                                |
 | -------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Frontend**   | **Angular 21**     | Modern framework for building UIs using Standalone Components, Signal Forms, Signals for state management, and `ChangeDetectionStrategy.OnPush` for optimal performance. |
-| **Backend**    | **Node.js**        | JavaScript runtime environment for the server side.                                                                                                        |
+| **Backend**    | **Node.js v22+**   | Uses "Built-in over dependencies" strategy: native SQLite, Worker Threads for CPU tasks, `fetch` API, and native test runner.                              |
 |                | **Express.js**     | Minimalist framework for building RESTful APIs.                                                                                                            |
 |                | **Multer**         | Middleware for handling file uploads (multipart/form-data).                                                                                                |
 | **AI**         | **Google Gemini**  | API for multimodal (text and image) content generation.                                                                                                    |
@@ -137,12 +137,12 @@ curl http://localhost:8080/health  # Frontend
 
 This platform includes three powerful AI capabilities powered by Google's models:
 
-### 📝 Text Generation (Google Text Bison)
+### 📝 Multi-Tiered Generation & Generative UI
 
-- Generate creative and contextual text from prompts
-- Configurable parameters: max tokens, temperature, top-p, top-k
-- Real-time streaming responses
-- Token usage tracking
+- Intelligent routing between Frontier models (Claude 3.5 Sonnet, Gemini 1.5 Pro) and local SLMs to optimize latency and cost.
+- **Server-Driven Generative UI**: Angular dynamically renders visual components via `@defer` based on LLM Tool Calls.
+- **Iterative Refinement (RCI)**: Recursive generation and quality scoring in worker threads.
+- Token usage tracking and real-time streaming via SSE.
 
 ### 🔍 Image OCR (Google Vision OCR)
 
@@ -234,11 +234,12 @@ Optimized for scalability and clarity:
 │   ├── Dockerfile.client  # Angular + Nginx
 │   ├── Dockerfile.server  # Node.js API
 │   └── nginx.conf         # Nginx configuration
-├── docs/                  # Documentation
+├── docs/                  # Legacy Documentation
 │   ├── API.md             # API documentation
 │   ├── DEVELOPMENT.md     # Development guide
 │   ├── DEPLOYMENT.md      # Deployment guide
 │   └── TROUBLESHOOTING.md # Problem solving guide
+├── registry.md            # Master Architectural Registry (Decisions & Patterns)
 ├── package.json           # Workspace configuration
 ├── package-lock.json      # Dependency lock file
 ├── .env.example           # Environment variables template
