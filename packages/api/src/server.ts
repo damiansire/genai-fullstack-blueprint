@@ -12,6 +12,7 @@ import { docsRoutes } from './api/routes/docsRoutes.js';
 import { errorHandler } from './api/middleware/errorHandler.js';
 import { rateLimiter } from './api/middleware/rateLimiter.js';
 import { tokenRateLimiter } from './api/middleware/tokenRateLimiter.js';
+import { aiSafetyFirewall } from './api/middleware/ai-safety.middleware.js';
 import { SqliteTokenStore } from './infrastructure/rate-limit/SqliteTokenStore.js';
 import { dbService, logRequest } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:perf_hooks)
@@ -163,7 +164,7 @@ class Server extends EventEmitter {
 
     // Model routes (authentication, validation, controllers)
     const modelRoutes = createModelRoutes(modelFactory, schemaRegistry);
-    this.app.use('/api', apiLimiter, apiTokenLimiter, modelRoutes);
+    this.app.use('/api', apiLimiter, apiTokenLimiter, aiSafetyFirewall, modelRoutes);
 
     // Patrón 1: Tool Search JIT — register, search, and manage tool definitions
     const toolRoutes = createToolRoutes();

@@ -185,6 +185,31 @@ This platform includes three powerful AI capabilities powered by Google's models
 
 ---
 
+## 🏢 Enterprise AI Platform Capabilities
+
+Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B SaaS-ready AI Platform**. It includes built-in enterprise features that address the most critical business requirements:
+
+### 🧠 Integrated RAG Infrastructure (Retrieval-Augmented Generation)
+- **Chat with Private Data**: Seamlessly ingest and query private documents and customer databases without the prohibitive cost of fine-tuning models.
+- **Native Vector DB**: Utilizes `sqlite-vec` for high-performance, in-memory semantic search and embeddings generation natively within the Node.js process.
+- **Dynamic Context Injection**: Automatically enriches LLM prompts with relevant semantic context to reduce hallucinations.
+
+### 🛡️ Guardrails & AI Safety Firewall
+- **Prompt Injection Defense**: Pre-flight validation of user inputs using local SLMs (Small Language Models like Phi-3.5) running in background Worker Threads.
+- **PII Masking**: Automatic detection and masking of Personally Identifiable Information (emails, credit cards) *before* data leaves your infrastructure to reach public APIs.
+- **Toxicity Filters**: Guarantees brand safety by actively blocking inappropriate or non-compliant generations.
+
+### 📊 Comprehensive LLMOps & Observability
+- **ROI & Billing Visibility**: Granular tracking of Token Consumption and Latency (TTFT) per user and per tenant, essential for B2B billing models.
+- **Distributed Tracing**: Uses Node.js `AsyncLocalStorage` and native OTLP telemetry to trace every interaction from the HTTP request down to the SQLite vector cache and the LLM API call.
+- **Zero-Cost Caching**: Semantic caching guarantees 0ms latency and 0 token cost for frequently asked questions.
+
+### 🏢 Multi-Tenant Architecture
+- **Cryptographic Isolation**: Designed from Day 1 to isolate data logically. Tenant IDs are bound to JWTs and all contextual data (RAG vectors, chat histories, token budgets) is segregated, ensuring strict compliance with GDPR and HIPAA.
+- **Tier-Based RBAC**: Intelligent routing blocks free-tier users from waking up expensive models (like Claude 3.5 or Gemini 1.5 Pro), protecting your LLM budget.
+
+---
+
 ## 🗂️ Project Structure
 
 Optimized for scalability and clarity:
