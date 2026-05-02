@@ -8,7 +8,6 @@ import { ChatSidebar } from '../../shared/components/chat-sidebar/chat-sidebar';
 
 @Component({
   selector: 'app-document-chat',
-  standalone: true,
   imports: [CommonModule, FormsModule, ModelResponse, ChatSidebar],
   templateUrl: './document-chat.html',
   styleUrl: './document-chat.scss',

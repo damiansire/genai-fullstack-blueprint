@@ -51,7 +51,6 @@ const DEVICE_TYPE_ICONS: Record<string, string> = {
 
 @Component({
   selector: 'app-iot-dashboard',
-  standalone: true,
   imports: [],
   templateUrl: './iot-dashboard.html',
   styleUrl: './iot-dashboard.scss',

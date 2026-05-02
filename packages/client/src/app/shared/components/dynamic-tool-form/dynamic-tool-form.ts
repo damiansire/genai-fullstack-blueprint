@@ -41,7 +41,6 @@ import type { DynamicToolForm, DynamicField } from '../../../core/types/tool-for
 
 @Component({
   selector: 'app-dynamic-tool-form',
-  standalone: true,
   imports: [],
   templateUrl: './dynamic-tool-form.html',
   styleUrl: './dynamic-tool-form.scss',

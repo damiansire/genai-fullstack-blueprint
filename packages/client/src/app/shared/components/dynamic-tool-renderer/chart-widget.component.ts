@@ -2,7 +2,6 @@ import { Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-chart-widget',
-  standalone: true,
   template: `
     <div class="chart-container">
       <h3 class="chart-title">

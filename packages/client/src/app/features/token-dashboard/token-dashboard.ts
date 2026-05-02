@@ -14,7 +14,6 @@ interface QuotaResponse {
 
 @Component({
   selector: 'app-token-dashboard',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './token-dashboard.html',
   styleUrl: './token-dashboard.scss',

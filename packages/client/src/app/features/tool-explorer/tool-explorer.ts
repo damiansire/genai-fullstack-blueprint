@@ -34,7 +34,6 @@ interface ToolSearchResponse {
 
 @Component({
   selector: 'app-tool-explorer',
-  standalone: true,
   imports: [DynamicToolFormComponent],
   templateUrl: './tool-explorer.html',
   styleUrl: './tool-explorer.scss',

@@ -3,7 +3,6 @@ import { NgComponentOutlet } from '@angular/common';
 
 @Component({
   selector: 'app-dynamic-tool-renderer',
-  standalone: true,
   imports: [NgComponentOutlet],
   templateUrl: './dynamic-tool-renderer.html',
   styleUrl: './dynamic-tool-renderer.scss'

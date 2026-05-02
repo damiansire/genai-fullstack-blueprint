@@ -36,7 +36,6 @@ bytes_sent=15728640 dst_ip=203.0.113.5 dst_port=4444
 
 @Component({
   selector: 'app-security-dashboard',
-  standalone: true,
   imports: [DecimalPipe],
   templateUrl: './security-dashboard.html',
   styleUrl: './security-dashboard.scss',

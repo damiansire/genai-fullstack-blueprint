@@ -2,7 +2,6 @@ import { Directive, signal, Input, Output, EventEmitter, inject, ElementRef } fr
 
 @Directive({
   selector: '[ngAccordionGroup]',
-  standalone: true
 })
 export class AccordionGroup {
   @Input() multiExpandable = false;
@@ -26,7 +25,6 @@ export class AccordionGroup {
 
 @Directive({
   selector: '[ngAccordionTrigger]',
-  standalone: true,
   host: {
     '[attr.aria-expanded]': 'expanded()',
     'role': 'button',
@@ -51,7 +49,6 @@ export class AccordionTrigger {
 
 @Directive({
   selector: '[ngAccordionPanel]',
-  standalone: true,
   host: {
     'role': 'region',
     '[hidden]': '!trigger?.expanded()'

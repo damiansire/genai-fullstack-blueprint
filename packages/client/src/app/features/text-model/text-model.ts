@@ -35,7 +35,6 @@ import { ChatSidebar } from '../../shared/components/chat-sidebar/chat-sidebar';
  */
 @Component({
   selector: 'app-text-model',
-  standalone: true,
   imports: [TextModelForm, TextModelResponse, ModelResponse, ChatSidebar],
   templateUrl: './text-model.html',
   styleUrl: './text-model.scss',

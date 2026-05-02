@@ -23,7 +23,6 @@ import { ModelInvocationResponse } from '../../../core/services/api';
  */
 @Component({
   selector: 'app-model-response',
-  standalone: true,
   imports: [DatePipe],
   templateUrl: './model-response.html',
   styleUrl: './model-response.scss',
