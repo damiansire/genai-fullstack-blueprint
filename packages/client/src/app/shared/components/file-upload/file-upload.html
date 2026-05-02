@@ -42,7 +42,7 @@
         <div class="file-info">
           @defer (on viewport) {
             @if (previewUrl()) {
-              <img [src]="previewUrl()" [alt]="file()!.name" class="image-preview" />
+              <img [src]="previewUrl()" [alt]="file()!.name" class="image-preview" width="120" height="120" style="object-fit: cover; aspect-ratio: 1/1;" />
             } @else {
               <span class="file-icon" aria-hidden="true">
                 @if (isProcessing()) {

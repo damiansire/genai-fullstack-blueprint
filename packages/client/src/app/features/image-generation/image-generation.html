@@ -150,6 +150,10 @@
                           [src]="'data:' + image.mimeType + ';base64,' + image.data"
                           [alt]="'Generated image ' + ($index + 1)"
                           class="generated-image"
+                          width="512"
+                          height="512"
+                          loading="lazy"
+                          style="aspect-ratio: 1/1;"
                         />
                         <div class="image-actions">
                           <a
