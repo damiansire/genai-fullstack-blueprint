@@ -23,6 +23,11 @@ export class FileUpload implements OnDestroy {
   isProcessing = signal(false);
   isDragging = signal(false);
 
+  private static nextId = 0;
+  public readonly idSuffix = FileUpload.nextId++;
+  public readonly inputId = `file-input-${this.idSuffix}`;
+  public readonly labelId = `file-label-${this.idSuffix}`;
+
 
 
   ngOnDestroy(): void {

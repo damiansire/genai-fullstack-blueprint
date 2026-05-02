@@ -1,5 +1,7 @@
 <div class="file-upload-group">
-  <ng-content select="label, [file-label]"></ng-content>
+  <div [id]="labelId">
+    <ng-content select="label, [file-label]"></ng-content>
+  </div>
   <div class="file-upload-area" 
        [class.has-file]="file()" 
        [class.processing]="isProcessing()" 
@@ -11,7 +13,8 @@
     <input
       #fileInput
       type="file"
-      id="fileInput"
+      [id]="inputId"
+      [attr.aria-labelledby]="labelId"
       (change)="onFileSelected($event)"
       [accept]="accept()"
       class="file-input"

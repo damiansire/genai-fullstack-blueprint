@@ -95,11 +95,13 @@
           <input 
             type="text" 
             [(ngModel)]="prompt"
+            aria-label="Prompt message"
             placeholder="Ask anything about your documents..."
             (keydown.enter)="onSubmit()">
           
           <button 
             class="send-btn" 
+            aria-label="Send message"
             [disabled]="isLoading() || !prompt().trim()"
             (click)="onSubmit()">
             <span aria-hidden="true">{{ icons.send }}</span>
