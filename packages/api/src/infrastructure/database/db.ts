@@ -33,6 +33,10 @@ export class DatabaseService extends EventEmitter {
   private selectLogsStmt: any = null;
   private insertCacheStmt: any = null;
   private selectCacheStmt: any = null;
+  // Patrón 1: Tool Search JIT
+  private insertToolStmt: any = null;
+  private searchToolsStmt: any = null;
+  private getToolByNameStmt: any = null;
 
   public initialize(): void {
     if (this.db) return;
@@ -76,6 +80,17 @@ export class DatabaseService extends EventEmitter {
             response TEXT NOT NULL,
             created_at TEXT NOT NULL
           );
+          CREATE TABLE IF NOT EXISTS tools (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            description TEXT NOT NULL,
+            schema_json TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          CREATE INDEX IF NOT EXISTS idx_tools_name ON tools(name);
+          CREATE INDEX IF NOT EXISTS idx_tools_category ON tools(category);
       `);
 
       // Try to load sqlite-vec extension (graceful degradation if not compiled)
@@ -94,13 +109,29 @@ export class DatabaseService extends EventEmitter {
           `);
         }
       } catch (err) {
-        logger.warn('[DB] Could not load sqlite-vec extension. Vector search will be disabled.', {}, err instanceof Error ? err : new Error(String(err)));
+        logger.warn('[DB] Could not load sqlite-vec extension. Vector search will be disabled.', {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
 
       this.insertLogStmt = this.proxiedDb.prepare('INSERT INTO request_logs (trace_id, timestamp, method, path, duration_ms) VALUES (?, ?, ?, ?, ?)');
       this.selectLogsStmt = this.proxiedDb.prepare('SELECT * FROM request_logs ORDER BY id DESC LIMIT ?');
       this.insertCacheStmt = this.proxiedDb.prepare('INSERT OR REPLACE INTO semantic_cache (hash, response, created_at) VALUES (?, ?, ?)');
       this.selectCacheStmt = this.proxiedDb.prepare('SELECT response FROM semantic_cache WHERE hash = ?');
+
+      // Patrón 1: Tool Search JIT — prepared statements
+      this.insertToolStmt = this.proxiedDb.prepare(
+        'INSERT OR REPLACE INTO tools (name, description, schema_json, category, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      );
+      // Simple keyword search across name + description — no external FTS engine needed
+      this.searchToolsStmt = this.proxiedDb.prepare(
+        `SELECT name, description, schema_json, category FROM tools
+         WHERE name LIKE ? OR description LIKE ? OR category LIKE ?
+         ORDER BY name ASC LIMIT ?`
+      );
+      this.getToolByNameStmt = this.proxiedDb.prepare(
+        'SELECT name, description, schema_json, category FROM tools WHERE name = ?'
+      );
       
       this.emit('connected');
     } catch (err) {
@@ -118,6 +149,9 @@ export class DatabaseService extends EventEmitter {
       this.selectLogsStmt = null;
       this.insertCacheStmt = null;
       this.selectCacheStmt = null;
+      this.insertToolStmt = null;
+      this.searchToolsStmt = null;
+      this.getToolByNameStmt = null;
       this.emit('closed');
     }
   }
@@ -189,6 +223,76 @@ export class DatabaseService extends EventEmitter {
       logger.error('Store vector failed', {}, error instanceof Error ? error : new Error(String(error)));
     }
   }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Patrón 1: Tool Search JIT — Tool Registry Methods
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Registers (or updates) a tool definition in SQLite.
+   * The schema_json is the complete JSON Schema the LLM will receive JIT.
+   */
+  public registerTool(
+    name: string,
+    description: string,
+    schemaJson: object,
+    category: string = 'general'
+  ): void {
+    if (!this.insertToolStmt) return;
+    try {
+      const now = new Date().toISOString();
+      this.insertToolStmt.run(name, description, JSON.stringify(schemaJson), category, now, now);
+      logger.info(`[ToolRegistry] Registered tool: ${name}`, { category });
+    } catch (error) {
+      logger.error('Failed to register tool', { name }, error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  /**
+   * JIT Tool Search — called by the LLM via the `search_tools` native tool.
+   * Returns the exact JSON schemas to inject at the END of the context window,
+   * preserving the cache prefix for Anthropic / OpenAI prompt caching.
+   */
+  public searchTools(
+    query: string,
+    limit: number = 5
+  ): Array<{ name: string; description: string; schema: object; category: string }> {
+    if (!this.searchToolsStmt) return [];
+    try {
+      const pattern = `%${query}%`;
+      const rows = this.searchToolsStmt.all(pattern, pattern, pattern, limit) as any[];
+      return rows.map((row) => ({
+        name: row.name,
+        description: row.description,
+        schema: JSON.parse(row.schema_json),
+        category: row.category,
+      }));
+    } catch (error) {
+      logger.error('Failed to search tools', { query }, error instanceof Error ? error : new Error(String(error)));
+      return [];
+    }
+  }
+
+  /**
+   * Retrieves a single tool's full schema by its exact name.
+   */
+  public getToolByName(
+    name: string
+  ): { name: string; description: string; schema: object; category: string } | null {
+    if (!this.getToolByNameStmt) return null;
+    try {
+      const row = this.getToolByNameStmt.get(name) as any;
+      if (!row) return null;
+      return {
+        name: row.name,
+        description: row.description,
+        schema: JSON.parse(row.schema_json),
+        category: row.category,
+      };
+    } catch (error) {
+      logger.error('Failed to get tool by name', { name }, error instanceof Error ? error : new Error(String(error)));
+      return null;
+    }
+  }
 }
 
 export const dbService = DatabaseService.getInstance();
@@ -196,3 +300,7 @@ export const logRequest = dbService.logRequest.bind(dbService);
 export const getRecentLogs = dbService.getRecentLogs.bind(dbService);
 export const getCachedResponse = dbService.getCachedResponse.bind(dbService);
 export const setCachedResponse = dbService.setCachedResponse.bind(dbService);
+// Patrón 1 exports
+export const registerTool = dbService.registerTool.bind(dbService);
+export const searchTools = dbService.searchTools.bind(dbService);
+export const getToolByName = dbService.getToolByName.bind(dbService);

@@ -16,7 +16,8 @@ import { dbService, logRequest } from './infrastructure/database/db.js';
 import { performance } from 'node:perf_hooks';
 // Stability: 2 - Stable (node:crypto)
 import { randomUUID, createHash } from 'node:crypto';
-import { requestContext } from './core/async-context.js';
+import { requestContext, createRootContext } from './core/async-context.js';
+import { createToolRoutes } from './api/routes/toolRoutes.js';
 // Stability: 2 - Stable (node:http)
 import type { Server as HttpServer } from 'node:http';
 import { logger } from './core/logger.js';
@@ -94,7 +95,9 @@ class Server extends EventEmitter {
         logRequest(req.method, req.path, duration, traceId);
       });
       
-      requestContext.run({ traceId }, () => {
+      // Patrón 5: seed a full agentic root span (depth=0) for this request.
+      // All downstream Workers inherit this via createChildContext().
+      requestContext.run(createRootContext(traceId), () => {
         next();
       });
     });
@@ -149,6 +152,10 @@ class Server extends EventEmitter {
     // Model routes (authentication, validation, controllers)
     const modelRoutes = createModelRoutes(modelFactory, schemaRegistry);
     this.app.use('/api', apiLimiter, modelRoutes);
+
+    // Patrón 1: Tool Search JIT — register, search, and manage tool definitions
+    const toolRoutes = createToolRoutes();
+    this.app.use('/api/tools', apiLimiter, toolRoutes);
 
     // 404 handler for undefined routes
     this.app.use((req, res) => {

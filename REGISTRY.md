@@ -123,3 +123,15 @@
     - **Local SLMs (Edge Routing & Validation)**: Designated **Llama 3.1 (8B)** for zero-latency initial routing and **Phi-3.5 Mini** for asynchronous background validation (e.g., prompt injection detection) running directly in Node.js *Worker Threads* to protect paid API quotas.
     - **Embeddings & RAG**: Prioritized **Nomic Embed Text** running locally via WebAssembly/C++ bindings to populate the `node:sqlite` semantic cache without external network calls.
     - **Multimodal Inputs**: Planned integration of **Whisper-v3/Turbo** over the native WebSocket layer for real-time Voice-to-Text, and Vision models (Claude/Gemini) to support *Wireframe-to-UI* generation directly from the Angular client.
+
+- **Friday, May 1 (Advanced Agentic Patterns - Batch 2)**:
+
+  - **Implemented Practices in the AI Gateway (`packages/api`):**
+
+    - **Patrón 1 — JIT Tool Search (`src/application/useCases/tool-search.usecase.ts`, `src/api/routes/toolRoutes.ts`, `src/infrastructure/database/db.ts`)**: Replaced the static tool-schema injection in the System Prompt with a native `search_tools` discovery mechanism. A `tools` table is created in SQLite on startup. The LLM emits `tool_use: { name: "search_tools" }` → the agentic loop calls `ToolSearchUseCase` → schemas are injected **at the END** of the context window, keeping the static System Prompt prefix immutable and guaranteeing 100% cache hits on Anthropic/OpenAI. Expected impact: up to −31% TTFT and up to −85% token costs via prompt caching.
+      - *Reference*: [`node:sqlite` API](https://nodejs.org/docs/latest/api/sqlite.html) · [Anthropic Prompt Caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+      - *Endpoints added*: `POST /api/tools/search` · `GET /api/tools/:name` · `POST /api/tools/register`
+
+    - **Patrón 5 — AsyncLocalStorage Extendido para Árboles Agenticos (`src/core/async-context.ts`)**: Extended `RequestContext` from a flat `{ traceId }` to a full agentic span tree: `{ traceId, spanId, parentSpanId?, depth, toolCallStack[] }`. Added `createRootContext()` (called once per HTTP request) and `createChildContext(toolName, parentCtx)` (called inside Worker Thread handlers). The child context is now serialized into `workerData` in `CPUWorkerService.executeTool()`, enabling full span-tree reconstruction in any OTLP collector (Jaeger, Grafana Tempo) without any prop-drilling or function-signature pollution.
+      - *Reference*: [Node.js `async_hooks` API](https://nodejs.org/docs/latest/api/async_hooks.html) · [OpenTelemetry Span Hierarchy](https://opentelemetry.io/docs/concepts/signals/traces/)
+

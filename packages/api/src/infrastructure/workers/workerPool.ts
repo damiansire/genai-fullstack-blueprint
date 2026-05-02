@@ -30,11 +30,13 @@ export class CPUWorkerService {
     });
   }
 
-  public static executeTool(toolName: string, args: any): Promise<any> {
+  public static executeTool(toolName: string, args: any, agentContext?: object): Promise<any> {
     return new Promise((resolve, reject) => {
       const workerPath = join(__dirname, 'toolWorker.js');
       const worker = new Worker(workerPath, {
-        workerData: { toolName, args },
+        // Patrón 5: pass the serialized child context so the Worker can
+        // restore its position in the agentic span tree via createChildContext().
+        workerData: { toolName, args, agentContext },
         execArgv: __filename.endsWith('.ts') ? ['--experimental-strip-types'] : []
       });
       worker.on('message', resolve);
@@ -44,6 +46,7 @@ export class CPUWorkerService {
       });
     });
   }
+
 
   /**
    * Executes zero-copy JSON parsing and Zod validation using a worker thread.

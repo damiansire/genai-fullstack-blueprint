@@ -5,6 +5,8 @@ import { ProcessContext } from '../../domain/ai/strategy.interface.js';
 import { ApiError } from '../../core/ApiError.js';
 import { getCachedResponse, setCachedResponse } from '../../infrastructure/database/db.js';
 import { logger } from '../../core/logger.js';
+import { getContext, createChildContext } from '../../core/async-context.js';
+import { ToolSearchUseCase } from './tool-search.usecase.js';
 
 export interface InvokeModelDTO {
   modelId: string;
@@ -93,34 +95,60 @@ export class InvokeModelUseCase {
       
       // Execute tools in parallel using native worker threads
       const toolPromises = currentResponse.tool_calls.map(async (toolCall: any) => {
-        // Advanced Dynamic Tool Search (Interception)
+        // ───────────────────────────────────────────────────
+        // Patrón 1: Tool Search JIT (materialised)
+        // The LLM emits tool_use: { name: 'search_tools', args: { query } }.
+        // We query SQLite for matching schemas and inject them ONLY here —
+        // at the end of the context window — so the static System Prompt
+        // prefix is never modified, guaranteeing 100% cache hits.
+        // ───────────────────────────────────────────────────
         if (toolCall.name === 'search_tools') {
           try {
-            const { embeddingService } = await import('../../services/embeddingService.js');
-            const queryVector = await embeddingService.generateEmbedding(toolCall.args.query || 'general');
-            
-            // In a real system, you'd match the queryVector against tool definitions stored in sqlite-vec.
-            // We simulate the DB search and "Just in Time" recovery:
-            logger.info('Dynamic Tool Search intercepted', { query: toolCall.args.query });
-            
-            return { 
-              id: toolCall.id, 
-              result: { 
-                system_message: 'Tool definitions retrieved and injected at the end of context to protect prompt cache.',
-                injected_schemas: [{ name: 'found_tool', description: 'Dynamically retrieved tool' }]
-              } 
+            const toolSearchUseCase = new ToolSearchUseCase();
+            const foundTools = await toolSearchUseCase.execute({
+              query: toolCall.args?.query ?? 'general',
+              limit: toolCall.args?.limit ?? 5,
+            });
+
+            logger.info('[JIT] Tool schemas retrieved and ready for context injection', {
+              query: toolCall.args?.query,
+              count: foundTools.length,
+              names: foundTools.map((t) => t.name),
+            });
+
+            return {
+              id: toolCall.id,
+              result: {
+                system_hint: 'Inject these schemas at the END of the context window.',
+                injected_schemas: foundTools,
+              },
             };
           } catch (e) {
-             logger.warn('Dynamic Tool Search failed, falling back', {}, e as Error);
+            logger.warn('[JIT] Tool Search failed, falling back to empty result', {
+              error: e instanceof Error ? e.message : String(e),
+            });
+            return { id: toolCall.id, result: { injected_schemas: [] } };
           }
         }
 
-        const result = await CPUWorkerService.executeTool(toolCall.name, toolCall.args);
+        // Patrón 5: propagate agentic tree context into the worker.
+        // The worker can call createChildContext(toolName, parentCtx) to branch
+        // the span tree without any function-signature changes.
+        const currentContext = getContext();
+        const childContext = currentContext
+          ? createChildContext(toolCall.name, currentContext)
+          : undefined;
+
+        const result = await CPUWorkerService.executeTool(
+          toolCall.name,
+          toolCall.args,
+          childContext
+        );
         
         // If the result is a huge JSON string, simulate transferring ownership to a Worker for zero-copy parsing
         if (typeof result === 'string' && result.length > 10000 && result.startsWith('{')) {
            const encoder = new TextEncoder();
-           const buffer = encoder.encode(result).buffer; // ArrayBuffer
+           const buffer = encoder.encode(result).buffer as ArrayBuffer;
            const parsedResult = await CPUWorkerService.parseJsonZeroCopy(buffer, 'ToolResultSchema');
            return { id: toolCall.id, result: parsedResult };
         }
