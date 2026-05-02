@@ -7,6 +7,7 @@ import { getCachedResponse, setCachedResponse } from '../../infrastructure/datab
 import { logger } from '../../core/logger.js';
 import { getContext, createChildContext } from '../../core/async-context.js';
 import { ToolSearchUseCase } from './tool-search.usecase.js';
+import { semanticCache } from '../../infrastructure/semantic-cache.service.js';
 
 export interface InvokeModelDTO {
   modelId: string;
@@ -69,11 +70,37 @@ export class InvokeModelUseCase {
       }
     }
 
-    // Generate Hash for Caching
+    // Generate Hash for Caching (exact-match — Tier 2)
     const hashPayload = JSON.stringify({ modelId: dto.modelId, body: requestData });
     const hash = createHash('sha256').update(hashPayload).digest('hex');
 
-    // Check Cache
+    // ───────────────────────────────────────────────────
+    // Patrón 3: Tier 1 — Semantic Cache (int8 quantized KNN via sqlite-vec)
+    // Runs BEFORE the exact-match check: catches paraphrased duplicates,
+    // variations in phrasing, or near-identical prompts that differ in whitespace.
+    // Embedding is generated here and reused at store time (no double inference).
+    // Silently degrades to MISS when sqlite-vec is not loaded.
+    // ───────────────────────────────────────────────────
+    const promptText = requestData.messages
+      ?.map((m: any) => (typeof m.content === 'string' ? m.content : ''))
+      .join(' ') ?? JSON.stringify(requestData);
+
+    const semanticResult = await semanticCache.lookup(promptText, dto.modelId);
+
+    if (semanticResult.hit) {
+      // Unredact PII before returning semantic hit
+      if (typeof semanticResult.response?.text === 'string') {
+        semanticResult.response.text = piiService.unredact(semanticResult.response.text, piiMapping);
+      }
+      return semanticResult.response;
+    }
+
+    // Keep the embedding + hash from the MISS for storage after the LLM call
+    const { embedding: missEmbedding, promptHash } = semanticResult;
+
+    // ───────────────────────────────────────────────────
+    // Tier 2 — Exact-match SHA-256 cache (existing)
+    // ───────────────────────────────────────────────────
     const cachedResponse = getCachedResponse(hash);
     if (cachedResponse) {
       logger.info(`Cache HIT for model ${dto.modelId}`, { hash });
@@ -173,7 +200,11 @@ export class InvokeModelUseCase {
 
     // Save to Cache (Only caching non-streaming for simplicity in this implementation)
     if (!dto.body['stream'] && !currentResponse.tool_calls) {
+      // Tier 2: exact-match cache
       setCachedResponse(hash, currentResponse);
+      // Patrón 3: Tier 1 — also store in semantic cache (reuses embedding from MISS)
+      // Fire-and-forget: non-critical, so we don't await or catch here.
+      semanticCache.store(missEmbedding, promptHash, currentResponse, dto.modelId);
     }
 
     // Unredact before returning to user

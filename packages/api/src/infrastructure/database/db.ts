@@ -37,6 +37,12 @@ export class DatabaseService extends EventEmitter {
   private insertToolStmt: any = null;
   private searchToolsStmt: any = null;
   private getToolByNameStmt: any = null;
+  // Patrón 3: sqlite-vec int8 quantized vectors
+  private insertVectorStmt: any = null;
+  private searchVectorStmt: any = null;
+  private insertVectorMetaStmt: any = null;
+  private getVectorMetaStmt: any = null;
+  private vecExtensionLoaded = false;
 
   public initialize(): void {
     if (this.db) return;
@@ -93,23 +99,36 @@ export class DatabaseService extends EventEmitter {
           CREATE INDEX IF NOT EXISTS idx_tools_category ON tools(category);
       `);
 
-      // Try to load sqlite-vec extension (graceful degradation if not compiled)
+      // Patrón 3: sqlite-vec — int8 quantized vector search
+      // Design: two tables work together:
+      //   semantic_vectors (vec0 virtual)  — stores int8[768] quantized embeddings for KNN
+      //   semantic_cache_meta              — maps vector_id → prompt_hash + cached response
+      // Using 768 dims (Xenova/gte-base output) quantized to int8:
+      //   float32[768] = 3072 bytes per vector
+      //   int8[768]    =  768 bytes per vector  (~4x compression)
+      // At scale: 1M vectors ≈ 750 MB int8 vs ~3 GB float32
       try {
-        // En Node v22.5.0+ db.loadExtension existe. 
         if (typeof (this.db as any).loadExtension === 'function') {
-          // Asumimos que el binario de sqlite-vec está en el entorno
           (this.db as any).loadExtension('vec0');
-          logger.info('[DB] sqlite-vec extension loaded natively.');
-          
+          this.vecExtensionLoaded = true;
+          logger.info('[DB] sqlite-vec extension loaded — int8 vector search enabled.');
+
           this.proxiedDb.exec(`
             CREATE VIRTUAL TABLE IF NOT EXISTS semantic_vectors USING vec0(
-              id INTEGER PRIMARY KEY,
-              embedding float[1536]
+              embedding int8[768]
+            );
+            CREATE TABLE IF NOT EXISTS semantic_cache_meta (
+              vector_id   INTEGER PRIMARY KEY,
+              prompt_hash TEXT NOT NULL UNIQUE,
+              response    TEXT NOT NULL,
+              model_id    TEXT NOT NULL,
+              created_at  TEXT NOT NULL,
+              hit_count   INTEGER DEFAULT 0
             );
           `);
         }
       } catch (err) {
-        logger.warn('[DB] Could not load sqlite-vec extension. Vector search will be disabled.', {
+        logger.warn('[DB] Could not load sqlite-vec extension. Semantic vector search disabled.', {
           error: err instanceof Error ? err.message : String(err),
         });
       }
@@ -132,6 +151,31 @@ export class DatabaseService extends EventEmitter {
       this.getToolByNameStmt = this.proxiedDb.prepare(
         'SELECT name, description, schema_json, category FROM tools WHERE name = ?'
       );
+
+      // Patrón 3: vector prepared statements (only when extension loaded)
+      if (this.vecExtensionLoaded) {
+        this.insertVectorStmt = this.proxiedDb.prepare(
+          'INSERT INTO semantic_vectors(rowid, embedding) VALUES (?, ?)'
+        );
+        // KNN search: returns the rowid of the nearest neighbor within distance threshold
+        this.searchVectorStmt = this.proxiedDb.prepare(
+          `SELECT rowid, distance
+           FROM semantic_vectors
+           WHERE embedding MATCH ?
+             AND k = ?
+           ORDER BY distance`
+        );
+        this.insertVectorMetaStmt = this.proxiedDb.prepare(
+          `INSERT OR REPLACE INTO semantic_cache_meta
+           (vector_id, prompt_hash, response, model_id, created_at)
+           VALUES (?, ?, ?, ?, ?)`
+        );
+        this.getVectorMetaStmt = this.proxiedDb.prepare(
+          `UPDATE semantic_cache_meta SET hit_count = hit_count + 1
+           WHERE vector_id = ?
+           RETURNING prompt_hash, response, model_id, hit_count`
+        );
+      }
       
       this.emit('connected');
     } catch (err) {
@@ -152,6 +196,12 @@ export class DatabaseService extends EventEmitter {
       this.insertToolStmt = null;
       this.searchToolsStmt = null;
       this.getToolByNameStmt = null;
+      // Patrón 3
+      this.insertVectorStmt = null;
+      this.searchVectorStmt = null;
+      this.insertVectorMetaStmt = null;
+      this.getVectorMetaStmt = null;
+      this.vecExtensionLoaded = false;
       this.emit('closed');
     }
   }
@@ -196,32 +246,143 @@ export class DatabaseService extends EventEmitter {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Patrón 3: sqlite-vec int8 Quantized Vector Cache
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** True when the sqlite-vec extension is loaded and vector ops are available. */
+  public isVecEnabled(): boolean {
+    return this.vecExtensionLoaded;
+  }
+
   /**
-   * Native Semantic Similarity Search using sqlite-vec
+   * Quantizes a Float32Array to Int8Array for storage in sqlite-vec int8 columns.
+   *
+   * Method: linear quantization per-vector.
+   *   q_i = clamp(round(v_i / absMax * 127), -127, 127)
+   * This preserves the cosine similarity ranking while compressing
+   * float32[768] (3072 bytes) → int8[768] (768 bytes) — ~4x compression.
+   * Cosine similarity error is typically < 2% vs full float32.
+   *
+   * Reference: https://arxiv.org/abs/2309.07305 (scalar quantization)
    */
-  public searchSimilarVectors(embedding: Float32Array, limit: number = 5): any[] {
+  public static quantizeToInt8(vec: Float32Array): Int8Array {
+    const absMax = Math.max(...Array.from(vec).map(Math.abs)) || 1;
+    const scale = 127 / absMax;
+    const result = new Int8Array(vec.length);
+    for (let i = 0; i < vec.length; i++) {
+      result[i] = Math.max(-127, Math.min(127, Math.round(vec[i]! * scale)));
+    }
+    return result;
+  }
+
+  /**
+   * Stores an int8-quantized embedding in sqlite-vec and links it to the
+   * semantic cache metadata table.
+   *
+   * @param vectorId   Monotonically increasing integer ID (rowid in vec0)
+   * @param embedding  Raw Float32Array from the embedding model
+   * @param promptHash SHA-256 hash of the full prompt payload
+   * @param response   Serialized LLM response to cache
+   * @param modelId    Model that produced the response
+   */
+  public storeSemanticVector(
+    vectorId: number,
+    embedding: Float32Array,
+    promptHash: string,
+    response: object,
+    modelId: string
+  ): void {
+    if (!this.vecExtensionLoaded || !this.insertVectorStmt || !this.insertVectorMetaStmt) return;
     try {
-      const stmt = this.proxiedDb.prepare(`
-        SELECT id, distance 
-        FROM semantic_vectors 
-        WHERE embedding MATCH ? 
-        ORDER BY distance 
-        LIMIT ?
-      `);
-      return stmt.all(embedding, limit);
+      const int8Vec = DatabaseService.quantizeToInt8(embedding);
+      this.insertVectorStmt.run(vectorId, int8Vec);
+      this.insertVectorMetaStmt.run(
+        vectorId,
+        promptHash,
+        JSON.stringify(response),
+        modelId,
+        new Date().toISOString()
+      );
     } catch (error) {
-      logger.error('Vector search failed', {}, error instanceof Error ? error : new Error(String(error)));
-      return [];
+      logger.error('[Vec] storeSemanticVector failed', { vectorId, modelId },
+        error instanceof Error ? error : new Error(String(error)));
     }
   }
 
-  public storeVector(id: number, embedding: Float32Array): void {
+  /**
+   * Searches for the nearest cached response using approximate KNN.
+   * Returns the cached response if the nearest neighbor's distance is below
+   * the similarity threshold (default: 0.15 in L2 space ≈ 0.93 cosine).
+   *
+   * The caller must quantize the query vector first OR pass the raw Float32Array
+   * — this method handles quantization internally for API simplicity.
+   *
+   * @param queryEmbedding Raw Float32Array from the embedding model
+   * @param topK           Candidates to retrieve from sqlite-vec (default: 3)
+   * @param distThreshold  L2 distance threshold (lower = stricter match)
+   */
+  public findSemanticMatch(
+    queryEmbedding: Float32Array,
+    topK: number = 3,
+    distThreshold: number = 0.15
+  ): { response: any; modelId: string; hitCount: number } | null {
+    if (!this.vecExtensionLoaded || !this.searchVectorStmt || !this.getVectorMetaStmt) return null;
     try {
-      const stmt = this.proxiedDb.prepare('INSERT INTO semantic_vectors (id, embedding) VALUES (?, ?)');
-      stmt.run(id, embedding);
+      const int8Query = DatabaseService.quantizeToInt8(queryEmbedding);
+      const candidates = this.searchVectorStmt.all(int8Query, topK) as Array<{
+        rowid: number;
+        distance: number;
+      }>;
+
+      if (candidates.length === 0) return null;
+
+      const best = candidates[0]!;
+      if (best.distance > distThreshold) {
+        logger.info('[Vec] Semantic search: nearest neighbor too distant', {
+          distance: best.distance,
+          threshold: distThreshold,
+        });
+        return null;
+      }
+
+      // Increment hit_count and return cached data atomically
+      const meta = this.getVectorMetaStmt.get(best.rowid) as {
+        prompt_hash: string;
+        response: string;
+        model_id: string;
+        hit_count: number;
+      } | undefined;
+
+      if (!meta) return null;
+
+      logger.info('[Vec] Semantic cache HIT', {
+        distance: best.distance,
+        hitCount: meta.hit_count,
+        modelId: meta.model_id,
+      });
+
+      return {
+        response: JSON.parse(meta.response),
+        modelId: meta.model_id,
+        hitCount: meta.hit_count,
+      };
     } catch (error) {
-      logger.error('Store vector failed', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error('[Vec] findSemanticMatch failed', {},
+        error instanceof Error ? error : new Error(String(error)));
+      return null;
     }
+  }
+
+  // ─── Legacy stubs (kept for backwards compat, superseded by storeSemanticVector) ─
+  /** @deprecated Use storeSemanticVector() instead. */
+  public storeVector(id: number, embedding: Float32Array): void {
+    this.storeSemanticVector(id, embedding, `legacy-${id}`, {}, 'unknown');
+  }
+  /** @deprecated Use findSemanticMatch() instead. */
+  public searchSimilarVectors(embedding: Float32Array, limit: number = 5): any[] {
+    const match = this.findSemanticMatch(embedding, limit);
+    return match ? [match] : [];
   }
   // ─────────────────────────────────────────────────────────────────────────────
   // Patrón 1: Tool Search JIT — Tool Registry Methods
@@ -304,3 +465,8 @@ export const setCachedResponse = dbService.setCachedResponse.bind(dbService);
 export const registerTool = dbService.registerTool.bind(dbService);
 export const searchTools = dbService.searchTools.bind(dbService);
 export const getToolByName = dbService.getToolByName.bind(dbService);
+// Patrón 3 exports
+export const isVecEnabled = dbService.isVecEnabled.bind(dbService);
+export const storeSemanticVector = dbService.storeSemanticVector.bind(dbService);
+export const findSemanticMatch = dbService.findSemanticMatch.bind(dbService);
+export const { quantizeToInt8 } = DatabaseService;
