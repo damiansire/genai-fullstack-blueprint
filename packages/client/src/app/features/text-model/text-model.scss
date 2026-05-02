@@ -4,6 +4,25 @@
   container-name: ai-generative-widget;
 }
 
+.chat-layout {
+  display: flex;
+  height: calc(100vh - 120px); // accounting for header padding
+  width: 100%;
+  gap: 1.5rem;
+}
+
+.feature-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+  overflow: hidden;
+}
+
 .ai-module-viewport-trigger {
   content-visibility: auto;
   contain-intrinsic-size: 100% 300px; 

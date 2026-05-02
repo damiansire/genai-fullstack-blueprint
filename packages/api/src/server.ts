@@ -23,6 +23,9 @@ import { requestContext, createRootContext } from './core/async-context.js';
 import { createToolRoutes } from './api/routes/toolRoutes.js';
 import { createMcpSseRouter } from './infrastructure/mcp/mcp-server.js';
 import { createDomainRoutes } from './api/routes/domainRoutes.js';
+import { createPromptRoutes } from './api/routes/promptRoutes.js';
+import { createUserRoutes } from './api/routes/userRoutes.js';
+import { createSessionRoutes } from './api/routes/sessionRoutes.js';
 import { registerTool } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:http)
 import type { Server as HttpServer } from 'node:http';
@@ -178,6 +181,11 @@ class Server extends EventEmitter {
     // Patrones 7, 9, 10: Domain use cases (Security, IoT Telemetry, Code Generation)
     const domainRouter = createDomainRoutes();
     this.app.use('/api/domain', domainRouter);
+
+    // Enterprise Modules
+    this.app.use('/api/admin/prompts', apiLimiter, createPromptRoutes());
+    this.app.use('/api/user', apiLimiter, createUserRoutes());
+    this.app.use('/api/sessions', apiLimiter, createSessionRoutes());
 
     // Seed Tool Registry with domain tools (Patrón 1 integration)
     this.seedToolRegistry();

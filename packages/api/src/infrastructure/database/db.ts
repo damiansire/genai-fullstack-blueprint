@@ -119,6 +119,30 @@ export class DatabaseService extends EventEmitter {
             size_bytes INTEGER,
             created_at TEXT NOT NULL
           );
+
+          CREATE TABLE IF NOT EXISTS prompts (
+            name TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            description TEXT,
+            updated_at TEXT NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS sessions (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT,
+            title TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS messages (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(session_id) REFERENCES sessions(id) ON DELETE CASCADE
+          );
       `);
 
       // Patrón 3: sqlite-vec — int8 quantized vector search
@@ -189,6 +213,12 @@ export class DatabaseService extends EventEmitter {
       this.selectContextCacheStmt = this.proxiedDb.prepare(
         'SELECT id, file_name, mime_type, size_bytes, created_at FROM gemini_context_cache WHERE id = ?'
       );
+
+      // Prompt Playground
+      this.proxiedDb.prepare(
+        'INSERT OR IGNORE INTO prompts (name, content, description, updated_at) VALUES (?, ?, ?, ?)'
+      ).run('generate_code', 'You are an expert coder. Generate code...', 'Default code gen prompt', new Date().toISOString());
+
 
       // Patrón 3: vector prepared statements (only when extension loaded)
       if (this.vecExtensionLoaded) {

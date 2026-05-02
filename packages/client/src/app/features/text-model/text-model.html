@@ -1,5 +1,12 @@
-<div class="feature-container">
-  <header class="feature-header">
+<div class="chat-layout">
+  <app-chat-sidebar 
+    [activeSessionId]="activeSessionId()"
+    (onSelectSession)="loadSession($event)"
+    (onNewChat)="resetForm()"
+  />
+
+  <div class="feature-container">
+    <header class="feature-header">
     <h1><span aria-hidden="true">{{ icons.robot }}</span> Text Model - Google Text Bison</h1>
     <p>Generate text using Google's Text Bison AI model</p>
   </header>

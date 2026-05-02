@@ -1,0 +1,243 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.chat-layout {
+  display: flex;
+  height: calc(100vh - 120px);
+  width: 100%;
+  gap: 1.5rem;
+}
+
+.rag-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+
+.feature-header {
+  background: var(--surface-2);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-1);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  p {
+    margin: 0.25rem 0 0 0;
+    color: var(--text-2);
+    font-size: 0.9rem;
+  }
+}
+
+.split-view {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.document-panel, .chat-panel {
+  flex: 1;
+  background: var(--surface-2);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-2);
+    font-weight: 600;
+  }
+}
+
+.upload-controls {
+  display: flex;
+  gap: 0.5rem;
+
+  .hidden-input {
+    display: none;
+  }
+
+  .upload-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+
+    &.outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-1);
+
+      &:hover {
+        background: var(--surface-1);
+      }
+    }
+
+    &.primary {
+      background: var(--primary-color);
+      color: white;
+
+      &:hover:not([disabled]) {
+        filter: brightness(1.1);
+      }
+
+      &[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+.document-content-area {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  position: relative;
+}
+
+.empty-doc, .empty-chat {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-3);
+
+  .big-icon {
+    font-size: 3rem;
+    opacity: 0.5;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  small {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+}
+
+.simulated-pdf {
+  font-family: 'Times New Roman', Times, serif;
+  background: white;
+  color: black;
+  padding: 2rem;
+  min-height: 100%;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  line-height: 1.6;
+  position: relative;
+
+  .citation-highlight {
+    background-color: rgba(255, 235, 59, 0.5);
+    padding: 0.1em;
+    border-radius: 2px;
+  }
+}
+
+.chat-history {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-input-area {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-3);
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--text-1);
+    font-size: 0.95rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+  }
+
+  .send-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not([disabled]) {
+      filter: brightness(1.1);
+    }
+
+    &[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.markdown-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.citations {
+  margin-top: 1rem;
+  
+  .badge {
+    display: inline-block;
+    background: var(--surface-3);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-2);
+  }
+}

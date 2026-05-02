@@ -1,0 +1,70 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="title-group">
+      <span class="icon" aria-hidden="true">📊</span>
+      <div class="title-text">
+        <h1>Token Quota & Usage</h1>
+        <p>Monitor your LLM API consumption and limits in real-time.</p>
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state">Loading quota data...</div>
+  } @else if (quota(); as q) {
+    <div class="metrics-grid">
+      
+      <!-- Circular Progress Card -->
+      <div class="card usage-card">
+        <h3>Monthly Usage</h3>
+        <div class="chart-container">
+          <svg viewBox="0 0 100 100" class="circular-chart">
+            <path class="circle-bg"
+              d="M50 5
+                a 45 45 0 0 1 0 90
+                a 45 45 0 0 1 0 -90"
+            />
+            <path class="circle"
+              [attr.stroke-dashoffset]="strokeDashoffset()"
+              [style.stroke]="statusColor()"
+              d="M50 5
+                a 45 45 0 0 1 0 90
+                a 45 45 0 0 1 0 -90"
+            />
+          </svg>
+          <div class="percentage-text" [style.color]="statusColor()">
+            {{ q.usagePercentage }}%
+          </div>
+        </div>
+        <p class="limit-text">{{ q.usedTokens | number }} / {{ q.maxTokens | number }} tokens</p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-column">
+        <div class="card stat-card">
+          <span class="stat-icon">💰</span>
+          <div class="stat-details">
+            <span class="stat-label">Available Budget</span>
+            <span class="stat-value">{{ q.availableTokens | number }} <small>tokens</small></span>
+          </div>
+        </div>
+
+        <div class="card stat-card">
+          <span class="stat-icon">🏢</span>
+          <div class="stat-details">
+            <span class="stat-label">Active Tenant</span>
+            <span class="stat-value">{{ q.tenantId }}</span>
+          </div>
+        </div>
+
+        <div class="card stat-card">
+          <span class="stat-icon">⏱️</span>
+          <div class="stat-details">
+            <span class="stat-label">Last Refill Date</span>
+            <span class="stat-value">{{ q.lastRefill | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,166 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 1000px;
+  margin: 0 auto;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.dashboard-header {
+  background: var(--surface-2);
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+
+  .title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .icon {
+      font-size: 2rem;
+      background: var(--surface-3);
+      padding: 0.75rem;
+      border-radius: 12px;
+    }
+
+    .title-text {
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-1);
+      }
+      p {
+        margin: 0.25rem 0 0 0;
+        color: var(--text-2);
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--surface-2);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+}
+
+.usage-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-1);
+  }
+
+  .chart-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin-bottom: 1rem;
+  }
+
+  .circular-chart {
+    display: block;
+    margin: 0 auto;
+    max-width: 80%;
+    max-height: 250px;
+  }
+
+  .circle-bg {
+    fill: none;
+    stroke: var(--surface-3);
+    stroke-width: 8;
+  }
+
+  .circle {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    transition: stroke-dashoffset 1s ease-out, stroke 0.3s ease;
+  }
+
+  .percentage-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+  }
+
+  .limit-text {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 0.9rem;
+  }
+}
+
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+
+    .stat-icon {
+      font-size: 2rem;
+      background: var(--surface-3);
+      padding: 1rem;
+      border-radius: 12px;
+    }
+
+    .stat-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-1);
+
+        small {
+          font-size: 0.8rem;
+          color: var(--text-3);
+          font-weight: normal;
+        }
+      }
+    }
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-3);
+}

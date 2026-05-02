@@ -1,0 +1,111 @@
+<div class="chat-layout">
+  <app-chat-sidebar 
+    [activeSessionId]="activeSessionId()"
+    (onSelectSession)="loadSession($event)"
+    (onNewChat)="resetForm()"
+  />
+
+  <div class="rag-container">
+    <header class="feature-header">
+      <h1><span aria-hidden="true">{{ icons.doc }}</span> Chat with Documents (RAG)</h1>
+      <p>Upload enterprise documents and chat with verified internal context.</p>
+    </header>
+
+    <div class="split-view">
+      <!-- Left: Document Viewer -->
+      <div class="document-panel">
+        <div class="panel-header">
+          <h3>Source Document</h3>
+          
+          <div class="upload-controls">
+            <input 
+              type="file" 
+              id="docUpload" 
+              class="hidden-input" 
+              accept=".txt,.pdf,.md"
+              (change)="onFileSelected($event)">
+            
+            <label for="docUpload" class="upload-btn outline">
+              <span aria-hidden="true">{{ icons.upload }}</span> 
+              {{ selectedDocument() ? selectedDocument()!.name : 'Select File' }}
+            </label>
+
+            @if (selectedDocument()) {
+              <button 
+                class="upload-btn primary" 
+                [disabled]="isUploading()"
+                (click)="uploadDocument()">
+                {{ isUploading() ? 'Ingesting vectors...' : 'Process (RAG)' }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="document-content-area">
+          @if (!selectedDocument()) {
+            <div class="empty-doc">
+              <span class="big-icon" aria-hidden="true">{{ icons.doc }}</span>
+              <p>No document selected. Upload a file to generate semantic embeddings.</p>
+            </div>
+          } @else {
+            <div class="simulated-pdf">
+              <p>{{ documentContent() }}</p>
+              
+              <div class="highlight-overlay">
+                <!-- In a real implementation, highlights match the citations from the LLM -->
+                <mark class="citation-highlight">multi-tenant asegura que los datos</mark>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right: Chat Interface -->
+      <div class="chat-panel">
+        <div class="chat-history">
+          @if (!activeResponse() && !aiStream.isStreaming()) {
+            <div class="empty-chat">
+              <span class="big-icon" aria-hidden="true">{{ icons.spark }}</span>
+              <p>Ask a question about the document.</p>
+              <small>Example: "How does multi-tenant architecture protect data?"</small>
+            </div>
+          }
+          
+          <app-model-response
+            [loading]="isLoading()"
+            [error]="activeError()"
+            [response]="activeResponse()"
+            [isStreaming]="aiStream.isStreaming()"
+            [streamText]="aiStream.streamText()"
+            loadingMessage="Searching semantic index..."
+            (retry)="onSubmit()"
+          >
+            @if (activeResponse(); as res) {
+              <div class="markdown-body">
+                <p>{{ res.candidates?.[0]?.content?.parts?.[0]?.text }}</p>
+                <div class="citations">
+                  <span class="badge">Reference: document.txt (score: 0.94)</span>
+                </div>
+              </div>
+            }
+          </app-model-response>
+        </div>
+
+        <div class="chat-input-area">
+          <input 
+            type="text" 
+            [(ngModel)]="prompt"
+            placeholder="Ask anything about your documents..."
+            (keydown.enter)="onSubmit()">
+          
+          <button 
+            class="send-btn" 
+            [disabled]="isLoading() || !prompt().trim()"
+            (click)="onSubmit()">
+            <span aria-hidden="true">{{ icons.send }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -14,6 +14,7 @@ import { AiStreamService } from '../../core/services/ai-stream.service';
 import { TextModelForm } from './components/text-model-form/text-model-form';
 import { TextModelResponse } from './components/text-model-response/text-model-response';
 import { ModelResponse } from '../../shared/components/model-response/model-response';
+import { ChatSidebar } from '../../shared/components/chat-sidebar/chat-sidebar';
 
 /**
  * TextModel — Patrón 4: Declarative SSE Stream via AiStreamService + Signals
@@ -35,7 +36,7 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
 @Component({
   selector: 'app-text-model',
   standalone: true,
-  imports: [TextModelForm, TextModelResponse, ModelResponse],
+  imports: [TextModelForm, TextModelResponse, ModelResponse, ChatSidebar],
   templateUrl: './text-model.html',
   styleUrl: './text-model.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +46,16 @@ export class TextModel implements OnDestroy {
   readonly aiStream = inject(AiStreamService);
 
   icons = { robot: '🤖' };
+
+  // ─── Session State ─────────────────────────────────────────────────────────
+  activeSessionId = signal<string | null>(null);
+
+  loadSession(id: string): void {
+    this.activeSessionId.set(id);
+    // In a full implementation, this would fetch /api/sessions/:id/messages
+    // and populate the UI with history.
+    console.log('Loading session:', id);
+  }
 
   // ─── Form State ────────────────────────────────────────────────────────────
 

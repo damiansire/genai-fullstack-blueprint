@@ -41,6 +41,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/code-generator/code-generator').then(m => m.CodeGenerator),
     title: 'Code Generator - AI Gateway'
   },
+  {
+    path: 'document-chat',
+    loadComponent: () => import('./features/document-chat/document-chat').then(m => m.DocumentChat),
+    title: 'Chat with Documents - RAG'
+  },
+  {
+    path: 'admin/prompts',
+    loadComponent: () => import('./features/prompt-playground/prompt-playground').then(m => m.PromptPlayground),
+    title: 'Prompt Playground - Admin'
+  },
+  {
+    path: 'user/quota',
+    loadComponent: () => import('./features/token-dashboard/token-dashboard').then(m => m.TokenDashboard),
+    title: 'Token Dashboard - AI Gateway'
+  },
   // Legacy redirect
   {
     path: 'image-model',

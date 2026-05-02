@@ -49,6 +49,25 @@
         </a>
       </li>
       <li>
+        <a routerLink="/document-chat" routerLinkActive="active" #rlaDoc="routerLinkActive" [attr.aria-current]="rlaDoc.isActive ? 'page' : null" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">📄</span>
+          <span class="nav-label">Doc Chat</span>
+        </a>
+      </li>
+      <li class="nav-divider"></li>
+      <li>
+        <a routerLink="/admin/prompts" routerLinkActive="active" #rlaAdmin="routerLinkActive" [attr.aria-current]="rlaAdmin.isActive ? 'page' : null" class="nav-link admin-link">
+          <span class="nav-icon" aria-hidden="true">💻</span>
+          <span class="nav-label">Playground</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/user/quota" routerLinkActive="active" #rlaQuota="routerLinkActive" [attr.aria-current]="rlaQuota.isActive ? 'page' : null" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">📊</span>
+          <span class="nav-label">Quota</span>
+        </a>
+      </li>
+      <li>
         <button popovertarget="ai-settings-menu" popovertargetaction="toggle" class="nav-link btn-settings" aria-label="Open Settings">
           <span class="nav-icon" aria-hidden="true">⚙️</span>
           <span class="nav-label">Settings</span>
