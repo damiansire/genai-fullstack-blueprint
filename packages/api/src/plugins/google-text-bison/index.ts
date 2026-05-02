@@ -155,7 +155,12 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
           processingTime,
           modelVersion: this.modelName,
           apiProvider: 'Google',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          usageMetadata: {
+            promptTokenCount: response.usage.promptTokens,
+            candidatesTokenCount: response.usage.completionTokens,
+            totalTokenCount: response.usage.totalTokens
+          }
         }
       };
 

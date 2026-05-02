@@ -1,4 +1,4 @@
-import { pipeline, env } from '@xenova/transformers';
+import { pipeline } from '@xenova/transformers';
 import { logger } from '../core/logger.js';
 
 // Disable fetching models from huggingface locally if preferred, but usually we let it cache.

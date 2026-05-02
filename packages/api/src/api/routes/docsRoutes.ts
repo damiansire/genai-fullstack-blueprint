@@ -3,9 +3,13 @@ import { Router } from 'express';
 // @ts-ignore - Assuming package will be installed or is available
 import { extendZodWithOpenApi, OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
-import { aiResponseSchema } from '../../infrastructure/ai/registry.js'; // Ajustar import según estructura
 
 extendZodWithOpenApi(z);
+
+const aiResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.any()
+});
 
 const registry = new OpenAPIRegistry();
 
@@ -20,7 +24,7 @@ registry.registerPath({
   summary: 'Invoke Model',
   request: {
     params: z.object({
-      modelId: z.string().openapi({ description: 'The registered ID of the model' })
+      modelId: z.string()
     })
   },
   responses: {

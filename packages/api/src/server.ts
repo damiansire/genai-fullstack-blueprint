@@ -11,6 +11,8 @@ import { createModelRoutes } from './api/routes/modelRoutes.js';
 import { docsRoutes } from './api/routes/docsRoutes.js';
 import { errorHandler } from './api/middleware/errorHandler.js';
 import { rateLimiter } from './api/middleware/rateLimiter.js';
+import { tokenRateLimiter } from './api/middleware/tokenRateLimiter.js';
+import { InMemoryTokenStore } from './infrastructure/rate-limit/InMemoryTokenStore.js';
 import { dbService, logRequest } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:perf_hooks)
 import { performance } from 'node:perf_hooks';
@@ -37,6 +39,7 @@ class Server extends EventEmitter {
   private port: number;
   private state: ServerState = 'STOPPED';
   private httpServer: HttpServer | null = null;
+  private tokenStore = new InMemoryTokenStore();
 
   constructor() {
     super();
@@ -152,9 +155,15 @@ class Server extends EventEmitter {
       max: 100 // limit each IP/API Key to 100 requests per windowMs
     });
 
+    // Apply Token Rate Limiter to /api routes (e.g. 50000 tokens per minute limit)
+    const apiTokenLimiter = tokenRateLimiter(this.tokenStore, {
+      windowMs: 60 * 1000,
+      maxTokens: 50000
+    });
+
     // Model routes (authentication, validation, controllers)
     const modelRoutes = createModelRoutes(modelFactory, schemaRegistry);
-    this.app.use('/api', apiLimiter, modelRoutes);
+    this.app.use('/api', apiLimiter, apiTokenLimiter, modelRoutes);
 
     // Patrón 1: Tool Search JIT — register, search, and manage tool definitions
     const toolRoutes = createToolRoutes();

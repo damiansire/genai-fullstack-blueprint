@@ -86,11 +86,28 @@ export function createModelController(modelFactory: ModelFactory) {
         success: true,
         data: result,
         metadata: {
+          ...result.metadata,
           modelId,
           processingTime,
           timestamp: new Date().toISOString()
         }
       };
+
+      // Handle token rate limiting consumption
+      const store = res.locals['tokenStore'];
+      const totalTokens = result.metadata?.usageMetadata?.totalTokenCount || 0;
+      
+      if (store && totalTokens > 0) {
+        const identifier = res.locals['rateLimitIdentifier'];
+        const windowMs = res.locals['rateLimitWindowMs'];
+        
+        try {
+          await store.consume(identifier, totalTokens, windowMs);
+          logger.info(`Consumed ${totalTokens} tokens for ${identifier}`);
+        } catch (err) {
+          logger.error('Failed to consume tokens in store', {}, err instanceof Error ? err : new Error(String(err)));
+        }
+      }
 
       logger.info(`Controller: Use Case '${modelId}' completed successfully`, {
         processingTime: `${processingTime}ms`
@@ -193,7 +210,7 @@ export function createStreamController(modelFactory: ModelFactory) {
       const chunkSize = 10;
       let i = 0;
 
-      const intervalId = setInterval(() => {
+      const intervalId = setInterval(async () => {
         if (i < textToStream.length) {
           const chunk = textToStream.slice(i, i + chunkSize);
           res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
@@ -203,6 +220,21 @@ export function createStreamController(modelFactory: ModelFactory) {
           res.write('event: done\n');
           res.write('data: {}\n\n');
           res.end();
+          
+          // Consume tokens for streaming request
+          const store = res.locals['tokenStore'];
+          const totalTokens = result.metadata?.usageMetadata?.totalTokenCount || 0;
+          
+          if (store && totalTokens > 0) {
+            const identifier = res.locals['rateLimitIdentifier'];
+            const windowMs = res.locals['rateLimitWindowMs'];
+            try {
+              await store.consume(identifier, totalTokens, windowMs);
+              logger.info(`[Stream] Consumed ${totalTokens} tokens for ${identifier}`);
+            } catch (err) {
+              logger.error('[Stream] Failed to consume tokens', {}, err instanceof Error ? err : new Error(String(err)));
+            }
+          }
         }
       }, 50);
 

@@ -22,6 +22,12 @@ export type ModelMetadata = {
   apiProvider?: string;
   /** Timestamp of processing */
   timestamp?: string;
+  /** Token usage statistics for Rate Limiting */
+  usageMetadata?: {
+    promptTokenCount: number;
+    candidatesTokenCount: number;
+    totalTokenCount: number;
+  };
   /** Additional context or information */
   [key: string]: any;
 };
