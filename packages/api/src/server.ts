@@ -12,7 +12,7 @@ import { docsRoutes } from './api/routes/docsRoutes.js';
 import { errorHandler } from './api/middleware/errorHandler.js';
 import { rateLimiter } from './api/middleware/rateLimiter.js';
 import { tokenRateLimiter } from './api/middleware/tokenRateLimiter.js';
-import { InMemoryTokenStore } from './infrastructure/rate-limit/InMemoryTokenStore.js';
+import { SqliteTokenStore } from './infrastructure/rate-limit/SqliteTokenStore.js';
 import { dbService, logRequest } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:perf_hooks)
 import { performance } from 'node:perf_hooks';
@@ -39,7 +39,7 @@ class Server extends EventEmitter {
   private port: number;
   private state: ServerState = 'STOPPED';
   private httpServer: HttpServer | null = null;
-  private tokenStore = new InMemoryTokenStore();
+  private tokenStore = new SqliteTokenStore();
 
   constructor() {
     super();

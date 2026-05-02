@@ -44,6 +44,14 @@ export class DatabaseService extends EventEmitter {
   private getVectorMetaStmt: any = null;
   private vecExtensionLoaded = false;
 
+  // Rate Limiting (Token Store)
+  private updateRateLimitStmt: any = null;
+  private getRateLimitStmt: any = null;
+
+  // Gemini Context Cache
+  private insertContextCacheStmt: any = null;
+  private selectContextCacheStmt: any = null;
+
   public initialize(): void {
     if (this.db) return;
 
@@ -97,6 +105,20 @@ export class DatabaseService extends EventEmitter {
           );
           CREATE INDEX IF NOT EXISTS idx_tools_name ON tools(name);
           CREATE INDEX IF NOT EXISTS idx_tools_category ON tools(category);
+          
+          CREATE TABLE IF NOT EXISTS rate_limit_tokens (
+            identifier TEXT PRIMARY KEY,
+            tokens INTEGER NOT NULL,
+            last_refill TEXT NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS gemini_context_cache (
+            id TEXT PRIMARY KEY,
+            file_name TEXT NOT NULL,
+            mime_type TEXT,
+            size_bytes INTEGER,
+            created_at TEXT NOT NULL
+          );
       `);
 
       // Patrón 3: sqlite-vec — int8 quantized vector search
@@ -150,6 +172,22 @@ export class DatabaseService extends EventEmitter {
       );
       this.getToolByNameStmt = this.proxiedDb.prepare(
         'SELECT name, description, schema_json, category FROM tools WHERE name = ?'
+      );
+
+      // Rate Limiting Tokens
+      this.updateRateLimitStmt = this.proxiedDb.prepare(
+        'INSERT OR REPLACE INTO rate_limit_tokens (identifier, tokens, last_refill) VALUES (?, ?, ?)'
+      );
+      this.getRateLimitStmt = this.proxiedDb.prepare(
+        'SELECT tokens, last_refill FROM rate_limit_tokens WHERE identifier = ?'
+      );
+
+      // Gemini Context Cache
+      this.insertContextCacheStmt = this.proxiedDb.prepare(
+        'INSERT OR REPLACE INTO gemini_context_cache (id, file_name, mime_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?)'
+      );
+      this.selectContextCacheStmt = this.proxiedDb.prepare(
+        'SELECT id, file_name, mime_type, size_bytes, created_at FROM gemini_context_cache WHERE id = ?'
       );
 
       // Patrón 3: vector prepared statements (only when extension loaded)
@@ -454,6 +492,62 @@ export class DatabaseService extends EventEmitter {
       return null;
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Rate Limiting Tokens
+  // ─────────────────────────────────────────────────────────────────────────────
+  public updateRateLimitToken(identifier: string, tokens: number, lastRefill: string): void {
+    if (!this.updateRateLimitStmt) return;
+    try {
+      this.updateRateLimitStmt.run(identifier, tokens, lastRefill);
+    } catch (error) {
+      logger.error('Failed to update rate limit token', { identifier }, error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  public getRateLimitToken(identifier: string): { tokens: number; lastRefill: string } | null {
+    if (!this.getRateLimitStmt) return null;
+    try {
+      const row = this.getRateLimitStmt.get(identifier) as any;
+      if (!row) return null;
+      return { tokens: row.tokens, lastRefill: row.last_refill };
+    } catch (error) {
+      logger.error('Failed to get rate limit token', { identifier }, error instanceof Error ? error : new Error(String(error)));
+      return null;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Gemini Context Cache
+  // ─────────────────────────────────────────────────────────────────────────────
+  public saveContextCache(id: string, fileName: string, mimeType: string, sizeBytes: number): void {
+    if (!this.insertContextCacheStmt) return;
+    try {
+      const now = new Date().toISOString();
+      this.insertContextCacheStmt.run(id, fileName, mimeType, sizeBytes, now);
+      logger.info(`[ContextCache] Saved cache ID: ${id}`);
+    } catch (error) {
+      logger.error('Failed to save context cache', { id }, error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  public getContextCache(id: string): { id: string; fileName: string; mimeType: string; sizeBytes: number; createdAt: string } | null {
+    if (!this.selectContextCacheStmt) return null;
+    try {
+      const row = this.selectContextCacheStmt.get(id) as any;
+      if (!row) return null;
+      return {
+        id: row.id,
+        fileName: row.file_name,
+        mimeType: row.mime_type,
+        sizeBytes: row.size_bytes,
+        createdAt: row.created_at,
+      };
+    } catch (error) {
+      logger.error('Failed to get context cache', { id }, error instanceof Error ? error : new Error(String(error)));
+      return null;
+    }
+  }
 }
 
 export const dbService = DatabaseService.getInstance();
@@ -470,3 +564,9 @@ export const isVecEnabled = dbService.isVecEnabled.bind(dbService);
 export const storeSemanticVector = dbService.storeSemanticVector.bind(dbService);
 export const findSemanticMatch = dbService.findSemanticMatch.bind(dbService);
 export const { quantizeToInt8 } = DatabaseService;
+
+// Rate Limit and Context Cache exports
+export const updateRateLimitToken = dbService.updateRateLimitToken.bind(dbService);
+export const getRateLimitToken = dbService.getRateLimitToken.bind(dbService);
+export const saveContextCache = dbService.saveContextCache.bind(dbService);
+export const getContextCache = dbService.getContextCache.bind(dbService);

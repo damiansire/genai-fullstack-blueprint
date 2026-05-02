@@ -16,6 +16,7 @@ import { Router, Request, Response } from 'express';
 import { securityAnalysisUseCase } from '../../application/useCases/security-analysis.usecase.js';
 import { telemetryStreamUseCase, DEVICES } from '../../application/useCases/telemetry-stream.usecase.js';
 import { codeGenerationUseCase, type SupportedLanguage } from '../../application/useCases/code-generation.usecase.js';
+import { contextCacheUseCase } from '../../application/useCases/context-cache.usecase.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
 import { logger } from '../../core/logger.js';
 
@@ -141,6 +142,49 @@ export function createDomainRoutes(): Router {
       const message = err instanceof Error ? err.message : String(err);
       logger.error('[Domain] Code generation failed', { error: message });
       res.status(500).json({ error: 'Code generation failed', detail: message });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Patrón 2: Gemini Context Caching
+  // POST /domain/context-cache
+  // GET  /domain/context-cache/:cacheId
+  // ──────────────────────────────────────────────────────────────────────────
+  router.post('/context-cache', apiKeyAuth, async (req: Request, res: Response) => {
+    const { fileName, mimeType, sizeBytes } = req.body as {
+      fileName?: string;
+      mimeType?: string;
+      sizeBytes?: number;
+    };
+
+    try {
+      const result = await contextCacheUseCase.execute({
+        action: 'create',
+        fileName,
+        mimeType,
+        sizeBytes
+      });
+      res.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error('[Domain] Context Cache creation failed', { error: message });
+      res.status(500).json({ error: 'Context Cache creation failed', detail: message });
+    }
+  });
+
+  router.get('/context-cache/:cacheId', apiKeyAuth, async (req: Request, res: Response) => {
+    const { cacheId } = req.params;
+    
+    try {
+      const result = await contextCacheUseCase.execute({
+        action: 'get',
+        cacheId
+      });
+      res.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error('[Domain] Context Cache get failed', { cacheId, error: message });
+      res.status(404).json({ error: 'Context Cache get failed', detail: message });
     }
   });
 
