@@ -11,7 +11,6 @@ import { PromptService } from './prompt.service';
 
 @Component({
   selector: 'app-prompt-playground',
-  standalone: true,
   imports: [CommonModule, FormField],
   templateUrl: './prompt-playground.html',
   styleUrl: './prompt-playground.scss',

@@ -2,18 +2,10 @@ import { Component, computed, inject, ChangeDetectionStrategy, output, input } f
 import { httpResource } from '@angular/common/http';
 import { API_CONFIG } from '../../../core/tokens/api-config';
 import { CommonModule } from '@angular/common';
-
-export interface ChatSession {
-  id: string;
-  tenant_id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-}
+import { ChatSession } from '../../../core/types/chat.types';
 
 @Component({
   selector: 'app-chat-sidebar',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <aside class="chat-sidebar">

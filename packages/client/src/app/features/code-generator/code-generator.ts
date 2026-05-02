@@ -21,7 +21,6 @@ const EXAMPLE_SPECS: Record<SupportedLanguage, string> = {
 
 @Component({
   selector: 'app-code-generator',
-  standalone: true,
   imports: [],
   templateUrl: './code-generator.html',
   styleUrl: './code-generator.scss',
