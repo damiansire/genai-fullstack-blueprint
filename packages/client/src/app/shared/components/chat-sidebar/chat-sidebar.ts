@@ -1,6 +1,6 @@
 import { Component, computed, inject, ChangeDetectionStrategy, output, input } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { API_CONFIG } from '../../core/tokens/api-config';
+import { API_CONFIG } from '../../../core/tokens/api-config';
 import { CommonModule } from '@angular/common';
 
 export interface ChatSession {

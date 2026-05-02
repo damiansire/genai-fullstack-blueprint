@@ -82,7 +82,7 @@
           >
             @if (activeResponse(); as res) {
               <div class="markdown-body">
-                <p>{{ res.candidates?.[0]?.content?.parts?.[0]?.text }}</p>
+                <p>{{ $any(res).candidates?.[0]?.content?.parts?.[0]?.text }}</p>
                 <div class="citations">
                   <span class="badge">Reference: document.txt (score: 0.94)</span>
                 </div>

@@ -18,6 +18,10 @@
       
       @if (isLoading()) {
         <div class="loading-state">Loading prompts...</div>
+      } @else if (loadError()) {
+        <div class="error-banner" role="alert" style="color: var(--color-error); padding: 1rem;">
+          <span class="icon">{{ icons.warning }}</span> Failed to load prompts.
+        </div>
       } @else {
         <ul class="prompt-list">
           @for (prompt of prompts(); track prompt.name) {
@@ -44,39 +48,52 @@
           <h2>{{ prompt.name }}</h2>
           <button 
             class="save-btn" 
-            [disabled]="isSaving()"
-            (click)="savePrompt()">
+            [disabled]="isSaving() || $any(promptForm()).invalid()"
+            (click)="onSubmit()">
             <span class="icon" aria-hidden="true">{{ icons.save }}</span>
             {{ isSaving() ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>
 
         @if (saveSuccess()) {
-          <div class="success-banner">
+          <div class="success-banner" role="status" style="color: var(--color-success); margin-bottom: 1rem;">
             <span class="icon">{{ icons.check }}</span> Prompt updated successfully and is now active.
           </div>
         }
+        @if (saveError()) {
+          <div class="error-banner" role="alert" style="color: var(--color-error); margin-bottom: 1rem;">
+            <span class="icon">{{ icons.warning }}</span> {{ saveError() }}
+          </div>
+        }
 
-        <div class="editor-form">
+        <form (submit)="onSubmit(); $event.preventDefault()" class="editor-form">
           <div class="form-group">
             <label for="promptDescription">Description</label>
             <input 
               id="promptDescription"
               type="text" 
-              [ngModel]="draftDescription()" 
-              (ngModelChange)="draftDescription.set($event)"
+              [formField]="$any(promptForm()).description"
               placeholder="What is this prompt used for?">
           </div>
 
-          <div class="form-group flex-fill">
-            <label for="promptContent">System Prompt Content</label>
+          <div class="form-group flex-fill" style="display: flex; flex-direction: column;">
+            <label for="promptContent">System Prompt Content *</label>
             <textarea 
               id="promptContent"
-              [ngModel]="draftContent()" 
-              (ngModelChange)="draftContent.set($event)"
-              placeholder="You are a helpful assistant..."></textarea>
+              [formField]="$any(promptForm()).content"
+              [class.error]="$any(promptForm()).content().touched() && $any(promptForm()).content().errors().length"
+              [attr.aria-invalid]="$any(promptForm()).content().touched() && $any(promptForm()).content().errors().length ? true : null"
+              aria-describedby="content-error"
+              placeholder="You are a helpful assistant..."
+              style="flex: 1;"></textarea>
+            
+            @if ($any(promptForm()).content().touched() && $any(promptForm()).content().errors().length) {
+              <div id="content-error" class="error-message" role="alert" style="color: var(--color-error); margin-top: 0.5rem; font-size: 0.875rem;">
+                {{ $any(promptForm()).content().errors()[0].message }}
+              </div>
+            }
           </div>
-        </div>
+        </form>
       } @else {
         <div class="empty-selection">
           <span class="icon" aria-hidden="true">{{ icons.terminal }}</span>
