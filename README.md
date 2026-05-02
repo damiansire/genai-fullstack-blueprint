@@ -7,9 +7,7 @@ The project is built from the ground up following strict industry best practices
 
 ---
 
-> **🏗️ Architecture:** This project uses a modular monolithic architecture. Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) to understand the design decisions and why we chose this approach over microservices.
-
----
+> **🏗️ Architecture:** All architectural decisions and documentation are centrally maintained in `registry.md`.
 
 ## 🧱 Core Architectural Principles
 
@@ -129,7 +127,7 @@ curl http://localhost:3000/health  # API
 curl http://localhost:8080/health  # Frontend
 ```
 
-> **Troubleshooting Docker:** If you encounter build errors, check the [Deployment Guide troubleshooting section](docs/DEPLOYMENT.md#-solución-de-problemas-de-docker)
+> **Troubleshooting Docker:** Refer to `registry.md` for current deployment architectures and known edge cases.
 
 ---
 
@@ -234,11 +232,6 @@ Optimized for scalability and clarity:
 │   ├── Dockerfile.client  # Angular + Nginx
 │   ├── Dockerfile.server  # Node.js API
 │   └── nginx.conf         # Nginx configuration
-├── docs/                  # Legacy Documentation
-│   ├── API.md             # API documentation
-│   ├── DEVELOPMENT.md     # Development guide
-│   ├── DEPLOYMENT.md      # Deployment guide
-│   └── TROUBLESHOOTING.md # Problem solving guide
 ├── registry.md            # Master Architectural Registry (Decisions & Patterns)
 ├── package.json           # Workspace configuration
 ├── package-lock.json      # Dependency lock file
@@ -274,20 +267,9 @@ Optimized for scalability and clarity:
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `docs/` directory:
+All comprehensive documentation, architecture decisions, and setup instructions have been consolidated into a single source of truth:
 
-- **[Quick Start - Nano Banana](docs/QUICKSTART-NANO-BANANA.md)** - 🍌 Quick guide to get started with image generation
-- **[Nano Banana Documentation](docs/NANO-BANANA.md)** - Complete guide for Gemini Image Generation features
-- **[API Documentation](docs/API.md)** - Complete API reference with examples
-- **[Development Guide](docs/DEVELOPMENT.md)** - Setup and development workflow
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment instructions
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common problems and solutions
-
-### Additional Resources
-
-- **[Setup Guide](docs/SETUP.md)** - Detailed installation and configuration instructions
-- **[Architecture Decisions](docs/ARCHITECTURE.md)** - Why we chose a modular monolith over microservices
-- **[Disclaimer](docs/DISCLAIMER.md)** - Important notes about using this repository
+- **[Master Architectural Registry (registry.md)](./registry.md)** - Contains API references, setup workflow, component structures, and Node.js native patterns.
 
 ## 🐳 Production Deployment with Docker
 
@@ -345,7 +327,7 @@ docker compose exec client sh
 - Production TypeScript configuration relaxes strictness for deployment
 - Nginx serves the Angular app with SPA routing support and compression
 
-For detailed deployment instructions and troubleshooting, see the **[Deployment Guide](docs/DEPLOYMENT.md)**
+For detailed orchestration and operational guidelines, refer to the `registry.md`.
 
 ---
 
