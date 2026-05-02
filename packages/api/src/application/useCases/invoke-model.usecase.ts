@@ -8,6 +8,7 @@ import { logger } from '../../core/logger.js';
 import { getContext, createChildContext } from '../../core/async-context.js';
 import { ToolSearchUseCase } from './tool-search.usecase.js';
 import { semanticCache } from '../../infrastructure/semantic-cache.service.js';
+import { CircuitBreaker } from '../../core/circuit-breaker.js';
 
 export interface InvokeModelDTO {
   modelId: string;
@@ -28,8 +29,34 @@ export interface InvokeModelDTO {
 import { UseCase } from '../../core/UseCase.js';
 
 export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
+  private static breakers: Map<string, CircuitBreaker> = new Map();
+
   constructor(private readonly modelFactory: ModelFactory) {
     super();
+  }
+
+  private async processWithFallback(strategy: any, modelId: string, requestData: any, context: ProcessContext): Promise<any> {
+    if (!InvokeModelUseCase.breakers.has(modelId)) {
+      InvokeModelUseCase.breakers.set(modelId, new CircuitBreaker(modelId, {
+        failureThreshold: 3,
+        resetTimeoutMs: 30000,
+        requestTimeoutMs: 15000
+      }));
+    }
+    const breaker = InvokeModelUseCase.breakers.get(modelId)!;
+
+    try {
+      return await breaker.fire(() => strategy.process(requestData, context));
+    } catch (error) {
+      if (breaker.getState() === 'OPEN' && modelId !== 'llama-3.1-8b' && this.modelFactory.isRegistered('llama-3.1-8b')) {
+        logger.warn(`Model ${modelId} circuit is OPEN, falling back to local SLM llama-3.1-8b`);
+        const fallbackStrategy = this.modelFactory.create('llama-3.1-8b');
+        const fallbackReq = { ...requestData };
+        fallbackReq.messages = [...(fallbackReq.messages || []), { role: 'system', content: '[SYSTEM_FALLBACK]: Degradación Elegante Activa. El modelo primario está fallando.' }];
+        return await fallbackStrategy.process(fallbackReq, context);
+      }
+      throw error;
+    }
   }
 
   protected async executeImpl(dto: InvokeModelDTO): Promise<any> {
@@ -116,7 +143,7 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
     }
 
     // Agentic Loop
-    let currentResponse = await strategy.process(requestData, dto.context);
+    let currentResponse = await this.processWithFallback(strategy, dto.modelId, requestData, dto.context);
     const maxIterations = 5;
     let iterations = 0;
 
@@ -195,7 +222,7 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       requestData.messages.push({ role: 'tool', results: toolResults });
 
       // Call AI again
-      currentResponse = await strategy.process(requestData, dto.context);
+      currentResponse = await this.processWithFallback(strategy, dto.modelId, requestData, dto.context);
     }
 
     if (iterations >= maxIterations) {

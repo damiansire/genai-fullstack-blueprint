@@ -213,9 +213,32 @@ export function createStreamController(modelFactory: ModelFactory) {
       let i = 0;
       let firstTokenSent = false;
 
+      // Predictive Rate Limiting Setup
+      const store = res.locals['tokenStore'];
+      const identifier = res.locals['rateLimitIdentifier'];
+      const windowMs = res.locals['rateLimitWindowMs'];
+      // Allow up to 1000 tokens for streaming simulation
+      const maxAllowedTokens = 1000;
+      let estimatedTokens = 0;
+
       const intervalId = setInterval(async () => {
         if (i < textToStream.length) {
           const chunk = textToStream.slice(i, i + chunkSize);
+          
+          // Estimate tokens for this chunk (approx 4 chars = 1 token)
+          estimatedTokens += Math.ceil(chunk.length / 4);
+          
+          // Predictive circuit breaking for stream draining attack
+          if (store && estimatedTokens > maxAllowedTokens) {
+             clearInterval(intervalId);
+             logger.warn(`[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit of ${maxAllowedTokens}`);
+             res.write(`event: error\n`);
+             res.write(`data: ${JSON.stringify({ message: 'Rate limit exceeded during streaming. Stream aborted.' })}\n\n`);
+             res.end();
+             req.destroy(); // Hard kill socket
+             return;
+          }
+
           res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
           i += chunkSize;
 
