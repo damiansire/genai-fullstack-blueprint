@@ -144,5 +144,9 @@
       - *Files created*: `mcp.types.ts` · `mcp-handlers.ts` · `mcp-server.ts`
       - *Config*: `package.json` script `mcp:stdio` added · SSE router mounted at `/mcp` in `server.ts`
 
-
-
+- **Saturday, May 2 (Enterprise Grade Gateway Features)**: Implemented production-ready scaling, governance, and observability features to transition the scaffold into an Enterprise AI Gateway.
+  - **Implemented Practices in the AI Gateway (`packages/api`)**:
+    - **Token-based Rate Limiting (P1)**: Implemented an injectable `TokenStore` interface and `InMemoryTokenStore` (using native `Map` and `setInterval` garbage collection to avoid Redis dependency). Created `tokenRateLimiter` middleware to intercept API requests and consume precise token quotas *after* LLM responses (by reading `usageMetadata`), effectively protecting LLM budgets rather than just raw HTTP request counts.
+    - **OpenTelemetry for TTFT (Time To First Token) (P1)**: Instrumented the `streamController` using native `node:perf_hooks` (`performance.now()`). Captures the exact millisecond delta between request start and the first Server-Sent Event (SSE) flush. The metric is natively logged and pushed down the stream payload (`{ metadata: { ttft_ms: X } }`) for client-side rendering.
+    - **Semantic Caching with sqlite-vec (P2)**: Verified the complete implementation of the `semanticCache.lookup()` inside `InvokeModelUseCase`. The system embeds user prompts to L2 distance via `sqlite-vec` (int8 quantized) prior to calling the LLM API. This guarantees a Tier 1 semantic match (ignoring whitespace/paraphrasing) before falling back to the Tier 2 exact SHA-256 hash match, minimizing TTFT to 0ms and tokens cost to 0 for frequent queries.
+    - **RBAC per Model Tiers (P3)**: Created an Express `rbacModelMiddleware` using the *Fail-Fast* pattern. It prevents unprivileged users (e.g., `free` tier) from waking up premium models (e.g., `gemini-1.5-pro` or `gemini-image-gen`) by matching the required tier from an internal map against the `req.user.tier` injected via the JSON Web Token.
