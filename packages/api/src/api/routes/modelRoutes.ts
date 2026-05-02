@@ -3,6 +3,7 @@ import multer from 'multer';
 import { ModelFactory } from '../../infrastructure/ai/factory.js';
 import { SchemaRegistry } from '../../infrastructure/ai/registry.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
+import { rbacModelMiddleware } from '../middleware/rbac.js';
 import { createDynamicValidationMiddleware } from '../middleware/dynamicValidation.js';
 import { 
   createModelController, 
@@ -155,6 +156,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
    */
   router.get('/models/:modelId', 
     apiKeyAuth,
+    rbacModelMiddleware,
     modelInfoController
   );
 
@@ -164,6 +166,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
    */
   router.post('/models/:modelId/invoke', 
     apiKeyAuth,
+    rbacModelMiddleware,
     (req, res, next) => {
       // Apply dynamic multer middleware based on model requirements
       const modelId = req.params['modelId'] || '';
@@ -179,6 +182,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
    */
   router.post('/models/:modelId/stream',
     apiKeyAuth,
+    rbacModelMiddleware,
     (req, res, next) => {
       const modelId = req.params['modelId'] || '';
       const multerMiddleware = createDynamicMulterMiddleware(modelId);

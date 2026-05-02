@@ -191,6 +191,8 @@ export function createStreamController(modelFactory: ModelFactory) {
     res.flushHeaders();
 
     try {
+      const startTime = performance.now();
+
       // In a real implementation, the UseCase would return a Readable stream
       // or an AsyncGenerator. For this scaffold, we simulate a stream from a UseCase result.
       const dto: InvokeModelDTO = {
@@ -209,12 +211,24 @@ export function createStreamController(modelFactory: ModelFactory) {
       const textToStream = result.text || JSON.stringify(result);
       const chunkSize = 10;
       let i = 0;
+      let firstTokenSent = false;
 
       const intervalId = setInterval(async () => {
         if (i < textToStream.length) {
           const chunk = textToStream.slice(i, i + chunkSize);
           res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
           i += chunkSize;
+
+          if (!firstTokenSent) {
+            firstTokenSent = true;
+            const ttftMs = Math.round(performance.now() - startTime);
+            logger.info(`[OpenTelemetry] Time To First Token (TTFT)`, {
+              ttft_ms: ttftMs,
+              modelId
+            });
+            // Propagate metric to frontend
+            res.write(`data: ${JSON.stringify({ metadata: { ttft_ms: ttftMs } })}\n\n`);
+          }
         } else {
           clearInterval(intervalId);
           res.write('event: done\n');
