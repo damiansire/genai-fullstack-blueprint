@@ -49,13 +49,16 @@
     <button
       class="cg-btn cg-btn--primary"
       (click)="generate()"
-      [disabled]="!hasSpec() || isGenerating()"
-      [attr.aria-busy]="isGenerating() || null"
+      [disabled]="!hasSpec() || isGenerating() || isCaching()"
+      [attr.aria-busy]="isGenerating() || isCaching() || null"
       type="button"
     >
-      @if (isGenerating()) {
+      @if (isCaching()) {
         <span class="cg-spinner" aria-hidden="true"></span>
-        Generating...
+        Caching Context...
+      } @else if (isGenerating()) {
+        <span class="cg-spinner" aria-hidden="true"></span>
+        Generating (RCI)...
       } @else {
         ⚡ Generate Code
       }
@@ -78,7 +81,12 @@
           <span class="cg-quality__value" [style.color]="qualityColor()">
             {{ r.metrics.qualityScore }}/100 — {{ qualityLabel() }}
           </span>
-          <span class="cg-quality__rounds">{{ r.refinementRounds }} round(s) · {{ r.processingMs }}ms</span>
+          <span class="cg-quality__rounds">
+            @if (r.cacheId) {
+              <span class="cg-badge cg-badge--cache" title="Context Caching Active">📦 RAG Cache</span>
+            }
+            {{ r.refinementRounds }} round(s) · {{ r.processingMs }}ms
+          </span>
         </div>
         <div class="cg-quality__track">
           <div class="cg-quality__fill"

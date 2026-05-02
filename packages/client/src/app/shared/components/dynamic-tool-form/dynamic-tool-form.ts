@@ -35,9 +35,9 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { API_CONFIG } from '../../core/tokens/api-config';
-import { ToolFormService } from '../../core/services/tool-form.service';
-import type { DynamicToolForm, DynamicField } from '../../core/types/tool-form.types';
+import { API_CONFIG } from '../../../core/tokens/api-config';
+import { ToolFormService } from '../../../core/services/tool-form.service';
+import type { DynamicToolForm, DynamicField } from '../../../core/types/tool-form.types';
 
 @Component({
   selector: 'app-dynamic-tool-form',
@@ -51,7 +51,7 @@ import type { DynamicToolForm, DynamicField } from '../../core/types/tool-form.t
     '[attr.data-form-state]': 'formState()',
   },
 })
-export class DynamicToolForm {
+export class DynamicToolFormComponent {
   private readonly apiConfig = inject(API_CONFIG);
   private readonly toolFormService = inject(ToolFormService);
 
@@ -72,7 +72,7 @@ export class DynamicToolForm {
    * httpResource reactively fetches the tool schema whenever toolName() changes.
    * Caches the response — repeated renders for the same tool name cost zero requests.
    */
-  private readonly toolResource = httpResource<{
+  protected readonly toolResource = httpResource<{
     name: string;
     description: string;
     schema: unknown;
@@ -171,7 +171,7 @@ export class DynamicToolForm {
 
   onSubmit(form: DynamicToolForm): void {
     // Validate all required fields
-    const hasEmptyRequired = form.fields.some((f) => this.isFieldInvalid(form, f));
+    const hasEmptyRequired = form.fields.some((f: DynamicField) => this.isFieldInvalid(form, f));
     if (hasEmptyRequired) return;
 
     this.isSubmitting.set(true);

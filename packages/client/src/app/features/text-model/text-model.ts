@@ -126,7 +126,7 @@ export class TextModel implements OnDestroy {
   // ─── Actions ───────────────────────────────────────────────────────────────
 
   onSubmit(): void {
-    submit(this.textForm, () => {
+    submit(this.textForm, async () => {
       const model = this.textModel();
       const payload = {
         prompt: model.prompt,
@@ -136,8 +136,7 @@ export class TextModel implements OnDestroy {
         topK: model.topK,
       };
 
-      // Patrón 4: single declarative call — no for-await, no try/catch here.
-      // All state management (isStreaming, streamText, streamError) lives in AiStreamService.
+      // Patrón 4: single declarative call
       this.aiStream.startStream('google-text-bison', { ...payload, stream: true });
     });
   }

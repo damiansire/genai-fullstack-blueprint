@@ -18,7 +18,7 @@ import {
 import { httpResource } from '@angular/common/http';
 import { API_CONFIG } from '../../core/tokens/api-config';
 import { AiStreamService } from '../../core/services/ai-stream.service';
-import { DynamicToolForm } from '../../shared/components/dynamic-tool-form/dynamic-tool-form';
+import { DynamicToolFormComponent } from '../../shared/components/dynamic-tool-form/dynamic-tool-form';
 import { ModelResponse } from '../../shared/components/model-response/model-response';
 
 interface ToolSummary {
@@ -35,7 +35,7 @@ interface ToolSearchResponse {
 @Component({
   selector: 'app-tool-explorer',
   standalone: true,
-  imports: [DynamicToolForm, ModelResponse],
+  imports: [DynamicToolFormComponent, ModelResponse],
   templateUrl: './tool-explorer.html',
   styleUrl: './tool-explorer.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

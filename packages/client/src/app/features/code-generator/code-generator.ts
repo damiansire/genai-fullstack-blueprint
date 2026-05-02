@@ -8,30 +8,7 @@ import {
   inject,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { API_CONFIG } from '../../core/tokens/api-config';
-
-type SupportedLanguage = 'typescript' | 'javascript' | 'python' | 'go' | 'rust' | 'sql';
-
-interface CodeQualityMetrics {
-  linesOfCode: number;
-  cyclomaticComplexity: number;
-  cognitiveComplexity: number;
-  commentRatio: number;
-  securitySmells: string[];
-  codeSmells: string[];
-  qualityScore: number;
-}
-
-interface CodeGenerationResult {
-  language: SupportedLanguage;
-  spec: string;
-  code: string;
-  metrics: CodeQualityMetrics;
-  suggestions: string[];
-  refinementRounds: number;
-  processingMs: number;
-  timestamp: string;
-}
+import { AiOrchestratorService, CodeGenerationResult, SupportedLanguage } from '../../core/services/ai-orchestrator.service';
 
 const EXAMPLE_SPECS: Record<SupportedLanguage, string> = {
   typescript: 'Create a type-safe HTTP retry function with exponential backoff and circuit breaker pattern',
@@ -51,7 +28,7 @@ const EXAMPLE_SPECS: Record<SupportedLanguage, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodeGenerator {
-  private readonly apiConfig = inject(API_CONFIG);
+  private readonly aiOrchestrator = inject(AiOrchestratorService);
 
   readonly languages: SupportedLanguage[] = ['typescript', 'javascript', 'python', 'go', 'rust', 'sql'];
   readonly langIcons: Record<SupportedLanguage, string> = {
@@ -63,6 +40,8 @@ export class CodeGenerator {
   spec = signal('');
   language = signal<SupportedLanguage>('typescript');
   isGenerating = signal(false);
+  isCaching = signal(false);
+  cacheId = signal<string | null>(null);
   result = signal<CodeGenerationResult | null>(null);
   error = signal<string | null>(null);
   copied = signal(false);
@@ -101,20 +80,21 @@ export class CodeGenerator {
     this.isGenerating.set(true);
     this.result.set(null);
     this.error.set(null);
+    this.cacheId.set(null);
 
     try {
-      const res = await fetch(`${this.apiConfig.baseUrl}/domain/code/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec: this.spec(), language: this.language() }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      this.result.set(await res.json());
+      // Step 1: Context Caching
+      this.isCaching.set(true);
+      const cacheRes = await this.aiOrchestrator.cacheContext('spec.txt', 'text/plain', this.spec());
+      this.cacheId.set(cacheRes.cacheId);
+      this.isCaching.set(false);
+
+      // Step 2: Code Generation using the cached context
+      const res = await this.aiOrchestrator.generateCode(this.spec(), this.language(), cacheRes.cacheId);
+      this.result.set(res);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Generation failed');
+      this.isCaching.set(false);
     } finally {
       this.isGenerating.set(false);
     }
