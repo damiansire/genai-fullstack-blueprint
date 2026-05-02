@@ -32,6 +32,7 @@ export interface ChatSession {
             <button 
               class="session-btn" 
               [class.active]="activeSessionId() === session.id"
+              [attr.aria-current]="activeSessionId() === session.id ? 'page' : null"
               (click)="onSelectSession.emit(session.id)">
               <span class="icon">💬</span>
               <span class="title">{{ session.title }}</span>

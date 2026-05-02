@@ -82,7 +82,6 @@ export class PromptPlayground {
         await this.promptService.updatePrompt(name, content, description);
         this.saveSuccess.set(true);
       } catch (err: any) {
-        console.error(err);
         this.saveError.set(err.message || 'An unexpected error occurred while saving.');
       } finally {
         this.isSaving.set(false);

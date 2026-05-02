@@ -31,9 +31,9 @@
     <div class="usage-info-container">
       <button class="btn-secondary" [attr.popovertarget]="'usagePopover-' + uniqueId">{{ icons.info }} Show AI Usage Stats</button>
       
-      <div [id]="'usagePopover-' + uniqueId" popover class="usage-popover">
+      <div [id]="'usagePopover-' + uniqueId" popover class="usage-popover" [attr.aria-labelledby]="'usageTitle-' + uniqueId">
         <div class="popover-header">
-          <h4>Usage Information</h4>
+          <h4 [id]="'usageTitle-' + uniqueId">Usage Information</h4>
           <button class="btn-close" [attr.popovertarget]="'usagePopover-' + uniqueId" popovertargetaction="hide" aria-label="Close">{{ icons.close }}</button>
         </div>
         <div class="usage-stats">
