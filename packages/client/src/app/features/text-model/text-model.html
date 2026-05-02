@@ -7,23 +7,33 @@
   <div class="feature-content">
     <app-text-model-form
       [form]="textForm"
-      [loading]="textModelResource.isLoading()"
+      [loading]="isLoading()"
       (submitForm)="onSubmit()"
       (resetForm)="resetForm()"
     />
 
-    <section class="ai-module-viewport-trigger">
-      @defer (when isStreaming() || streamResponse() || textModelResource.hasValue() || textModelResource.isLoading() || textModelResource.error()) {
+    <!--
+      Patrón 4: @defer trigger is now a single unified computed Signal.
+      The skeleton proxy holds the layout space (CLS = 0) while the
+      heavy <app-model-response> module is deferred.
+    -->
+    <section class="ai-module-viewport-trigger" aria-live="polite" aria-atomic="false">
+      @defer (when shouldShowResponse()) {
         <app-model-response
-          [loading]="isStreaming() || textModelResource.isLoading()"
-          [error]="textModelResource.error()?.message || null"
-          [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)"
+          [loading]="isLoading()"
+          [error]="activeError()"
+          [response]="activeResponse()"
+          [isStreaming]="aiStream.isStreaming()"
+          [streamText]="aiStream.streamText()"
           loadingMessage="Generating text response..."
-          (retry)="textModelResource.reload()"
+          (retry)="onSubmit()"
         >
-          <app-text-model-response [response]="textModelResource.value() ?? (streamResponse() ? { text: streamResponse() } : null)" />
+          @if (activeResponse()) {
+            <app-text-model-response [response]="activeResponse()" />
+          }
         </app-model-response>
       } @placeholder (minimum 400ms) {
+        <!-- Native skeletal proxy: reserves layout space, prevents CLS -->
         <div class="native-skeletal-proxy" aria-hidden="true">
           <div class="skeleton-header-strip"></div>
           <div class="skeleton-content-block"></div>

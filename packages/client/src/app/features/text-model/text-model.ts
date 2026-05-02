@@ -1,65 +1,59 @@
-import { Component, signal, inject, ChangeDetectionStrategy, linkedSignal, computed } from '@angular/core';
+import {
+  Component,
+  signal,
+  inject,
+  ChangeDetectionStrategy,
+  computed,
+  OnDestroy,
+} from '@angular/core';
 import { form, submit, required, minLength, maxLength, min, max } from '@angular/forms/signals';
 import { httpResource } from '@angular/common/http';
 import { ModelInvocationResponse } from '../../core/services/api';
 import { API_CONFIG } from '../../core/tokens/api-config';
-import { SseService } from '../../core/services/sse.service';
+import { AiStreamService } from '../../core/services/ai-stream.service';
 import { TextModelForm } from './components/text-model-form/text-model-form';
 import { TextModelResponse } from './components/text-model-response/text-model-response';
 import { ModelResponse } from '../../shared/components/model-response/model-response';
 
+/**
+ * TextModel — Patrón 4: Declarative SSE Stream via AiStreamService + Signals
+ *
+ * Before (imperative):
+ *   - Manual `isStreaming` flag
+ *   - Manual `streamTrigger` to reset `linkedSignal`
+ *   - `for await` loop in `onSubmit()` imperative handler
+ *   - Manual `try/catch/finally` for error and cleanup
+ *   - SseService injected and called directly in the component
+ *
+ * After (declarative):
+ *   - Component reads Signals from AiStreamService (isStreaming, streamText, error)
+ *   - `onSubmit()` calls `aiStream.startStream()` — ONE line of business logic
+ *   - `httpResource` handles the non-streaming (exact-match cache) path
+ *   - Template is fully reactive: @defer, @if, all driven by Signals
+ *   - OnDestroy cancels any active stream (AbortController) automatically
+ */
 @Component({
   selector: 'app-text-model',
+  standalone: true,
   imports: [TextModelForm, TextModelResponse, ModelResponse],
   templateUrl: './text-model.html',
   styleUrl: './text-model.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TextModel {
+export class TextModel implements OnDestroy {
   private readonly apiConfig = inject(API_CONFIG);
-  private readonly sseService = inject(SseService);
+  readonly aiStream = inject(AiStreamService);
 
-  icons = {
-    robot: '🤖'
-  };
+  icons = { robot: '🤖' };
 
-  requestParams = signal<{
-    prompt: string;
-    maxTokens: number;
-    temperature: number;
-    topP: number;
-    topK: number;
-    stream?: boolean;
-  } | undefined>(undefined);
-
-  // Normal non-streaming fallback
-  textModelResource = httpResource<ModelInvocationResponse>(() => {
-    const params = this.requestParams();
-    if (!params || params.stream) return undefined; // Don't trigger if it's a stream request
-
-    return {
-      url: `${this.apiConfig.baseUrl}/models/google-text-bison/invoke`,
-      method: 'POST',
-      body: params,
-      headers: { 'Content-Type': 'application/json' }
-    };
-  });
-
-  // Streaming accumulation using linkedSignal
-  streamTrigger = signal(0);
-  streamResponse = linkedSignal<number, string>({
-    source: this.streamTrigger,
-    computation: () => '' // Resets the accumulator when trigger changes
-  });
-  
-  isStreaming = signal(false);
+  // ─── Form State ────────────────────────────────────────────────────────────
 
   textModel = signal({
     prompt: '',
     maxTokens: 256,
     temperature: 0.7,
     topP: 0.9,
-    topK: 40
+    topK: 40,
   });
 
   textForm = form(this.textModel, (s) => {
@@ -76,39 +70,75 @@ export class TextModel {
     max(s.topK, 100, { message: 'Top K must not exceed 100' });
   });
 
+  // ─── Non-streaming httpResource (cache-first path) ─────────────────────────
+  // Triggered only when stream is explicitly disabled.
+  // In the current flow, stream is always true, so this acts as a fallback.
+  requestParams = signal<
+    | { prompt: string; maxTokens: number; temperature: number; topP: number; topK: number }
+    | undefined
+  >(undefined);
+
+  textModelResource = httpResource<ModelInvocationResponse>(() => {
+    const params = this.requestParams();
+    if (!params) return undefined;
+    return {
+      url: `${this.apiConfig.baseUrl}/models/google-text-bison/invoke`,
+      method: 'POST',
+      body: params,
+      headers: { 'Content-Type': 'application/json' },
+    };
+  });
+
+  // ─── Unified Response Signal ───────────────────────────────────────────────
+  // Merges the streaming response with the httpResource response into a single
+  // Signal that <app-model-response> and <app-text-model-response> consume.
+  // Priority: stream > httpResource (stream is always preferred for UX).
+  readonly activeResponse = computed<ModelInvocationResponse | null>(() => {
+    return (
+      this.aiStream.streamAsResponse() ??
+      this.textModelResource.value() ??
+      null
+    );
+  });
+
+  // True if either the stream or the httpResource is active
+  readonly isLoading = computed(
+    () => this.aiStream.isStreaming() || this.textModelResource.isLoading()
+  );
+
+  // Unified error from either source
+  readonly activeError = computed<string | null>(
+    () =>
+      this.aiStream.streamError() ??
+      this.textModelResource.error()?.message ??
+      null
+  );
+
+  // ─── @defer trigger: show the response panel when any data arrives ──────────
+  readonly shouldShowResponse = computed(
+    () =>
+      this.isLoading() ||
+      this.aiStream.hasStreamContent() ||
+      this.textModelResource.hasValue() ||
+      !!this.activeError()
+  );
+
+  // ─── Actions ───────────────────────────────────────────────────────────────
+
   onSubmit(): void {
-    submit(this.textForm, async () => {
+    submit(this.textForm, () => {
       const model = this.textModel();
-      const params = {
+      const payload = {
         prompt: model.prompt,
         maxTokens: model.maxTokens,
         temperature: model.temperature,
         topP: model.topP,
         topK: model.topK,
-        stream: true // Enforce streaming based on the Deep Research recommendation
       };
-      
-      this.requestParams.set(params);
 
-      // Execute Streaming Loop
-      if (params.stream) {
-        this.streamTrigger.update(v => v + 1); // Reset linkedSignal accumulator
-        this.isStreaming.set(true);
-        try {
-          const generator = this.sseService.streamModelResponse('google-text-bison', params);
-          for await (const chunk of generator) {
-            if (chunk.isDone) {
-              this.isStreaming.set(false);
-              break;
-            }
-            // Append incrementally to linkedSignal
-            this.streamResponse.update(current => current + chunk.text);
-          }
-        } catch (error) {
-          console.error('SSE Stream Error:', error);
-          this.isStreaming.set(false);
-        }
-      }
+      // Patrón 4: single declarative call — no for-await, no try/catch here.
+      // All state management (isStreaming, streamText, streamError) lives in AiStreamService.
+      this.aiStream.startStream('google-text-bison', { ...payload, stream: true });
     });
   }
 
@@ -118,9 +148,18 @@ export class TextModel {
       maxTokens: 256,
       temperature: 0.7,
       topP: 0.9,
-      topK: 40
+      topK: 40,
     });
     this.requestParams.set(undefined);
-    this.streamResponse.set('');
+    // Resets all stream Signals and cancels any active fetch via AbortController
+    this.aiStream.resetStream();
+  }
+
+  // ─── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnDestroy(): void {
+    // Cancel any in-flight stream when the component is destroyed
+    // (e.g. route navigation away from the page)
+    this.aiStream.cancelStream();
   }
 }

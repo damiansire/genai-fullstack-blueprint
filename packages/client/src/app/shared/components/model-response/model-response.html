@@ -1,5 +1,7 @@
 <section class="response-section">
-  @if (loading()) {
+
+  @if (loading() && !isStreaming()) {
+    <!-- Pure loading state: spinner shown ONLY before the first chunk arrives -->
     <div class="loading-state" role="status" aria-live="polite">
       <div class="spinner-large" aria-hidden="true"></div>
       <p>{{ loadingMessage() }}</p>
@@ -16,25 +18,57 @@
     </div>
   }
 
-  @if (response() && !loading()) {
-    <div class="response-state">
-      <div class="response-meta">
-        <div class="meta-item">
-          <span class="meta-label">Processing Time:</span>
-          <span class="meta-value">{{ response()?.metadata?.processingTime }}ms</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Model:</span>
-          <span class="meta-value">{{ response()?.metadata?.modelId }}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Timestamp:</span>
-          <span class="meta-value">{{ response()?.metadata?.timestamp | date:'medium' }}</span>
-        </div>
+  <!--
+    Patrón 4: Streaming live view.
+    Rendered as soon as the first chunk arrives (streamText().length > 0),
+    even while isStreaming() is still true.
+    The blinking cursor is a pure CSS ::after pseudo-element — zero JS animation loop.
+    aria-live="polite" announces updates to screen readers without interrupting.
+  -->
+  @if (isStreaming() || (streamText() && !response()?.metadata)) {
+    <div
+      class="streaming-state"
+      role="status"
+      aria-live="polite"
+      aria-label="AI is generating a response"
+    >
+      <div class="streaming-header">
+        <span class="streaming-badge" aria-hidden="true">
+          <span class="streaming-dot"></span>
+          Live
+        </span>
+        <span class="streaming-sr-only">Response is being generated</span>
       </div>
+      <!--
+        The text container gets the data-streaming attribute via :host so CSS can
+        attach the blinking cursor ::after pseudo-element automatically.
+        No JS involved — CSS @keyframes caret-blink handles the animation natively.
+      -->
+      <p class="streaming-text" [attr.data-streaming]="isStreaming() || null">{{ streamText() }}</p>
+    </div>
+  }
+
+  @if (response() && !isStreaming()) {
+    <div class="response-state">
+      @if (response()?.metadata) {
+        <div class="response-meta" role="region" aria-label="Response metadata">
+          <div class="meta-item">
+            <span class="meta-label">Processing Time:</span>
+            <span class="meta-value">{{ response()?.metadata?.processingTime }}ms</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Model:</span>
+            <span class="meta-value">{{ response()?.metadata?.modelId }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Timestamp:</span>
+            <span class="meta-value">{{ response()?.metadata?.timestamp | date:'medium' }}</span>
+          </div>
+        </div>
+      }
 
       <ng-content></ng-content>
     </div>
   }
-</section>
 
+</section>
