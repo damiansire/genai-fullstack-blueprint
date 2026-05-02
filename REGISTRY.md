@@ -139,4 +139,10 @@
       - *Reference*: [Web Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) · [Angular Signals](https://angular.dev/guide/signals) · [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
       - *Files changed*: `ai-stream.service.ts` (new) · `text-model.ts` (refactored) · `text-model.html` (declarative) · `model-response.ts` (streaming inputs) · `model-response.html` (live view) · `model-response.scss` (CSS caret animation)
 
+    - **Patrón 2 — Servidor Nativo MCP (`src/infrastructure/mcp/`)**: Implemented a zero-dependency Model Context Protocol server exposing the Gateway's capabilities via two transports. **stdio transport** (`npm run mcp:stdio`): reads newline-delimited JSON-RPC 2.0 from stdin/stdout using `node:readline` — compatible with Claude Desktop, Cursor, Zed, and Continue.dev. **SSE transport** (`GET /mcp/sse` + `POST /mcp/message`): reuses the existing `text/event-stream` infrastructure with an in-memory `Map` of session connections. MCP capabilities: `tools/list` (reads from SQLite Tool Registry, Patrón 1), `tools/call` (delegates to Worker Pool), `resources/list|read` (exposes models, logs, tools registry), `prompts/list|get` (reusable interaction templates). Both transports seed `AsyncLocalStorage` root contexts per message (fully Patrón 5 compatible).
+      - *Reference*: [MCP Spec v2024-11-05](https://spec.modelcontextprotocol.io/) · [Node.js readline API](https://nodejs.org/docs/latest/api/readline.html)
+      - *Files created*: `mcp.types.ts` · `mcp-handlers.ts` · `mcp-server.ts`
+      - *Config*: `package.json` script `mcp:stdio` added · SSE router mounted at `/mcp` in `server.ts`
+
+
 

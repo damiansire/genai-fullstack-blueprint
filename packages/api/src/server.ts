@@ -18,6 +18,7 @@ import { performance } from 'node:perf_hooks';
 import { randomUUID, createHash } from 'node:crypto';
 import { requestContext, createRootContext } from './core/async-context.js';
 import { createToolRoutes } from './api/routes/toolRoutes.js';
+import { createMcpSseRouter } from './infrastructure/mcp/mcp-server.js';
 // Stability: 2 - Stable (node:http)
 import type { Server as HttpServer } from 'node:http';
 import { logger } from './core/logger.js';
@@ -156,6 +157,11 @@ class Server extends EventEmitter {
     // Patrón 1: Tool Search JIT — register, search, and manage tool definitions
     const toolRoutes = createToolRoutes();
     this.app.use('/api/tools', apiLimiter, toolRoutes);
+
+    // Patrón 2: MCP Server — SSE transport for web-based MCP clients
+    // stdio transport is a separate process: npm run mcp:stdio
+    const mcpRouter = createMcpSseRouter();
+    this.app.use('/mcp', mcpRouter);
 
     // 404 handler for undefined routes
     this.app.use((req, res) => {

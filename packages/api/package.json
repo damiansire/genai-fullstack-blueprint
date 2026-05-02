@@ -8,7 +8,8 @@
     "build:prod": "tsc -p tsconfig.prod.json",
     "dev": "tsx watch --env-file=../../env.example src/server.ts",
     "start": "node --env-file=../../env.example dist/server.js",
-    "test": "node --env-file=../../env.example --import tsx --test --experimental-test-coverage src/**/*.test.ts"
+    "test": "node --env-file=../../env.example --import tsx --test --experimental-test-coverage src/**/*.test.ts",
+    "mcp:stdio": "tsx --env-file=../../env.example src/infrastructure/mcp/mcp-server.ts --stdio"
   },
   "keywords": [],
   "author": "",
