@@ -1,0 +1,354 @@
+:host {
+  display: block;
+  container-type: inline-size;
+  container-name: dtf-widget;
+}
+
+// ─── Skeleton Loading ─────────────────────────────────────────────────────────
+
+.dtf-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-bg-white, rgba(255,255,255,0.05));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.dtf-skeleton__header {
+  height: 28px;
+  width: 45%;
+  background: rgba(255,255,255,0.08);
+  border-radius: 6px;
+  animation: dtf-pulse 1.5s ease-in-out infinite;
+}
+
+.dtf-skeleton__field {
+  height: 42px;
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  animation: dtf-pulse 1.5s ease-in-out infinite;
+
+  &--short { width: 55%; }
+}
+
+.dtf-skeleton__actions {
+  height: 38px;
+  width: 30%;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  animation: dtf-pulse 1.5s ease-in-out infinite;
+}
+
+// ─── Error State ──────────────────────────────────────────────────────────────
+
+.dtf-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-lg, 12px);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+
+  &__icon { font-size: 1.25rem; }
+  &__message {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgb(239, 68, 68);
+    strong { font-weight: 600; }
+  }
+}
+
+// ─── Panel ────────────────────────────────────────────────────────────────────
+
+.dtf-panel {
+  background: var(--color-bg-white, rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+
+  &:focus-within {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+  }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+.dtf-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text, #f1f5f9);
+    letter-spacing: -0.01em;
+  }
+
+  &__description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary, rgba(241,245,249,0.55));
+    line-height: 1.6;
+  }
+}
+
+.dtf-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: rgb(129, 140, 248);
+}
+
+// ─── Form + Fields ────────────────────────────────────────────────────────────
+
+.dtf-form { display: contents; }
+
+.dtf-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.dtf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  &--required .dtf-label { }
+
+  &__checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+}
+
+// ─── Labels ───────────────────────────────────────────────────────────────────
+
+.dtf-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text, #f1f5f9);
+  cursor: pointer;
+
+  &--inline { margin: 0; }
+}
+
+.dtf-required-mark {
+  color: rgb(239, 68, 68);
+  margin-left: 2px;
+}
+
+// ─── Controls ─────────────────────────────────────────────────────────────────
+
+.dtf-input,
+.dtf-textarea,
+.dtf-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--color-text, #f1f5f9);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+
+  &::placeholder { color: rgba(241,245,249,0.3); }
+
+  &:focus {
+    border-color: rgba(99, 102, 241, 0.7);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  }
+
+  &--invalid {
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+  }
+}
+
+.dtf-textarea { resize: vertical; min-height: 96px; }
+
+.dtf-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: rgb(99, 102, 241);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+// ─── Hint + Validation ────────────────────────────────────────────────────────
+
+.dtf-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, rgba(241,245,249,0.45));
+  line-height: 1.5;
+}
+
+.dtf-validation-error {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(239, 68, 68);
+  animation: dtf-shake 0.2s ease-out;
+}
+
+// ─── Payload Preview ──────────────────────────────────────────────────────────
+
+.dtf-preview {
+  margin: 0 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-text-secondary, rgba(241,245,249,0.5));
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+
+    &:hover { color: var(--color-text, #f1f5f9); }
+  }
+
+  &__icon { font-size: 0.75rem; }
+
+  &__code {
+    margin-top: 0.625rem;
+    padding: 0.875rem 1rem;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: rgb(134, 239, 172);  // green tint — looks like a terminal
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    animation: dtf-fadeIn 0.15s ease-out;
+  }
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+
+.dtf-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.dtf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.125rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+  &:not(:disabled):active { transform: scale(0.98); }
+
+  &--primary {
+    background: rgb(99, 102, 241);
+    color: #fff;
+    border-color: rgb(99, 102, 241);
+
+    &:not(:disabled):hover { background: rgb(79, 82, 221); }
+  }
+
+  &--secondary {
+    background: rgba(255,255,255,0.07);
+    color: var(--color-text, #f1f5f9);
+    border-color: rgba(255,255,255,0.15);
+
+    &:not(:disabled):hover { background: rgba(255,255,255,0.12); }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--color-text-secondary, rgba(241,245,249,0.55));
+    border-color: rgba(255,255,255,0.1);
+
+    &:not(:disabled):hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--color-text, #f1f5f9);
+    }
+  }
+}
+
+.dtf-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dtf-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+// ─── Container Queries ────────────────────────────────────────────────────────
+
+@container dtf-widget (max-width: 400px) {
+  .dtf-actions { flex-direction: column; align-items: stretch; }
+  .dtf-btn { justify-content: center; }
+  .dtf-header__title-row { flex-wrap: wrap; }
+}
+
+// ─── Keyframes ────────────────────────────────────────────────────────────────
+
+@keyframes dtf-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes dtf-shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-4px); }
+  75%       { transform: translateX(4px); }
+}
+
+@keyframes dtf-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dtf-fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

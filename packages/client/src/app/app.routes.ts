@@ -21,6 +21,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/image-generation/image-generation').then(m => m.ImageGeneration),
     title: 'Image Generation - Nano Banana'
   },
+  {
+    path: 'tool-explorer',
+    loadComponent: () => import('./features/tool-explorer/tool-explorer').then(m => m.ToolExplorer),
+    title: 'Tool Explorer - AI Gateway'
+  },
   // Legacy redirect
   {
     path: 'image-model',

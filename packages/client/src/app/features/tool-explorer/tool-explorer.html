@@ -1,0 +1,118 @@
+<div class="te-layout">
+
+  <!-- ─── Sidebar: Tool List ─────────────────────────────────────────────── -->
+  <aside class="te-sidebar" aria-label="Tool registry">
+
+    <header class="te-sidebar__header">
+      <h1 class="te-sidebar__title">
+        <span aria-hidden="true">{{ icons.wrench }}</span>
+        Tool Explorer
+      </h1>
+      <p class="te-sidebar__subtitle">{{ tools().length }} tools registered</p>
+    </header>
+
+    <div class="te-search">
+      <span class="te-search__icon" aria-hidden="true">{{ icons.search }}</span>
+      <input
+        id="tool-search"
+        type="search"
+        class="te-search__input"
+        placeholder="Search tools..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        aria-label="Search tool registry"
+        autocomplete="off"
+      />
+    </div>
+
+    @if (isToolListLoading()) {
+      <!-- Skeleton for tool list -->
+      <div class="te-skeleton-list" aria-busy="true" aria-label="Loading tools...">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="te-skeleton-item"></div>
+        }
+      </div>
+    } @else if (!hasResults()) {
+      <div class="te-empty" role="status">
+        <span aria-hidden="true">{{ icons.empty }}</span>
+        <p>No tools found{{ searchQuery() ? ' for "' + searchQuery() + '"' : '' }}.</p>
+      </div>
+    } @else {
+      <nav class="te-tool-list" aria-label="Registered tools">
+        @for (category of groupedCategories(); track trackByCategory($index, category)) {
+          <div class="te-category">
+            <h2 class="te-category__label">{{ category }}</h2>
+            @for (tool of groupedTools().get(category) || []; track trackByName($index, tool)) {
+              <button
+                class="te-tool-item"
+                [class.te-tool-item--active]="selectedTool() === tool.name"
+                (click)="selectTool(tool.name)"
+                [attr.aria-pressed]="selectedTool() === tool.name"
+                [attr.aria-label]="'Select ' + tool.name"
+              >
+                <span class="te-tool-item__name">{{ tool.name }}</span>
+                <span class="te-tool-item__desc">{{ tool.description }}</span>
+              </button>
+            }
+          </div>
+        }
+      </nav>
+    }
+  </aside>
+
+  <!-- ─── Main: Dynamic Form + Results ──────────────────────────────────── -->
+  <main class="te-main" role="main">
+
+    @if (!selectedTool()) {
+      <!-- Empty state: no tool selected -->
+      <div class="te-empty-state">
+        <div class="te-empty-state__icon" aria-hidden="true">{{ icons.wrench }}</div>
+        <h2 class="te-empty-state__title">Select a tool</h2>
+        <p class="te-empty-state__hint">
+          Choose a tool from the registry to see its schema
+          and execute it with a dynamically generated form.
+        </p>
+      </div>
+    } @else {
+      <div class="te-workspace">
+
+        <!-- Dynamic form — schema fetched from Tool Registry (Patrón 1) -->
+        @defer (when !!selectedTool()) {
+          <app-dynamic-tool-form
+            [toolName]="selectedTool()!"
+            (toolSubmit)="onToolSubmit($event)"
+            (toolCancel)="onToolCancel()"
+          />
+        } @placeholder {
+          <div class="te-form-placeholder" aria-hidden="true"></div>
+        }
+
+        <!-- Execution result -->
+        @if (shouldShowResult()) {
+          <section class="te-result" aria-live="polite" aria-label="Execution result">
+            <header class="te-result__header">
+              <h3 class="te-result__title">Result</h3>
+              @if (isExecuting()) {
+                <span class="te-executing-badge">
+                  <span class="te-executing-dot"></span>
+                  Executing...
+                </span>
+              }
+            </header>
+
+            @if (executionError()) {
+              <div class="te-result__error" role="alert">
+                {{ executionError() }}
+              </div>
+            }
+
+            @if (resultJson()) {
+              <pre class="te-result__json" aria-label="Tool execution result">{{ resultJson() }}</pre>
+            }
+          </section>
+        }
+
+      </div>
+    }
+  </main>
+</div>

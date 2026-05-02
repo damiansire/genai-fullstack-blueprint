@@ -1,0 +1,212 @@
+<!--
+  DynamicToolForm Template — Patrón 6: Signal Forms Dinámicos
+
+  Renders a JSON-Schema-driven form entirely from Signal state.
+  @for iterates DynamicField descriptors — no template compilation,
+  no eval, no dynamic HTML injection.
+
+  State machine (driven by formState() computed):
+    loading → skeleton placeholder
+    error   → error panel with retry
+    empty   → schema not yet available (should not be visible long)
+    ready   → the generated form
+-->
+
+@switch (formState()) {
+
+  @case ('loading') {
+    <!-- Native skeletal proxy: reserves layout so CLS = 0 -->
+    <div class="dtf-skeleton" aria-busy="true" aria-label="Loading tool schema...">
+      <div class="dtf-skeleton__header"></div>
+      <div class="dtf-skeleton__field"></div>
+      <div class="dtf-skeleton__field dtf-skeleton__field--short"></div>
+      <div class="dtf-skeleton__field"></div>
+      <div class="dtf-skeleton__actions"></div>
+    </div>
+  }
+
+  @case ('error') {
+    <div class="dtf-error" role="alert">
+      <span class="dtf-error__icon" aria-hidden="true">⚠️</span>
+      <p class="dtf-error__message">
+        Could not load schema for <strong>{{ toolName() }}</strong>: {{ loadError() }}
+      </p>
+      <button class="dtf-btn dtf-btn--secondary" (click)="toolResource.reload()">
+        Retry
+      </button>
+    </div>
+  }
+
+  @case ('ready') {
+    @let form = dynamicForm();
+    @if (form) {
+      <article class="dtf-panel" [attr.aria-label]="form.toolName + ' configuration'">
+
+        <!-- Form Header -->
+        <header class="dtf-header">
+          <div class="dtf-header__title-row">
+            <h2 class="dtf-header__title">{{ form.toolName }}</h2>
+            <span class="dtf-badge">Tool</span>
+          </div>
+          @if (form.toolDescription) {
+            <p class="dtf-header__description">{{ form.toolDescription }}</p>
+          }
+        </header>
+
+        <!-- Dynamic Fields -->
+        <form
+          class="dtf-form"
+          (submit)="$event.preventDefault(); onSubmit(form)"
+          novalidate
+        >
+          <div class="dtf-fields">
+            @for (field of form.fields; track trackByKey($index, field)) {
+              <div class="dtf-field" [class.dtf-field--required]="field.required">
+
+                <!-- Checkbox uses a different layout -->
+                @if (field.controlType === 'checkbox') {
+                  <div class="dtf-field__checkbox-row">
+                    <input
+                      type="checkbox"
+                      [id]="'dtf-' + form.toolName + '-' + field.key"
+                      class="dtf-checkbox"
+                      [checked]="getFieldValue(form, field)"
+                      [attr.aria-required]="field.required || null"
+                      (change)="setFieldValue(form, field, $event)"
+                    />
+                    <label
+                      [for]="'dtf-' + form.toolName + '-' + field.key"
+                      class="dtf-label dtf-label--inline"
+                    >
+                      {{ field.label }}
+                      @if (field.required) { <span class="dtf-required-mark" aria-hidden="true">*</span> }
+                    </label>
+                  </div>
+                } @else {
+                  <!-- Standard field: label → control → hint → error -->
+                  <label
+                    [for]="'dtf-' + form.toolName + '-' + field.key"
+                    class="dtf-label"
+                  >
+                    {{ field.label }}
+                    @if (field.required) { <span class="dtf-required-mark" aria-hidden="true">*</span> }
+                  </label>
+
+                  @if (field.controlType === 'textarea') {
+                    <textarea
+                      [id]="'dtf-' + form.toolName + '-' + field.key"
+                      class="dtf-input dtf-textarea"
+                      [class.dtf-input--invalid]="isFieldInvalid(form, field)"
+                      [attr.placeholder]="field.placeholder || null"
+                      [attr.aria-required]="field.required || null"
+                      [attr.aria-describedby]="field.description ? 'dtf-hint-' + field.key : null"
+                      [attr.minlength]="field.minLength || null"
+                      [attr.maxlength]="field.maxLength || null"
+                      rows="4"
+                      (input)="setFieldValue(form, field, $event)"
+                    >{{ getFieldValue(form, field) }}</textarea>
+
+                  } @else if (field.controlType === 'select') {
+                    <select
+                      [id]="'dtf-' + form.toolName + '-' + field.key"
+                      class="dtf-input dtf-select"
+                      [class.dtf-input--invalid]="isFieldInvalid(form, field)"
+                      [attr.aria-required]="field.required || null"
+                      (change)="setFieldValue(form, field, $event)"
+                    >
+                      @for (option of field.options; track option) {
+                        <option
+                          [value]="option"
+                          [selected]="getFieldValue(form, field) === option"
+                        >{{ option }}</option>
+                      }
+                    </select>
+
+                  } @else {
+                    <!-- text / number / email / url / date / time / password -->
+                    <input
+                      [type]="field.controlType"
+                      [id]="'dtf-' + form.toolName + '-' + field.key"
+                      class="dtf-input"
+                      [class.dtf-input--invalid]="isFieldInvalid(form, field)"
+                      [value]="getFieldValue(form, field)"
+                      [attr.placeholder]="field.placeholder || null"
+                      [attr.aria-required]="field.required || null"
+                      [attr.aria-describedby]="field.description ? 'dtf-hint-' + field.key : null"
+                      [attr.min]="field.min ?? null"
+                      [attr.max]="field.max ?? null"
+                      [attr.minlength]="field.minLength || null"
+                      [attr.maxlength]="field.maxLength || null"
+                      (input)="setFieldValue(form, field, $event)"
+                    />
+                  }
+
+                  <!-- Hint text from schema description -->
+                  @if (field.description) {
+                    <p [id]="'dtf-hint-' + field.key" class="dtf-hint">{{ field.description }}</p>
+                  }
+
+                  <!-- Inline validation error -->
+                  @if (isFieldInvalid(form, field)) {
+                    <p class="dtf-validation-error" role="alert">
+                      {{ field.label }} is required.
+                    </p>
+                  }
+                }
+
+              </div>
+            }
+          </div>
+
+          <!-- Payload Preview (collapsible) -->
+          <div class="dtf-preview">
+            <button
+              type="button"
+              class="dtf-preview__toggle"
+              [attr.aria-expanded]="showPreview()"
+              aria-controls="dtf-payload-preview"
+              (click)="togglePreview()"
+            >
+              <span class="dtf-preview__icon" aria-hidden="true">{{ showPreview() ? '▾' : '▸' }}</span>
+              Payload Preview
+            </button>
+            @if (showPreview()) {
+              <pre
+                id="dtf-payload-preview"
+                class="dtf-preview__code"
+                aria-label="Current form values as JSON"
+              >{{ payloadPreview() }}</pre>
+            }
+          </div>
+
+          <!-- Form Actions -->
+          <div class="dtf-actions">
+            <button
+              type="submit"
+              class="dtf-btn dtf-btn--primary"
+              [disabled]="isSubmitting()"
+              [attr.aria-busy]="isSubmitting() || null"
+            >
+              @if (isSubmitting()) {
+                <span class="dtf-spinner" aria-hidden="true"></span>
+                Executing...
+              } @else {
+                Execute Tool
+              }
+            </button>
+            <button
+              type="button"
+              class="dtf-btn dtf-btn--ghost"
+              [disabled]="isSubmitting()"
+              (click)="onCancel()"
+            >
+              Cancel
+            </button>
+          </div>
+
+        </form>
+      </article>
+    }
+  }
+
+}
