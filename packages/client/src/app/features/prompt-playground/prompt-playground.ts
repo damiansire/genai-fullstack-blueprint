@@ -6,12 +6,14 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { form, required, minLength, submit, FormField } from '@angular/forms/signals';
+import { form, required, minLength, submit } from '@angular/forms/signals';
+import { PromptListComponent } from './components/prompt-list/prompt-list';
+import { PromptEditorComponent } from './components/prompt-editor/prompt-editor';
 import { PromptService } from './prompt.service';
 
 @Component({
   selector: 'app-prompt-playground',
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, PromptListComponent, PromptEditorComponent],
   templateUrl: './prompt-playground.html',
   styleUrl: './prompt-playground.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

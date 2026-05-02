@@ -10,6 +10,9 @@ import {
 } from '@angular/core';
 import { AiOrchestratorService, CodeGenerationResult, SupportedLanguage } from '../../core/services/ai-orchestrator.service';
 
+import { CodeConfigComponent } from './components/code-config/code-config';
+import { CodeResultComponent } from './components/code-result/code-result';
+
 const EXAMPLE_SPECS: Record<SupportedLanguage, string> = {
   typescript: 'Create a type-safe HTTP retry function with exponential backoff and circuit breaker pattern',
   javascript: 'Build a debounced event emitter with wildcard subscriptions and once() support',
@@ -21,7 +24,7 @@ const EXAMPLE_SPECS: Record<SupportedLanguage, string> = {
 
 @Component({
   selector: 'app-code-generator',
-  imports: [],
+  imports: [CodeConfigComponent, CodeResultComponent],
   templateUrl: './code-generator.html',
   styleUrl: './code-generator.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,23 +50,10 @@ export class CodeGenerator {
 
   // ─── Computed ────────────────────────────────────────────────────────────
   readonly hasSpec = computed(() => this.spec().trim().length > 0);
-  readonly qualityColor = computed(() => {
-    const score = this.result()?.metrics.qualityScore ?? 0;
-    if (score >= 80) return '#22c55e';
-    if (score >= 60) return '#eab308';
-    return '#ef4444';
-  });
-  readonly qualityLabel = computed(() => {
-    const score = this.result()?.metrics.qualityScore ?? 0;
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Fair';
-    return 'Needs Work';
-  });
 
   // ─── Actions ──────────────────────────────────────────────────────────────
-  onSpecInput(e: Event): void {
-    this.spec.set((e.target as HTMLTextAreaElement).value);
+  onSpecInput(newSpec: string): void {
+    this.spec.set(newSpec);
   }
 
   selectLanguage(lang: SupportedLanguage): void {
@@ -106,10 +96,4 @@ export class CodeGenerator {
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2000);
   }
-
-  metricBar(value: number, max: number): string {
-    return `${Math.min(100, Math.round((value / max) * 100))}%`;
-  }
-
-  trackBySuggestion(_: number, s: string) { return s; }
 }

@@ -1,0 +1,84 @@
+<div class="cg-result" aria-live="polite">
+  <!-- Quality Bar -->
+  <div class="cg-quality">
+    <div class="cg-quality__header">
+      <span class="cg-quality__label">Quality Score</span>
+      <span class="cg-quality__value" [style.color]="qualityColor()">
+        {{ result().metrics.qualityScore }}/100 — {{ qualityLabel() }}
+      </span>
+      <span class="cg-quality__rounds">
+        @if (result().cacheId) {
+          <span class="cg-badge cg-badge--cache" title="Context Caching Active">📦 RAG Cache</span>
+        }
+        {{ result().refinementRounds }} round(s) · {{ result().processingMs }}ms
+      </span>
+    </div>
+    <div class="cg-quality__track">
+      <div class="cg-quality__fill"
+        [style.width]="result().metrics.qualityScore + '%'"
+        [style.background]="qualityColor()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="cg-metrics">
+    <div class="cg-metric">
+      <span class="cg-metric__val">{{ result().metrics.linesOfCode }}</span>
+      <span class="cg-metric__lbl">Lines</span>
+    </div>
+    <div class="cg-metric">
+      <span class="cg-metric__val">{{ result().metrics.cyclomaticComplexity }}</span>
+      <span class="cg-metric__lbl">Cyclomatic</span>
+      <div class="cg-metric__bar"><div [style.width]="metricBar(result().metrics.cyclomaticComplexity, 20)"></div></div>
+    </div>
+    <div class="cg-metric">
+      <span class="cg-metric__val">{{ result().metrics.cognitiveComplexity }}</span>
+      <span class="cg-metric__lbl">Cognitive</span>
+      <div class="cg-metric__bar"><div [style.width]="metricBar(result().metrics.cognitiveComplexity, 30)"></div></div>
+    </div>
+    <div class="cg-metric">
+      <span class="cg-metric__val">{{ (result().metrics.commentRatio * 100).toFixed(0) }}%</span>
+      <span class="cg-metric__lbl">Comments</span>
+    </div>
+    <div class="cg-metric">
+      <span class="cg-metric__val cg-metric__val--warn">{{ result().metrics.securitySmells.length }}</span>
+      <span class="cg-metric__lbl">Sec. Smells</span>
+    </div>
+    <div class="cg-metric">
+      <span class="cg-metric__val">{{ result().metrics.codeSmells.length }}</span>
+      <span class="cg-metric__lbl">Code Smells</span>
+    </div>
+  </div>
+
+  <!-- Suggestions -->
+  @if (result().suggestions.length > 0) {
+    <details class="cg-suggestions" open>
+      <summary class="cg-suggestions__toggle">
+        💡 {{ result().suggestions.length }} Suggestion(s)
+      </summary>
+      <ul class="cg-suggestions__list">
+        @for (s of result().suggestions; track trackBySuggestion($index, s)) {
+          <li class="cg-suggestion">{{ s }}</li>
+        }
+      </ul>
+    </details>
+  }
+
+  <!-- Code Block -->
+  <div class="cg-code-panel">
+    <div class="cg-code-header">
+      <span class="cg-code-lang">{{ langIcons()[result().language] }} {{ result().language }}</span>
+      <span class="cg-code-lines">{{ result().metrics.linesOfCode }} lines</span>
+      <button
+        class="cg-btn cg-btn--ghost cg-copy-btn"
+        (click)="onCopyCode.emit()"
+        type="button"
+        [attr.aria-label]="copied() ? 'Copied!' : 'Copy code'"
+      >
+        {{ copied() ? '✓ Copied' : '📋 Copy' }}
+      </button>
+    </div>
+    <pre class="cg-code" [attr.lang]="result().language" aria-label="Generated code" tabindex="0">{{ result().code }}</pre>
+  </div>
+</div>

@@ -1,0 +1,57 @@
+<div class="cg-config">
+  <!-- Language Picker -->
+  <div class="cg-lang-picker" role="radiogroup" aria-label="Target language">
+    @for (lang of languages(); track lang) {
+      <button
+        [id]="'lang-' + lang"
+        class="cg-lang-btn"
+        [class.cg-lang-btn--active]="activeLanguage() === lang"
+        (click)="onLanguageSelect.emit(lang)"
+        [attr.aria-pressed]="activeLanguage() === lang"
+        type="button"
+      >
+        <span aria-hidden="true">{{ langIcons()[lang] }}</span>
+        {{ lang }}
+      </button>
+    }
+  </div>
+
+  <!-- Spec Input -->
+  <div class="cg-spec-group">
+    <div class="cg-spec-header">
+      <label for="spec-input" class="cg-label">Specification</label>
+      <button class="cg-btn cg-btn--ghost" (click)="onLoadExample.emit()" type="button">
+        Load Example
+      </button>
+    </div>
+    <textarea
+      id="spec-input"
+      class="cg-textarea"
+      [value]="specText()"
+      (input)="onInput($event)"
+      placeholder="Describe the function/module to generate in plain English..."
+      rows="4"
+      spellcheck="false"
+      aria-label="Code specification"
+    ></textarea>
+  </div>
+
+  <!-- Generate Button -->
+  <button
+    class="cg-btn cg-btn--primary"
+    (click)="onGenerate.emit()"
+    [disabled]="!hasSpec || isGenerating() || isCaching()"
+    [attr.aria-busy]="isGenerating() || isCaching() || null"
+    type="button"
+  >
+    @if (isCaching()) {
+      <span class="cg-spinner" aria-hidden="true"></span>
+      Caching Context...
+    } @else if (isGenerating()) {
+      <span class="cg-spinner" aria-hidden="true"></span>
+      Generating (RCI)...
+    } @else {
+      ⚡ Generate Code
+    }
+  </button>
+</div>
