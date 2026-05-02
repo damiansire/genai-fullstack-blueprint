@@ -1,0 +1,164 @@
+<div class="sd-layout">
+
+  <!-- ─── Header ──────────────────────────────────────────────────────── -->
+  <header class="sd-header">
+    <div class="sd-header__title-row">
+      <h1 class="sd-header__title">🛡️ Security Log Analyzer</h1>
+      <span class="sd-header__subtitle">MITRE ATT&amp;CK Pattern Detection</span>
+    </div>
+    <p class="sd-header__desc">
+      Paste raw log text to detect threats, score risk, and get actionable mitigations — zero LLM cost.
+    </p>
+  </header>
+
+  <!-- ─── Input Panel ──────────────────────────────────────────────────── -->
+  <section class="sd-input-panel" aria-label="Log input">
+    <div class="sd-input-header">
+      <span class="sd-input-label">Log Input</span>
+      @if (logLineCount() > 0) {
+        <span class="sd-line-count">{{ logLineCount() }} lines</span>
+      }
+      <div class="sd-input-actions">
+        <button class="sd-btn sd-btn--ghost" (click)="loadSample()" type="button">
+          Load Sample
+        </button>
+        <button class="sd-btn sd-btn--ghost" (click)="clearAll()" type="button" [disabled]="!hasLogs()">
+          Clear
+        </button>
+      </div>
+    </div>
+    <textarea
+      id="log-input"
+      class="sd-textarea"
+      placeholder="Paste log lines here... (syslog, Apache, nginx, auth.log, etc.)"
+      [value]="logs()"
+      (input)="onLogsInput($event)"
+      rows="10"
+      aria-label="Raw log text input"
+      spellcheck="false"
+    ></textarea>
+    <div class="sd-analyze-row">
+      <button
+        class="sd-btn sd-btn--primary"
+        (click)="analyze()"
+        [disabled]="!hasLogs() || isAnalyzing()"
+        [attr.aria-busy]="isAnalyzing() || null"
+        type="button"
+      >
+        @if (isAnalyzing()) {
+          <span class="sd-spinner" aria-hidden="true"></span>
+          Analyzing...
+        } @else {
+          🔍 Analyze Logs
+        }
+      </button>
+    </div>
+  </section>
+
+  <!-- ─── Error ────────────────────────────────────────────────────────── -->
+  @if (analysisError()) {
+    <div class="sd-error" role="alert">⚠️ {{ analysisError() }}</div>
+  }
+
+  <!-- ─── Report ───────────────────────────────────────────────────────── -->
+  @if (report(); as r) {
+    <section class="sd-report" aria-label="Analysis report" aria-live="polite">
+
+      <!-- Summary Row -->
+      <div class="sd-summary">
+        <!-- Risk Gauge -->
+        <div class="sd-gauge" [style.background]="riskGradient()" aria-label="Risk score {{ r.riskScore }} out of 100">
+          <div class="sd-gauge__inner">
+            <span class="sd-gauge__score">{{ r.riskScore }}</span>
+            <span class="sd-gauge__label">Risk</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="sd-stats">
+          <div class="sd-stat">
+            <span class="sd-stat__value">{{ r.logLines }}</span>
+            <span class="sd-stat__label">Log Lines</span>
+          </div>
+          <div class="sd-stat">
+            <span class="sd-stat__value">{{ r.threats.length }}</span>
+            <span class="sd-stat__label">Threats</span>
+          </div>
+          <div class="sd-stat">
+            <span class="sd-stat__value">{{ r.processingMs }}ms</span>
+            <span class="sd-stat__label">Analysis Time</span>
+          </div>
+        </div>
+
+        <!-- Overall Severity -->
+        <div class="sd-severity-panel">
+          <div class="sd-severity-badge" [class]="'sd-severity--' + r.overallSeverity.toLowerCase()">
+            {{ r.overallSeverity }}
+          </div>
+          <p class="sd-summary-text">{{ r.summary }}</p>
+        </div>
+      </div>
+
+      <!-- Threat Cards -->
+      @if (r.threats.length > 0) {
+        <div class="sd-section">
+          <h2 class="sd-section__title">Threat Indicators</h2>
+          <div class="sd-threats">
+            @for (threat of r.threats; track trackByCategory($index, threat)) {
+              <article class="sd-threat-card" [class]="'sd-threat--' + threat.severity.toLowerCase()">
+                <div class="sd-threat__header">
+                  <div>
+                    <span class="sd-threat__technique">{{ threat.technique }}</span>
+                    <h3 class="sd-threat__category">{{ threat.category }}</h3>
+                  </div>
+                  <span [class]="severityClass(threat.severity)">{{ threat.severity }}</span>
+                </div>
+
+                <!-- Confidence bar -->
+                <div class="sd-confidence">
+                  <span class="sd-confidence__label">Confidence</span>
+                  <div class="sd-confidence__track" aria-label="Confidence: {{ (threat.confidence * 100) | number:'1.0-0' }}%">
+                    <div class="sd-confidence__bar" [style.width]="confidenceWidth(threat.confidence)"></div>
+                  </div>
+                  <span class="sd-confidence__value">{{ (threat.confidence * 100).toFixed(0) }}%</span>
+                </div>
+
+                <!-- Evidence -->
+                @if (threat.evidence.length > 0) {
+                  <details class="sd-evidence">
+                    <summary class="sd-evidence__toggle">{{ threat.evidence.length }} evidence line(s)</summary>
+                    <ul class="sd-evidence__list">
+                      @for (line of threat.evidence; track $index) {
+                        <li class="sd-evidence__item"><code>{{ line }}</code></li>
+                      }
+                    </ul>
+                  </details>
+                }
+
+                <!-- Recommendation -->
+                <p class="sd-threat__rec">💡 {{ threat.recommendation }}</p>
+              </article>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Mitigations -->
+      @if (r.mitigations.length > 0) {
+        <div class="sd-section">
+          <h2 class="sd-section__title">Action Checklist</h2>
+          <ul class="sd-mitigations">
+            @for (m of r.mitigations; track $index) {
+              <li class="sd-mitigation">
+                <input type="checkbox" [id]="'mit-' + $index" class="sd-mitigation__check" />
+                <label [for]="'mit-' + $index" class="sd-mitigation__label">{{ m }}</label>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+    </section>
+  }
+
+</div>

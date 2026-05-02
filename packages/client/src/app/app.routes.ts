@@ -26,6 +26,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tool-explorer/tool-explorer').then(m => m.ToolExplorer),
     title: 'Tool Explorer - AI Gateway'
   },
+  {
+    path: 'security',
+    loadComponent: () => import('./features/security-dashboard/security-dashboard').then(m => m.SecurityDashboard),
+    title: 'Security Analyzer - AI Gateway'
+  },
+  {
+    path: 'iot',
+    loadComponent: () => import('./features/iot-dashboard/iot-dashboard').then(m => m.IotDashboard),
+    title: 'IoT Telemetry - AI Gateway'
+  },
+  {
+    path: 'code-gen',
+    loadComponent: () => import('./features/code-generator/code-generator').then(m => m.CodeGenerator),
+    title: 'Code Generator - AI Gateway'
+  },
   // Legacy redirect
   {
     path: 'image-model',

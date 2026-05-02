@@ -1,0 +1,154 @@
+<div class="cg-layout">
+
+  <!-- ─── Header ──────────────────────────────────────────────────────── -->
+  <header class="cg-header">
+    <h1 class="cg-header__title">⚡ Code Generator</h1>
+    <p class="cg-header__desc">Spec → Code → Quality Analysis → Refinement (Patrón 10)</p>
+  </header>
+
+  <!-- ─── Config Panel ────────────────────────────────────────────────── -->
+  <div class="cg-config">
+    <!-- Language Picker -->
+    <div class="cg-lang-picker" role="radiogroup" aria-label="Target language">
+      @for (lang of languages; track lang) {
+        <button
+          [id]="'lang-' + lang"
+          class="cg-lang-btn"
+          [class.cg-lang-btn--active]="language() === lang"
+          (click)="selectLanguage(lang)"
+          [attr.aria-pressed]="language() === lang"
+          type="button"
+        >
+          <span aria-hidden="true">{{ langIcons[lang] }}</span>
+          {{ lang }}
+        </button>
+      }
+    </div>
+
+    <!-- Spec Input -->
+    <div class="cg-spec-group">
+      <div class="cg-spec-header">
+        <label for="spec-input" class="cg-label">Specification</label>
+        <button class="cg-btn cg-btn--ghost" (click)="loadExample()" type="button">
+          Load Example
+        </button>
+      </div>
+      <textarea
+        id="spec-input"
+        class="cg-textarea"
+        [value]="spec()"
+        (input)="onSpecInput($event)"
+        placeholder="Describe the function/module to generate in plain English..."
+        rows="4"
+        spellcheck="false"
+        aria-label="Code specification"
+      ></textarea>
+    </div>
+
+    <!-- Generate Button -->
+    <button
+      class="cg-btn cg-btn--primary"
+      (click)="generate()"
+      [disabled]="!hasSpec() || isGenerating()"
+      [attr.aria-busy]="isGenerating() || null"
+      type="button"
+    >
+      @if (isGenerating()) {
+        <span class="cg-spinner" aria-hidden="true"></span>
+        Generating...
+      } @else {
+        ⚡ Generate Code
+      }
+    </button>
+  </div>
+
+  <!-- ─── Error ───────────────────────────────────────────────────────── -->
+  @if (error()) {
+    <div class="cg-error" role="alert">⚠️ {{ error() }}</div>
+  }
+
+  <!-- ─── Result ──────────────────────────────────────────────────────── -->
+  @if (result(); as r) {
+    <div class="cg-result" aria-live="polite">
+
+      <!-- Quality Bar -->
+      <div class="cg-quality">
+        <div class="cg-quality__header">
+          <span class="cg-quality__label">Quality Score</span>
+          <span class="cg-quality__value" [style.color]="qualityColor()">
+            {{ r.metrics.qualityScore }}/100 — {{ qualityLabel() }}
+          </span>
+          <span class="cg-quality__rounds">{{ r.refinementRounds }} round(s) · {{ r.processingMs }}ms</span>
+        </div>
+        <div class="cg-quality__track">
+          <div class="cg-quality__fill"
+            [style.width]="r.metrics.qualityScore + '%'"
+            [style.background]="qualityColor()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Grid -->
+      <div class="cg-metrics">
+        <div class="cg-metric">
+          <span class="cg-metric__val">{{ r.metrics.linesOfCode }}</span>
+          <span class="cg-metric__lbl">Lines</span>
+        </div>
+        <div class="cg-metric">
+          <span class="cg-metric__val">{{ r.metrics.cyclomaticComplexity }}</span>
+          <span class="cg-metric__lbl">Cyclomatic</span>
+          <div class="cg-metric__bar"><div [style.width]="metricBar(r.metrics.cyclomaticComplexity, 20)"></div></div>
+        </div>
+        <div class="cg-metric">
+          <span class="cg-metric__val">{{ r.metrics.cognitiveComplexity }}</span>
+          <span class="cg-metric__lbl">Cognitive</span>
+          <div class="cg-metric__bar"><div [style.width]="metricBar(r.metrics.cognitiveComplexity, 30)"></div></div>
+        </div>
+        <div class="cg-metric">
+          <span class="cg-metric__val">{{ (r.metrics.commentRatio * 100).toFixed(0) }}%</span>
+          <span class="cg-metric__lbl">Comments</span>
+        </div>
+        <div class="cg-metric">
+          <span class="cg-metric__val cg-metric__val--warn">{{ r.metrics.securitySmells.length }}</span>
+          <span class="cg-metric__lbl">Sec. Smells</span>
+        </div>
+        <div class="cg-metric">
+          <span class="cg-metric__val">{{ r.metrics.codeSmells.length }}</span>
+          <span class="cg-metric__lbl">Code Smells</span>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      @if (r.suggestions.length > 0) {
+        <details class="cg-suggestions" open>
+          <summary class="cg-suggestions__toggle">
+            💡 {{ r.suggestions.length }} Suggestion(s)
+          </summary>
+          <ul class="cg-suggestions__list">
+            @for (s of r.suggestions; track trackBySuggestion($index, s)) {
+              <li class="cg-suggestion">{{ s }}</li>
+            }
+          </ul>
+        </details>
+      }
+
+      <!-- Code Block -->
+      <div class="cg-code-panel">
+        <div class="cg-code-header">
+          <span class="cg-code-lang">{{ langIcons[r.language] }} {{ r.language }}</span>
+          <span class="cg-code-lines">{{ r.metrics.linesOfCode }} lines</span>
+          <button
+            class="cg-btn cg-btn--ghost cg-copy-btn"
+            (click)="copyCode()"
+            type="button"
+            [attr.aria-label]="copied() ? 'Copied!' : 'Copy code'"
+          >
+            {{ copied() ? '✓ Copied' : '📋 Copy' }}
+          </button>
+        </div>
+        <pre class="cg-code" [attr.lang]="r.language" aria-label="Generated code">{{ r.code }}</pre>
+      </div>
+    </div>
+  }
+
+</div>

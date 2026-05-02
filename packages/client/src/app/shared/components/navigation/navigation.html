@@ -25,6 +25,30 @@
         </a>
       </li>
       <li>
+        <a routerLink="/tool-explorer" routerLinkActive="active" #rlaTools="routerLinkActive" [attr.aria-current]="rlaTools.isActive ? 'page' : null" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">{{ icons.tools }}</span>
+          <span class="nav-label">Tool Explorer</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/security" routerLinkActive="active" #rlaSec="routerLinkActive" [attr.aria-current]="rlaSec.isActive ? 'page' : null" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">{{ icons.security }}</span>
+          <span class="nav-label">Security</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/iot" routerLinkActive="active" #rlaIot="routerLinkActive" [attr.aria-current]="rlaIot.isActive ? 'page' : null" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">{{ icons.iot }}</span>
+          <span class="nav-label">IoT</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/code-gen" routerLinkActive="active" #rlaCg="routerLinkActive" [attr.aria-current]="rlaCg.isActive ? 'page' : null" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">{{ icons.codeGen }}</span>
+          <span class="nav-label">Code Gen</span>
+        </a>
+      </li>
+      <li>
         <button popovertarget="ai-settings-menu" popovertargetaction="toggle" class="nav-link btn-settings" aria-label="Open Settings">
           <span class="nav-icon" aria-hidden="true">⚙️</span>
           <span class="nav-label">Settings</span>

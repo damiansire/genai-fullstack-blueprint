@@ -1,0 +1,112 @@
+<div class="iot-layout">
+
+  <!-- ─── Header ─────────────────────────────────────────────────────── -->
+  <header class="iot-header">
+    <div class="iot-header__title-row">
+      <h1 class="iot-header__title">📡 IoT Telemetry Dashboard</h1>
+      <div class="iot-header__controls">
+        @if (!isStreaming()) {
+          <button class="iot-btn iot-btn--start" (click)="startStream()" type="button">
+            ▶ Start Stream
+          </button>
+        } @else {
+          <div class="iot-live-badge">
+            <span class="iot-live-dot"></span>
+            LIVE — {{ totalFrames() }} frames
+          </div>
+          <button class="iot-btn iot-btn--stop" (click)="stopStream()" type="button">
+            ■ Stop
+          </button>
+        }
+      </div>
+    </div>
+    <p class="iot-header__desc">
+      Real-time sensor telemetry with Z-score anomaly detection (WARNING at 2.5σ, CRITICAL at 4.0σ)
+    </p>
+  </header>
+
+  <!-- ─── Connection Error ────────────────────────────────────────────── -->
+  @if (connectionError()) {
+    <div class="iot-error" role="alert">⚠️ {{ connectionError() }}</div>
+  }
+
+  <!-- ─── Alert Banner ────────────────────────────────────────────────── -->
+  @if (hasAlerts()) {
+    <div class="iot-alert-banner" [class.iot-alert-banner--critical]="criticalCount() > 0" role="status" aria-live="polite">
+      <span class="iot-alert-banner__icon">{{ criticalCount() > 0 ? '🚨' : '⚠️' }}</span>
+      <span class="iot-alert-banner__text">
+        {{ alertCount() }} alert(s) — {{ criticalCount() }} CRITICAL
+      </span>
+      <button class="iot-btn iot-btn--ghost" (click)="dismissAlerts()" type="button">Dismiss</button>
+    </div>
+  }
+
+  <!-- ─── Empty State ──────────────────────────────────────────────────── -->
+  @if (!isStreaming() && deviceList().length === 0) {
+    <div class="iot-empty">
+      <div class="iot-empty__icon">📡</div>
+      <h2 class="iot-empty__title">No active stream</h2>
+      <p class="iot-empty__hint">Click Start Stream to connect to 7 simulated IoT devices.</p>
+    </div>
+  }
+
+  <!-- ─── Device Grid ──────────────────────────────────────────────────── -->
+  @if (deviceList().length > 0) {
+    <div class="iot-grid" role="list" aria-label="Device readings">
+      @for (state of deviceList(); track trackById($index, state)) {
+        <article [class]="cardClass(state)" role="listitem" [attr.aria-label]="state.config.id + ' sensor'">
+
+          <!-- Card Header -->
+          <div class="dc-header">
+            <span class="dc-icon" aria-hidden="true">{{ deviceIcon(state.config.type) }}</span>
+            <div class="dc-meta">
+              <h3 class="dc-id">{{ state.config.id }}</h3>
+              <span class="dc-location">{{ state.config.location }}</span>
+            </div>
+            @if (state.latest) {
+              <span [class]="alertClass(state.latest.alertLevel)" [attr.aria-label]="'Alert level: ' + state.latest.alertLevel">
+                {{ state.latest.alertLevel }}
+              </span>
+            }
+          </div>
+
+          <!-- Value Display -->
+          <div class="dc-value-row">
+            @if (state.latest) {
+              <span class="dc-value">{{ state.latest.value }}</span>
+              <span class="dc-unit">{{ state.latest.unit }}</span>
+            } @else {
+              <span class="dc-value dc-value--waiting">—</span>
+            }
+          </div>
+
+          <!-- Sparkline -->
+          @if (state.history.length >= 2) {
+            <svg class="dc-sparkline" viewBox="0 0 120 32" aria-hidden="true" preserveAspectRatio="none">
+              <polyline
+                [attr.points]="sparklinePath(state.history)"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          } @else {
+            <div class="dc-sparkline-placeholder" aria-hidden="true">Waiting for data...</div>
+          }
+
+          <!-- Metadata -->
+          @if (state.latest?.metadata) {
+            <div class="dc-meta-row">
+              <span class="dc-meta-item" title="Rolling mean">μ {{ state.latest!.metadata.rollingMean }}</span>
+              <span class="dc-meta-item" title="Z-score">z={{ state.latest!.metadata.zScore }}</span>
+              <span class="dc-meta-item">{{ state.frameCount }} frames</span>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+
+</div>

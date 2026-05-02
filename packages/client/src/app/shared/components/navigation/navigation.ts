@@ -13,7 +13,11 @@ export class Navigation {
     ai: '🤖',
     text: '📝',
     ocr: '🔍',
-    generation: '🎨'
+    generation: '🎨',
+    tools: '🔧',
+    security: '🛡️',
+    iot: '📡',
+    codeGen: '⚡',
   };
 }
 

@@ -19,6 +19,8 @@ import { randomUUID, createHash } from 'node:crypto';
 import { requestContext, createRootContext } from './core/async-context.js';
 import { createToolRoutes } from './api/routes/toolRoutes.js';
 import { createMcpSseRouter } from './infrastructure/mcp/mcp-server.js';
+import { createDomainRoutes } from './api/routes/domainRoutes.js';
+import { registerTool } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:http)
 import type { Server as HttpServer } from 'node:http';
 import { logger } from './core/logger.js';
@@ -162,6 +164,13 @@ class Server extends EventEmitter {
     // stdio transport is a separate process: npm run mcp:stdio
     const mcpRouter = createMcpSseRouter();
     this.app.use('/mcp', mcpRouter);
+
+    // Patrones 7, 9, 10: Domain use cases (Security, IoT Telemetry, Code Generation)
+    const domainRouter = createDomainRoutes();
+    this.app.use('/api/domain', domainRouter);
+
+    // Seed Tool Registry with domain tools (Patrón 1 integration)
+    this.seedToolRegistry();
 
     // 404 handler for undefined routes
     this.app.use((req, res) => {
@@ -313,7 +322,57 @@ class Server extends EventEmitter {
   public getApp(): express.Application {
     return this.app;
   }
+
+  /**
+   * Seeds the SQLite Tool Registry with domain tools at startup.
+   * Patrón 1 + Patrón 6 integration: tools appear in Tool Explorer automatically.
+   * Uses INSERT OR REPLACE — safe to call on every boot.
+   */
+  private seedToolRegistry(): void {
+    try {
+      registerTool('analyze_security_logs', 'Analyzes raw log text for security threats using MITRE ATT\&CK patterns. Returns a structured report with severity, indicators, and mitigations.', {
+        type: 'object',
+        properties: {
+          logs: { type: 'string', description: 'Raw log text (newline-separated entries)', format: 'textarea' },
+        },
+        required: ['logs'],
+      }, 'security');
+
+      registerTool('stream_telemetry', 'Opens a real-time SSE stream of IoT sensor readings. Returns device frames with Z-score anomaly detection.', {
+        type: 'object',
+        properties: {
+          devices: { type: 'string', description: 'Comma-separated device IDs to monitor (empty = all)', examples: ['TEMP-WH-001,HUM-WH-001'] },
+        },
+      }, 'iot');
+
+      registerTool('generate_code', 'Generates code from a spec string with iterative quality analysis and refinement. Returns code + metrics + suggestions.', {
+        type: 'object',
+        properties: {
+          spec: { type: 'string', description: 'Natural language specification of the code to generate', format: 'textarea' },
+          language: { type: 'string', enum: ['typescript', 'javascript', 'python', 'go', 'rust', 'sql'], description: 'Target programming language', default: 'typescript' },
+        },
+        required: ['spec'],
+      }, 'devtools');
+
+      registerTool('search_tools', 'Searches the tool registry for relevant tool schemas. Use this before calling any domain tool to retrieve its exact JSON schema JIT.', {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Keyword to search for in tool names and descriptions' },
+          limit: { type: 'number', description: 'Maximum number of results (default: 5, max: 20)', minimum: 1, maximum: 20 },
+        },
+        required: ['query'],
+      }, 'meta');
+
+      logger.info('[Server] Tool Registry seeded with domain tools.');
+    } catch (err) {
+      // Non-critical: Tool Registry may already have these tools from previous boot
+      logger.warn('[Server] Tool Registry seed skipped (tools may already exist)', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
 }
+
 
 // Create and start the server
 const server = new Server();
