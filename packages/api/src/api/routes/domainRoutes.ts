@@ -27,7 +27,7 @@ export function createDomainRoutes(): Router {
   // POST /domain/security/analyze
   // Body: { logs: string }
   // ──────────────────────────────────────────────────────────────────────────
-  router.post('/security/analyze', apiKeyAuth, (req: Request, res: Response) => {
+  router.post('/security/analyze', apiKeyAuth, async (req: Request, res: Response) => {
     const { logs } = req.body as { logs?: string };
 
     if (!logs || typeof logs !== 'string') {
@@ -41,7 +41,7 @@ export function createDomainRoutes(): Router {
     }
 
     try {
-      const report = securityAnalysisUseCase.execute(logs);
+      const report = await securityAnalysisUseCase.execute(logs);
       res.json(report);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -109,7 +109,7 @@ export function createDomainRoutes(): Router {
   // POST /domain/code/generate
   // Body: { spec: string, language?: SupportedLanguage }
   // ──────────────────────────────────────────────────────────────────────────
-  router.post('/code/generate', apiKeyAuth, (req: Request, res: Response) => {
+  router.post('/code/generate', apiKeyAuth, async (req: Request, res: Response) => {
     const { spec, language = 'typescript' } = req.body as {
       spec?: string;
       language?: SupportedLanguage;
@@ -135,7 +135,7 @@ export function createDomainRoutes(): Router {
     }
 
     try {
-      const result = codeGenerationUseCase.execute(spec, language);
+      const result = await codeGenerationUseCase.execute({ spec, language });
       res.json(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

@@ -5,10 +5,14 @@ export interface GetModelInfoDTO {
   modelId: string;
 }
 
-export class GetModelInfoUseCase {
-  constructor(private readonly modelFactory: ModelFactory) {}
+import { UseCase } from '../../core/UseCase.js';
 
-  public async execute(dto: GetModelInfoDTO): Promise<{ modelId: string; available: boolean; registeredAt: string }> {
+export class GetModelInfoUseCase extends UseCase<GetModelInfoDTO, { modelId: string; available: boolean; registeredAt: string }> {
+  constructor(private readonly modelFactory: ModelFactory) {
+    super();
+  }
+
+  protected async executeImpl(dto: GetModelInfoDTO): Promise<{ modelId: string; available: boolean; registeredAt: string }> {
     if (!dto.modelId) {
       throw ApiError.badRequest('Model ID is required');
     }

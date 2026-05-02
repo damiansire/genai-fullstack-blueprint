@@ -317,11 +317,19 @@ def _process_request(options: dict[str, Any]) -> Any:
 
 // ─── Use Case ─────────────────────────────────────────────────────────────────
 
-export class CodeGenerationUseCase {
+import { UseCase } from '../../core/UseCase.js';
+
+export interface CodeGenerationDTO {
+  spec: string;
+  language?: SupportedLanguage;
+}
+
+export class CodeGenerationUseCase extends UseCase<CodeGenerationDTO, CodeGenerationResult> {
   private readonly QUALITY_THRESHOLD = 65; // minimum score before refinement
   private readonly MAX_ROUNDS = 3;
 
-  execute(spec: string, language: SupportedLanguage = 'typescript'): CodeGenerationResult {
+  protected async executeImpl(request: CodeGenerationDTO): Promise<CodeGenerationResult> {
+    const { spec, language = 'typescript' } = request;
     const start = performance.now();
     const traceId = getContext()?.traceId;
 

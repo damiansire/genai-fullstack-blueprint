@@ -25,10 +25,14 @@ export interface InvokeModelDTO {
   context: ProcessContext;
 }
 
-export class InvokeModelUseCase {
-  constructor(private readonly modelFactory: ModelFactory) {}
+import { UseCase } from '../../core/UseCase.js';
 
-  public async execute(dto: InvokeModelDTO): Promise<any> {
+export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
+  constructor(private readonly modelFactory: ModelFactory) {
+    super();
+  }
+
+  protected async executeImpl(dto: InvokeModelDTO): Promise<any> {
     if (!dto.modelId) {
       throw ApiError.badRequest('Model ID is required');
     }

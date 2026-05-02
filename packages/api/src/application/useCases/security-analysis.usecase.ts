@@ -160,13 +160,15 @@ function maxSeverity(threats: ThreatIndicator[]): ThreatSeverity {
 
 // ─── Use Case ─────────────────────────────────────────────────────────────────
 
-export class SecurityAnalysisUseCase {
+import { UseCase } from '../../core/UseCase.js';
+
+export class SecurityAnalysisUseCase extends UseCase<string, SecurityAnalysisReport> {
   /**
    * Analyzes a block of log text for security threats.
    * @param logs  Raw log text (newline-separated entries)
    * @returns     Structured SecurityAnalysisReport
    */
-  execute(logs: string): SecurityAnalysisReport {
+  protected async executeImpl(logs: string): Promise<SecurityAnalysisReport> {
     const start = performance.now();
     const traceId = getContext()?.traceId;
     const logLines = logs.split('\n').filter(l => l.trim().length > 0);
