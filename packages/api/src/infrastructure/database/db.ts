@@ -63,6 +63,9 @@ export class DatabaseService extends EventEmitter {
 
       const dbPath = path.join(dataDir, 'gateway.db');
       this.db = new DatabaseSync(dbPath);
+      
+      // Habilitar Write-Ahead Logging (WAL) para concurrencia masiva (Mitigación de thread bottleneck)
+      this.db.exec('PRAGMA journal_mode = WAL;');
 
       // Apply Proxy Pattern to intercept queries (Node.js Design Patterns)
       this.proxiedDb = new Proxy(this.db, {

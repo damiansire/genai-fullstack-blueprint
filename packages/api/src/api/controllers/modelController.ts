@@ -206,65 +206,68 @@ export function createStreamController(modelFactory: ModelFactory) {
 
       const result = await invokeModelUseCase.execute(dto);
       
-      // Simulate chunking the response text using a native interval (streaming behavior)
-      // Since our current models return a complete response, we mock the stream by breaking it.
+      // Simulate chunking the response text using a native stream implementation
       const textToStream = result.text || JSON.stringify(result);
-      const chunkSize = 10;
       let i = 0;
       let firstTokenSent = false;
+      let isDisconnected = false;
 
       // Predictive Rate Limiting Setup
       const store = res.locals['tokenStore'];
       const identifier = res.locals['rateLimitIdentifier'];
       const windowMs = res.locals['rateLimitWindowMs'];
-      // Allow up to 1000 tokens for streaming simulation
       const maxAllowedTokens = 1000;
       let estimatedTokens = 0;
 
-      const intervalId = setInterval(async () => {
+      const sendNextChunk = async () => {
+        if (isDisconnected) return;
+
         if (i < textToStream.length) {
+          // Jittering: Group tokens randomly (chunk size between 5 and 20)
+          const chunkSize = Math.floor(Math.random() * 15) + 5;
           const chunk = textToStream.slice(i, i + chunkSize);
           
-          // Estimate tokens for this chunk (approx 4 chars = 1 token)
           estimatedTokens += Math.ceil(chunk.length / 4);
           
           // Predictive circuit breaking for stream draining attack
           if (store && estimatedTokens > maxAllowedTokens) {
-             clearInterval(intervalId);
-             logger.warn(`[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit of ${maxAllowedTokens}`);
+             logger.warn(`[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit`);
              res.write(`event: error\n`);
              res.write(`data: ${JSON.stringify({ message: 'Rate limit exceeded during streaming. Stream aborted.' })}\n\n`);
              res.end();
-             req.destroy(); // Hard kill socket
+             req.destroy();
              return;
           }
 
-          res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+          // Sanitización estricta de nuevas líneas (Defensa contra CVE-2026-33128 SSE Injection)
+          const sanitizedChunk = chunk.replace(/\n/g, '\\n');
+
+          res.write(`data: ${JSON.stringify({ chunk: sanitizedChunk })}\n\n`);
+          
+          // Padding (Relleno Estocástico): inject random crypto noise to destroy token length predictability
+          const noiseLength = Math.floor(Math.random() * 64) + 16;
+          const noise = await import('node:crypto').then(crypto => crypto.randomBytes(noiseLength).toString('hex'));
+          res.write(`: ${noise}\n\n`);
+
           i += chunkSize;
 
           if (!firstTokenSent) {
             firstTokenSent = true;
             const ttftMs = Math.round(performance.now() - startTime);
-            logger.info(`[OpenTelemetry] Time To First Token (TTFT)`, {
-              ttft_ms: ttftMs,
-              modelId
-            });
-            // Propagate metric to frontend
+            logger.info(`[OpenTelemetry] Time To First Token (TTFT)`, { ttft_ms: ttftMs, modelId });
             res.write(`data: ${JSON.stringify({ metadata: { ttft_ms: ttftMs } })}\n\n`);
           }
+          
+          // Jittering: Random micro-delays between 30ms and 80ms
+          const jitterDelayMs = Math.floor(Math.random() * 50) + 30;
+          setTimeout(sendNextChunk, jitterDelayMs);
         } else {
-          clearInterval(intervalId);
           res.write('event: done\n');
           res.write('data: {}\n\n');
           res.end();
           
-          // Consume tokens for streaming request
-          const store = res.locals['tokenStore'];
           const totalTokens = result.metadata?.usageMetadata?.totalTokenCount || 0;
-          
           if (store && totalTokens > 0) {
-            const identifier = res.locals['rateLimitIdentifier'];
-            const windowMs = res.locals['rateLimitWindowMs'];
             try {
               await store.consume(identifier, totalTokens, windowMs);
               logger.info(`[Stream] Consumed ${totalTokens} tokens for ${identifier}`);
@@ -273,11 +276,13 @@ export function createStreamController(modelFactory: ModelFactory) {
             }
           }
         }
-      }, 50);
+      };
+
+      sendNextChunk();
 
       // Handle client disconnect
       req.on('close', () => {
-        clearInterval(intervalId);
+        isDisconnected = true;
         logger.info(`Client disconnected during stream from '${modelId}'`);
       });
 

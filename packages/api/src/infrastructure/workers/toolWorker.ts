@@ -1,15 +1,13 @@
-import { parentPort, workerData } from 'node:worker_threads';
+import { parentPort } from 'node:worker_threads';
 
 if (!parentPort) {
   throw new Error('This file must be run as a worker thread');
 }
 
-const { toolName, args } = workerData;
+parentPort.on('message', async (message) => {
+  const { id, toolName, args } = message;
 
-async function execute() {
   try {
-    // In a real implementation, we would map toolName to an actual function.
-    // For this scaffold, we simulate a heavy tool execution.
     let result;
     
     switch (toolName) {
@@ -19,17 +17,14 @@ async function execute() {
         result = fib(n);
         break;
       case 'render_chart':
-        // Simulates preparing data for generative UI
         result = { type: 'bar', data: [10, 20, 30], label: args.label || 'Sales' };
         break;
       default:
         result = { error: `Tool ${toolName} not recognized` };
     }
 
-    parentPort!.postMessage({ success: true, result });
+    parentPort!.postMessage({ id, success: true, result });
   } catch (error) {
-    parentPort!.postMessage({ success: false, error: String(error) });
+    parentPort!.postMessage({ id, success: false, error: String(error) });
   }
-}
-
-execute();
+});

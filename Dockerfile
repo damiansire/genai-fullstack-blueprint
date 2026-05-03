@@ -24,8 +24,7 @@ RUN --mount=type=cache,target=/root/.npm \
 # Transferencia granular de la algoritmia y código fuente operativo.
 COPY packages/api/ ./packages/api/
 
-# Activación del orquestador interno de procesamiento
-RUN npm run build --workspace=packages/api
+# Eliminado el orquestador de compilación (tsc). Se confía nativamente en V8.
 
 # Operación Quirúrgica: Poda y desvinculación sistémica de pertrechos de desarrollo local
 RUN npm prune --omit=dev --workspace=packages/api && \
@@ -42,8 +41,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Transferencia extractiva del compilado
-COPY --from=builder /app/packages/api/dist ./dist
+# Transferencia directa del código fuente Typescript sin procesar
+COPY --from=builder /app/packages/api/src ./src
 COPY --from=builder /app/packages/api/package.json ./package.json
 
 # Traspaso de la topología pre-podada de directorios de resolución global
@@ -57,5 +56,5 @@ VOLUME ["/app/data"]
 ENV PORT=8080
 EXPOSE 8080
 
-# Comando vectorial implícito de ejecución.
-CMD ["dist/server.js"]
+# Comando vectorial implícito de ejecución con modelo estricto de permisos
+CMD ["--experimental-strip-types", "--permission", "--allow-fs-read=*", "--allow-fs-write=/app/data/", "--allow-net", "--allow-worker", "src/server.ts"]

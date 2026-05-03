@@ -1,4 +1,4 @@
-import { isMainThread, parentPort, workerData } from 'node:worker_threads';
+import { isMainThread, parentPort } from 'node:worker_threads';
 import { z } from 'zod';
 import { performance } from 'node:perf_hooks';
 
@@ -6,25 +6,20 @@ import { performance } from 'node:perf_hooks';
 // decodes it to a string, parses the JSON, and validates it with Zod.
 
 if (!isMainThread && parentPort) {
-  // workerData contains { schemaName }
-  const { schemaName } = workerData;
-
   parentPort.on('message', (message) => {
+    const { id, buffer, schemaName } = message;
     try {
       const start = performance.now();
-      const buffer = message.buffer as ArrayBuffer;
       
       // Zero-copy decoding
       const textDecoder = new TextDecoder('utf-8');
-      const jsonString = textDecoder.decode(buffer);
+      const jsonString = textDecoder.decode(buffer as ArrayBuffer);
       
       // Parse JSON
       const parsedData = JSON.parse(jsonString);
 
-      // In a real application, you'd map schemaName to actual imported Zod schemas.
-      // Here we simulate validation. If schemaName is provided, we validate it.
+      // Validate with Zod
       let validatedData = parsedData;
-      
       if (schemaName === 'ArraySchema') {
         const schema = z.array(z.any());
         validatedData = schema.parse(parsedData);
@@ -32,7 +27,6 @@ if (!isMainThread && parentPort) {
         const schema = z.object({}).passthrough();
         validatedData = schema.parse(parsedData);
       } else {
-        // generic fallback
         const schema = z.any();
         validatedData = schema.parse(parsedData);
       }
@@ -40,12 +34,14 @@ if (!isMainThread && parentPort) {
       const end = performance.now();
 
       parentPort!.postMessage({
+        id,
         success: true,
         data: validatedData,
         processingTimeMs: Math.round(end - start)
       });
     } catch (error) {
       parentPort!.postMessage({
+        id,
         success: false,
         error: error instanceof Error ? error.message : String(error)
       });
