@@ -1,42 +1,61 @@
-# Stage 1: Build
-FROM node:22-alpine AS builder
+# syntax=docker/dockerfile:1.4
+
+# Etapa 1: Infraestructura de Base de Construcción 
+# Empleo mandatario de Debian Slim para garantizar compatibilidad nativa íntegra
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Copy package configurations
-COPY package*.json ./
-COPY packages/api/package*.json ./packages/api/
-COPY packages/client/package*.json ./packages/client/
+# Inicialización del gestor avanzado de librerías base OS.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install dependencies (since we are zero-deps as much as possible, this is fast)
-RUN npm ci --workspace=packages/api
+# Transición perimetral de manifiestos de control y vinculación a nivel de monorepo.
+COPY package.json package-lock.json ./
+COPY packages/api/package.json ./packages/api/
+COPY packages/client/package.json ./packages/client/
 
-# Copy source code
+# Absorción e hidratación del árbol completo de dependencias cruzadas
+# Apalancando con vehemencia un punto de anclaje de caché temporal canalizado por BuildKit.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
+
+# Transferencia granular de la algoritmia y código fuente operativo.
 COPY packages/api/ ./packages/api/
 
-# Build TypeScript
+# Activación del orquestador interno de procesamiento
 RUN npm run build --workspace=packages/api
 
-# Stage 2: Production (Distroless / Lightweight Alpine)
-FROM node:22-alpine AS production
+# Operación Quirúrgica: Poda y desvinculación sistémica de pertrechos de desarrollo local
+RUN npm prune --omit=dev --workspace=packages/api && \
+    npm prune --omit=dev
+
+# Preparación de la carpeta para almacenamiento local de la base de datos
+RUN mkdir -p /app/data && chown -R 65532:65532 /app/data
+
+# Etapa 2: Imagen Final Distribuida y Consolidada Minimalista
+# Adopción del estándar Distroless para la rama Debian 12 con candado nonroot
+FROM gcr.io/distroless/nodejs22-debian12:nonroot AS production
 
 WORKDIR /app
 
-# Set production environment
 ENV NODE_ENV=production
 
-# Copy compiled code and production dependencies
+# Transferencia extractiva del compilado
 COPY --from=builder /app/packages/api/dist ./dist
 COPY --from=builder /app/packages/api/package.json ./package.json
 
-# Install only production dependencies
-# Since we use built-ins (sqlite-vec via native, crypto, tests), this footprint is tiny
-RUN npm install --omit=dev
+# Traspaso de la topología pre-podada de directorios de resolución global
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/api/node_modules ./packages/api/node_modules
 
-# Cloud Run injects the PORT dynamically
+# Transferencia de la carpeta de datos con privilegios alineados a nonroot (UID 65532)
+COPY --from=builder --chown=nonroot:nonroot /app/data ./data
+VOLUME ["/app/data"]
+
 ENV PORT=8080
 EXPOSE 8080
 
-# Run with Node native env config
-# We assume .env is injected via Cloud Run secrets manager, or mapped
-CMD ["node", "dist/server.js"]
+# Comando vectorial implícito de ejecución.
+CMD ["dist/server.js"]
