@@ -189,7 +189,7 @@ Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B
 
 ### 🧠 Integrated RAG Infrastructure (Retrieval-Augmented Generation)
 - **Chat with Private Data**: Seamlessly ingest and query private documents and customer databases without the prohibitive cost of fine-tuning models.
-- **Native Vector DB**: Utilizes `sqlite-vec` for high-performance, in-memory semantic search and embeddings generation natively within the Node.js process.
+- **Native Vector DB (optional, off by default)**: *Designed* to use the `sqlite-vec` extension for in-memory semantic search. `sqlite-vec` is **not a bundled dependency**: it must be provided as an external SQLite extension at runtime. If it is not loadable, the database logs `Semantic vector search disabled` and only the exact-match (SHA-256) cache path operates.
 - **Dynamic Context Injection**: Automatically enriches LLM prompts with relevant semantic context to reduce hallucinations.
 
 ### 🛡️ Guardrails & AI Safety Firewall
@@ -200,7 +200,7 @@ Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B
 ### 📊 Comprehensive LLMOps & Observability
 - **ROI & Billing Visibility**: Granular tracking of Token Consumption and Latency (TTFT) per user and per tenant, essential for B2B billing models.
 - **Distributed Tracing**: Uses Node.js `AsyncLocalStorage` and native OTLP telemetry to trace every interaction from the HTTP request down to the SQLite vector cache and the LLM API call.
-- **Zero-Cost Caching**: Semantic caching guarantees 0ms latency and 0 token cost for frequently asked questions.
+- **Low-Cost Caching**: The **exact-match** cache (SHA-256 of the prompt) serves identical repeat queries with ~0ms latency and 0 token cost. The **semantic** (paraphrase-tolerant) path requires the optional `sqlite-vec` extension and is off by default; without it, paraphrased queries are not cache hits.
 
 ### 🏢 Multi-Tenant Architecture (design, not yet implemented)
 > ⚠️ **Roadmap, not shipped.** The codebase authenticates by API key only; there is **no JWT verification, no per-tenant binding, and no data segregation by `tenant_id`** yet. Do **not** rely on this for compliance — the items below describe the intended design.
