@@ -14,7 +14,7 @@
     "build:client": "npm run build:prod --workspace=client",
     "start:api": "npm run start --workspace=api",
     "start:client": "npm run start --workspace=client",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test --workspace=client && npm run test --workspace=api"
   },
   "keywords": [],
   "author": "",
