@@ -90,6 +90,14 @@ export class ApiError extends Error {
   }
 
   /**
+   * Create a Not Implemented error (501)
+   * @param message - Error message
+   */
+  static notImplemented(message: string = 'Not Implemented'): ApiError {
+    return new ApiError(501, message);
+  }
+
+  /**
    * Create a Service Unavailable error (503)
    * @param message - Error message
    */
