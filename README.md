@@ -202,9 +202,10 @@ Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B
 - **Distributed Tracing**: Uses Node.js `AsyncLocalStorage` and native OTLP telemetry to trace every interaction from the HTTP request down to the SQLite vector cache and the LLM API call.
 - **Zero-Cost Caching**: Semantic caching guarantees 0ms latency and 0 token cost for frequently asked questions.
 
-### 🏢 Multi-Tenant Architecture
-- **Cryptographic Isolation**: Designed from Day 1 to isolate data logically. Tenant IDs are bound to JWTs and all contextual data (RAG vectors, chat histories, token budgets) is segregated, ensuring strict compliance with GDPR and HIPAA.
-- **Tier-Based RBAC**: Intelligent routing blocks free-tier users from waking up expensive models (like Claude 3.5 or Gemini 1.5 Pro), protecting your LLM budget.
+### 🏢 Multi-Tenant Architecture (design, not yet implemented)
+> ⚠️ **Roadmap, not shipped.** The codebase authenticates by API key only; there is **no JWT verification, no per-tenant binding, and no data segregation by `tenant_id`** yet. Do **not** rely on this for compliance — the items below describe the intended design.
+- **Tenant Isolation (planned)**: The architecture is intended to bind tenant IDs to JWTs and segregate all contextual data (RAG vectors, chat histories, token budgets) per tenant. Implementing this binding and per-tenant query scoping is a prerequisite before any GDPR/HIPAA claim can be made.
+- **Tier-Based RBAC (partial)**: `rbac` middleware can gate models by tier, but the tier is not yet populated from a real identity source, so every request currently resolves to the most restrictive (`free`) tier.
 
 ---
 
