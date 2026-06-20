@@ -114,8 +114,10 @@ export function createSmoothMessage(params: SmoothMessageParams): SmoothMessageC
     if (charsToProcess > 0) {
       const actualChars = Math.min(charsToProcess, outputQueue.length);
       const charsToAdd = outputQueue.splice(0, actualChars).join('');
-      // Reset the time accumulator proportionally to what we consumed.
-      accumulatedTime = 0;
+      // Subtract only the time the consumed chars cost, keeping the sub-char
+      // remainder so the effective drain rate matches `currentSpeed` instead of
+      // biasing below it (the discarded remainder grows worse at low speeds).
+      accumulatedTime -= (actualChars * 1000) / currentSpeed;
       emit(charsToAdd);
     }
 
