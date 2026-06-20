@@ -137,7 +137,7 @@ This platform includes three powerful AI capabilities powered by Google's models
 
 ### 📝 Multi-Tiered Generation & Generative UI
 
-- Intelligent routing between Frontier models (Claude 3.5 Sonnet, Gemini 1.5 Pro) and local SLMs to optimize latency and cost.
+- Routing across the **Google** model plugins that ship today (`google-text-bison`, `gemini-image-gen`, `google-vision-ocr`). *Multi-provider routing to other frontier models (e.g. Claude 3.5 Sonnet, Gemini 1.5 Pro) and local SLMs is on the roadmap — there is currently no Anthropic/OpenAI integration in the codebase.*
 - **Server-Driven Generative UI**: Angular dynamically renders visual components via `@defer` based on LLM Tool Calls.
 - **Iterative Refinement (RCI)**: Recursive generation and quality scoring in worker threads.
 - Token usage tracking and real-time streaming via SSE.
