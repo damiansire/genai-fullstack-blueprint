@@ -193,7 +193,7 @@ Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B
 - **Dynamic Context Injection**: Automatically enriches LLM prompts with relevant semantic context to reduce hallucinations.
 
 ### 🛡️ Guardrails & AI Safety Firewall
-- **Prompt Injection Defense**: Pre-flight validation of user inputs using local SLMs (Small Language Models like Phi-3.5) running in background Worker Threads.
+- **Prompt Injection Heuristic**: Pre-flight validation of user inputs via a basic keyword/substring check. *(A local SLM such as Phi-3.5 running in a background Worker Thread is on the roadmap — not yet implemented.)*
 - **PII Masking**: Automatic detection and masking of Personally Identifiable Information (emails, credit cards) *before* data leaves your infrastructure to reach public APIs.
 - **Toxicity Filters**: Guarantees brand safety by actively blocking inappropriate or non-compliant generations.
 

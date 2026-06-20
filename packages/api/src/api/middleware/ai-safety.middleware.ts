@@ -43,11 +43,13 @@ export const aiSafetyFirewall = async (req: Request, res: Response, next: NextFu
   // Apply PII masking to the request body
   req.body = traverseAndMask(req.body);
 
-  // Simulated Prompt Injection / Toxicity detection (Background SLM pattern)
-  // In a real scenario, this would send a background request to Phi-3.5 via Worker Threads
+  // Basic keyword heuristic for prompt injection / toxicity.
+  // NOTE: this is a simple substring match, NOT an SLM. It is trivially evaded
+  // (synonyms, other languages, obfuscation) and prone to false positives. A
+  // real Phi-3.5 / SLM classifier in a Worker Thread is on the roadmap.
   const promptContent = JSON.stringify(req.body).toLowerCase();
   const toxicityKeywords = ['ignore previous instructions', 'system prompt', 'bypass', 'hack', 'toxic'];
-  
+
   const isToxicOrInjection = toxicityKeywords.some(keyword => promptContent.includes(keyword));
 
   if (isToxicOrInjection) {
