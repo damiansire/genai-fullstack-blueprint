@@ -53,7 +53,7 @@ Follow these steps to set up and run the project locally.
 
 Make sure you have the following installed:
 
-- **Node.js** (v18 or higher) and **npm**
+- **Node.js** (v22 or higher) and **npm**
 - **Angular CLI** (`npm install -g @angular/cli`)
 - **Docker** and **Docker Compose** (optional)
 
