@@ -184,6 +184,7 @@ const numCpus = os.cpus().length || 4;
 let cpuPoolInstance: WorkerPool | undefined;
 let toolPoolInstance: WorkerPool | undefined;
 let jsonPoolInstance: WorkerPool | undefined;
+let safetyPoolInstance: WorkerPool | undefined;
 
 function getCpuPool(): WorkerPool {
   return (cpuPoolInstance ??= new WorkerPool(numCpus, 'cpuWorker'));
@@ -194,16 +195,21 @@ function getToolPool(): WorkerPool {
 function getJsonPool(): WorkerPool {
   return (jsonPoolInstance ??= new WorkerPool(numCpus, 'jsonWorker'));
 }
+function getSafetyPool(): WorkerPool {
+  // Classification can be CPU-heavy (and would be heavier with a real SLM), so a
+  // shorter timeout keeps a wedged classification from stalling a request.
+  return (safetyPoolInstance ??= new WorkerPool(numCpus, 'safetyWorker', 10_000));
+}
 
 /**
  * Terminate every worker in every pool that was actually created. Wire this into
  * the server's graceful-shutdown sequence so SIGINT/SIGTERM exits cleanly.
  */
 export async function shutdownWorkerPools(): Promise<void> {
-  const pools = [cpuPoolInstance, toolPoolInstance, jsonPoolInstance].filter(
+  const pools = [cpuPoolInstance, toolPoolInstance, jsonPoolInstance, safetyPoolInstance].filter(
     (p): p is WorkerPool => p !== undefined,
   );
-  cpuPoolInstance = toolPoolInstance = jsonPoolInstance = undefined;
+  cpuPoolInstance = toolPoolInstance = jsonPoolInstance = safetyPoolInstance = undefined;
   await Promise.all(pools.map((p) => p.shutdown()));
 }
 
@@ -218,5 +224,14 @@ export class CPUWorkerService {
 
   public static parseJsonZeroCopy(buffer: ArrayBuffer, schemaName: string = 'Any'): Promise<any> {
      return getJsonPool().runTask({ buffer, schemaName }, [buffer]);
+  }
+
+  /**
+   * Run safety/DLP classification off the main thread. The worker returns a
+   * SafetyVerdict ({ flagged, score, category, reason }). This is the SLM-ready
+   * seam: the heavy scan never blocks the Event Loop.
+   */
+  public static classifySafety(text: string): Promise<any> {
+     return getSafetyPool().runTask({ text });
   }
 }
