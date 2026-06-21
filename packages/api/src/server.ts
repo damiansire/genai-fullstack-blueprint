@@ -20,6 +20,7 @@ import { performance } from 'node:perf_hooks';
 // Stability: 2 - Stable (node:crypto)
 import { randomUUID, createHash } from 'node:crypto';
 import { requestContext, createRootContext } from './core/async-context.js';
+import { shutdownWorkerPools } from './infrastructure/workers/workerPool.js';
 import { createToolRoutes } from './api/routes/toolRoutes.js';
 import { createMcpSseRouter } from './infrastructure/mcp/mcp-server.js';
 import { createDomainRoutes } from './api/routes/domainRoutes.js';
@@ -399,6 +400,8 @@ const server = new Server();
 const handleGracefulShutdown = async (signal: string) => {
   logger.info(`${signal} received. Initiating graceful shutdown sequence...`);
   await server.stop();
+  // Terminate any worker threads so the process can exit without lingering handles.
+  await shutdownWorkerPools();
   process.exit(0);
 };
 

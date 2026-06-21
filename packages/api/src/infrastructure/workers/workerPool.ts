@@ -153,23 +153,70 @@ export class WorkerPool {
       this.processQueue();
     });
   }
+
+  /**
+   * Terminate every worker in the pool so the process can exit cleanly. Pending
+   * task timers are cleared and queued tasks are rejected; idempotent.
+   */
+  public async shutdown(): Promise<void> {
+    // Reject every task (in-flight + queued) so no caller is left hanging once
+    // the workers are terminated.
+    const pending = [...this.taskMap.values(), ...this.taskQueue];
+    this.taskMap.clear();
+    this.taskQueue.length = 0;
+    for (const task of pending) {
+      if (task.timer) clearTimeout(task.timer);
+      task.asyncResource.runInAsyncScope(() =>
+        task.reject(new Error('WorkerPool is shutting down')),
+      );
+    }
+    const workers = this.workers.splice(0);
+    this.idleWorkers = [];
+    this.workerTasks.clear();
+    await Promise.all(workers.map((w) => w.terminate()));
+  }
 }
 
 const numCpus = os.cpus().length || 4;
-export const cpuPool = new WorkerPool(numCpus, 'cpuWorker');
-export const toolPool = new WorkerPool(numCpus, 'toolWorker');
-export const jsonPool = new WorkerPool(numCpus, 'jsonWorker');
+
+// Pools are created lazily on first use, so importing this module does not eagerly
+// spawn 3 x numCpus threads in processes that never run a worker task.
+let cpuPoolInstance: WorkerPool | undefined;
+let toolPoolInstance: WorkerPool | undefined;
+let jsonPoolInstance: WorkerPool | undefined;
+
+function getCpuPool(): WorkerPool {
+  return (cpuPoolInstance ??= new WorkerPool(numCpus, 'cpuWorker'));
+}
+function getToolPool(): WorkerPool {
+  return (toolPoolInstance ??= new WorkerPool(numCpus, 'toolWorker'));
+}
+function getJsonPool(): WorkerPool {
+  return (jsonPoolInstance ??= new WorkerPool(numCpus, 'jsonWorker'));
+}
+
+/**
+ * Terminate every worker in every pool that was actually created. Wire this into
+ * the server's graceful-shutdown sequence so SIGINT/SIGTERM exits cleanly.
+ */
+export async function shutdownWorkerPools(): Promise<void> {
+  const pools = [cpuPoolInstance, toolPoolInstance, jsonPoolInstance].filter(
+    (p): p is WorkerPool => p !== undefined,
+  );
+  cpuPoolInstance = toolPoolInstance = jsonPoolInstance = undefined;
+  await Promise.all(pools.map((p) => p.shutdown()));
+}
 
 export class CPUWorkerService {
   public static runCpuIntensiveTask(payload: any, iterations?: number): Promise<any> {
-     return cpuPool.runTask({ payload, iterations });
+     return getCpuPool().runTask({ payload, iterations });
   }
 
   public static executeTool(toolName: string, args: any, agentContext?: object): Promise<any> {
-     return toolPool.runTask({ toolName, args, agentContext });
+     return getToolPool().runTask({ toolName, args, agentContext });
   }
 
   public static parseJsonZeroCopy(buffer: ArrayBuffer, schemaName: string = 'Any'): Promise<any> {
-     return jsonPool.runTask({ buffer, schemaName }, [buffer]);
+     return getJsonPool().runTask({ buffer, schemaName }, [buffer]);
   }
 }

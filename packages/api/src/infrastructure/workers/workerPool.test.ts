@@ -50,7 +50,23 @@ describe('WorkerPool', () => {
     const out = await crashPool.runTask({ cmd: 'echo', value: 'recovered' });
     assert.equal(out, 'recovered');
   });
+
+  it('shutdown() terminates workers and rejects queued tasks', async () => {
+    const dummy = new WorkerPool(1, 'testFixtureWorker', 5_000);
+    // Occupy the single worker, then queue a second task behind it.
+    const inFlight = dummy.runTask({ cmd: 'echo', value: 'first' }).catch(() => undefined);
+    const queued = dummy.runTask({ cmd: 'echo', value: 'second' });
+    // Attach the rejection expectation BEFORE shutdown so the queued task's
+    // rejection is never momentarily unhandled.
+    const queuedRejects = assert.rejects(queued, /shutting down/);
+    await dummy.shutdown();
+    // The queued task must be rejected by the shutdown, not left pending forever;
+    // the in-flight task settles without hanging the process.
+    await queuedRejects;
+    await inFlight;
+  });
 });
-// Note: the module-level cpu/tool/json pools keep worker threads alive with
-// no public shutdown hook, so the process is run with --test-force-exit
-// (wired into the package "test" script) to exit cleanly after reporting.
+// Note: the worker pools now expose shutdown() (and the module-level pools are
+// torn down via shutdownWorkerPools() in the server's graceful shutdown). The
+// package "test" script still uses --test-force-exit as a belt-and-suspenders
+// guard for any pool a test leaves running.
