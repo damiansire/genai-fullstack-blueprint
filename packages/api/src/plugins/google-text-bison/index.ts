@@ -1,8 +1,22 @@
 import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/strategy.interface.js';
 import { performance } from 'node:perf_hooks';
+import { z } from 'zod';
 
 import { logger } from '../../core/logger.js';
 import { resilientTransport } from '../../infrastructure/http/resilient-transport.js';
+
+/**
+ * Boundary schema for the Google PaLM/Text-Bison `generateText` response.
+ * Only the field we actually consume (`candidates[].output`) is pinned; the
+ * rest is passthrough so provider additions don't break us.
+ */
+const textBisonResponseSchema = z
+  .object({
+    candidates: z
+      .array(z.object({ output: z.string().optional() }).passthrough())
+      .optional(),
+  })
+  .passthrough();
 
 /**
  * Model ID for Google Text Bison
@@ -187,23 +201,27 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
     const url = `${this.baseUrl}/${this.modelName}:generateText?key=${apiKey}`;
 
     // Shared resilient transport: header-aware retry + backoff, one impl for all plugins.
-    const data = await resilientTransport.fetchJson<any>(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: { text: params.prompt },
-        temperature: params.temperature,
-        topK: params.topK,
-        topP: params.topP,
-        candidateCount: 1,
-        maxOutputTokens: params.maxTokens,
-        stopSequences: params.stopSequences && params.stopSequences.length > 0 ? params.stopSequences : undefined
-      })
-    });
+    const data = await resilientTransport.fetchJson(
+      url,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: { text: params.prompt },
+          temperature: params.temperature,
+          topK: params.topK,
+          topP: params.topP,
+          candidateCount: 1,
+          maxOutputTokens: params.maxTokens,
+          stopSequences: params.stopSequences && params.stopSequences.length > 0 ? params.stopSequences : undefined
+        })
+      },
+      textBisonResponseSchema,
+    );
 
     const candidate = data.candidates?.[0];
-    
-    if (!candidate) {
+
+    if (!candidate || typeof candidate.output !== 'string') {
       throw new Error('La API de Google no devolvió ningún candidato válido.');
     }
 

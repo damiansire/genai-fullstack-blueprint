@@ -100,11 +100,42 @@ export function classify(rawText: string): SafetyVerdict {
   return { flagged, score: best.score, category: best.category, reason: best.reason, elapsedMs };
 }
 
+/**
+ * Narrow guard for the inbound worker message. The worker boundary is exactly
+ * the kind of external input that must be validated at runtime rather than
+ * cast: a malformed `{ id, text }` produced by a bug elsewhere would otherwise
+ * propagate as a silently-wrong classification.
+ */
+interface SafetyRequest {
+  id: number;
+  text: string;
+}
+function isSafetyRequest(value: unknown): value is SafetyRequest {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<string, unknown>)['id'] === 'number' &&
+    typeof (value as Record<string, unknown>)['text'] === 'string'
+  );
+}
+
 if (!isMainThread && parentPort) {
-  parentPort.on('message', (message) => {
-    const { id, text } = message as { id: number; text: string };
+  parentPort.on('message', (message: unknown) => {
+    if (!isSafetyRequest(message)) {
+      const id =
+        typeof (message as Record<string, unknown> | null)?.['id'] === 'number'
+          ? (message as { id: number }).id
+          : -1;
+      parentPort!.postMessage({
+        id,
+        success: false,
+        error: 'Malformed safety worker message: expected { id: number, text: string }',
+      });
+      return;
+    }
+    const { id, text } = message;
     try {
-      const result = classify(typeof text === 'string' ? text : '');
+      const result = classify(text);
       parentPort!.postMessage({ id, success: true, result });
     } catch (error) {
       parentPort!.postMessage({

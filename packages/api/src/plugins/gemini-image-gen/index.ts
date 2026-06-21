@@ -1,7 +1,40 @@
 import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/strategy.interface.js';
 import { performance } from 'node:perf_hooks';
+import { z } from 'zod';
 import { logger } from '../../core/logger.js';
 import { resilientTransport } from '../../infrastructure/http/resilient-transport.js';
+
+/**
+ * Boundary schema for the Gemini `generateContent` response. Only the structure
+ * we read in `extractOutputFromResponse` is pinned (candidates → content.parts
+ * with optional `text` / `inlineData`); everything else is passthrough so the
+ * provider can add fields without breaking us.
+ */
+const geminiPartSchema = z
+  .object({
+    text: z.string().optional(),
+    inlineData: z
+      .object({ data: z.string(), mimeType: z.string().optional() })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+const geminiResponseSchema = z
+  .object({
+    candidates: z
+      .array(
+        z
+          .object({
+            content: z.object({ parts: z.array(geminiPartSchema).optional() }).passthrough().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+  })
+  .passthrough();
+
+type GeminiResponse = z.infer<typeof geminiResponseSchema>;
 
 /**
  * Input parameters for Gemini Image Generation
@@ -138,14 +171,18 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
       }
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${apiKey}`;
 
-      const response = await resilientTransport.fetchJson<any>(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          generationConfig: config
-        })
-      });
+      const response = await resilientTransport.fetchJson(
+        url,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: config
+          })
+        },
+        geminiResponseSchema,
+      );
       const processingTime = Math.round(performance.now() - startTime);
 
       logger.info(`✅ Gemini API responded in ${processingTime}ms`);
@@ -210,7 +247,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
   /**
    * Extract images and text from Gemini response
    */
-  private extractOutputFromResponse(response: any): GeminiImageGenOutput {
+  private extractOutputFromResponse(response: GeminiResponse): GeminiImageGenOutput {
     const output: GeminiImageGenOutput = {
       images: []
     };
@@ -218,8 +255,8 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
     // Process all candidates (usually just one)
     if (response.candidates && response.candidates.length > 0) {
       const candidate = response.candidates[0];
-      
-      if (candidate.content && candidate.content.parts) {
+
+      if (candidate?.content && candidate.content.parts) {
         for (const part of candidate.content.parts) {
           // Extract text
           if (part.text) {

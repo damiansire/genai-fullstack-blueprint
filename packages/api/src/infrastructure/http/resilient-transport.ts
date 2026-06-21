@@ -4,6 +4,18 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { logger } from '../../core/logger.js';
 
 /**
+ * Minimal structural contract for a runtime validator (satisfied by any zod
+ * schema). Kept structural so the transport does not hard-depend on a zod
+ * version's exact type surface — callers pass `z.object({...})` and get a
+ * validated, narrowed result.
+ */
+export interface ResponseValidator<T> {
+  safeParse(input: unknown):
+    | { success: true; data: T }
+    | { success: false; error: { message: string } };
+}
+
+/**
  * Shared resilient HTTP transport for every provider plugin.
  *
  * "Built-in over dependencies": uses the platform-native `fetch` + `AbortSignal`
@@ -208,17 +220,27 @@ export class ResilientTransport {
   /**
    * Convenience: POST a JSON body and parse a JSON response with the resilient
    * pipeline. Defensive parse — never a bare JSON.parse on provider output.
+   *
+   * Pass a `schema` (any zod schema) to validate the provider's payload at the
+   * boundary: the parsed JSON is run through `safeParse` and a validation
+   * failure throws a `TransportHttpError` instead of letting an unexpected shape
+   * leak downstream as an unchecked `as T` cast. Without a schema the JSON is
+   * still parsed defensively (non-JSON bodies throw), but the caller owns the
+   * type assertion — prefer passing a schema for external provider responses.
    */
-  async fetchJson<T = unknown>(url: string, opts: ResilientRequestOptions = {}): Promise<T> {
+  async fetchJson<T = unknown>(
+    url: string,
+    opts: ResilientRequestOptions = {},
+    schema?: ResponseValidator<T>,
+  ): Promise<T> {
     const start = performance.now();
     const res = await this.fetchWithRetry(url, opts);
     const text = await res.text();
     const elapsed = Math.round(performance.now() - start);
 
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(text) as T;
-      logger.debug('[Transport] request ok', { url: url.split('?')[0], elapsedMs: elapsed });
-      return parsed;
+      parsed = JSON.parse(text);
     } catch {
       throw new TransportHttpError(
         res.status,
@@ -226,6 +248,25 @@ export class ResilientTransport {
         false,
       );
     }
+
+    if (schema) {
+      const result = schema.safeParse(parsed);
+      if (!result.success) {
+        throw new TransportHttpError(
+          res.status,
+          `Provider returned an unexpected JSON shape: ${result.error.message}`,
+          false,
+        );
+      }
+      logger.debug('[Transport] request ok (validated)', {
+        url: url.split('?')[0],
+        elapsedMs: elapsed,
+      });
+      return result.data;
+    }
+
+    logger.debug('[Transport] request ok', { url: url.split('?')[0], elapsedMs: elapsed });
+    return parsed as T;
   }
 }
 
