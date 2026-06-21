@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, RequestHandler } from 'express';
 import multer from 'multer';
 import { ModelFactory } from '../../infrastructure/ai/factory.js';
 import { SchemaRegistry } from '../../infrastructure/ai/registry.js';
@@ -16,10 +16,21 @@ import {
  * Create model routes with dependencies
  * @param modelFactory - Instance of ModelFactory
  * @param schemaRegistry - Instance of SchemaRegistry
+ * @param postAuthChain - Cross-cutting middlewares (rate limiters, safety
+ *   firewall) that must run AFTER authentication but before the controllers.
+ *   Applied via router.use so auth is always the front gate.
  * @returns Express router
  */
-export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: SchemaRegistry): Router {
+export function createModelRoutes(
+  modelFactory: ModelFactory,
+  schemaRegistry: SchemaRegistry,
+  postAuthChain: RequestHandler[] = [],
+): Router {
   const router = Router();
+
+  // P2 middleware order: auth FIRST (front gate), then the per-key rate limiters
+  // and safety/PII firewall — which now see a populated req.user.apiKeyId.
+  router.use(apiKeyAuth, ...postAuthChain);
 
   // Create middleware instances
   const dynamicValidation = createDynamicValidationMiddleware(schemaRegistry);
@@ -146,16 +157,14 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
   /**
    * GET /models - List all available models
    */
-  router.get('/models', 
-    apiKeyAuth,
+  router.get('/models',
     modelListController
   );
 
   /**
    * GET /models/:modelId - Get information about a specific model
    */
-  router.get('/models/:modelId', 
-    apiKeyAuth,
+  router.get('/models/:modelId',
     rbacModelMiddleware,
     modelInfoController
   );
@@ -164,8 +173,7 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
    * POST /models/:modelId/invoke - Invoke a specific model
    * Applies authentication, dynamic validation, and file upload middleware
    */
-  router.post('/models/:modelId/invoke', 
-    apiKeyAuth,
+  router.post('/models/:modelId/invoke',
     rbacModelMiddleware,
     (req, res, next) => {
       // Apply dynamic multer middleware based on model requirements
@@ -181,7 +189,6 @@ export function createModelRoutes(modelFactory: ModelFactory, schemaRegistry: Sc
    * POST /models/:modelId/stream - Stream model response via SSE
    */
   router.post('/models/:modelId/stream',
-    apiKeyAuth,
     rbacModelMiddleware,
     (req, res, next) => {
       const modelId = req.params['modelId'] || '';

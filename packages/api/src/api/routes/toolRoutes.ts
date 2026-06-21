@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
 import {
   ToolSearchUseCase,
@@ -15,11 +15,14 @@ import { ApiError } from '../../core/ApiError.js';
  *   GET    /api/tools/:name       ← Exact schema retrieval (used in agentic loops)
  *   POST   /api/tools/register    ← Add / update a tool definition at runtime
  *
- * These routes are protected by the same apiKeyAuth middleware as model routes.
- * The rateLimiter is applied at the parent mount point in server.ts.
+ * Auth is the front gate (router.use), followed by any cross-cutting chain
+ * (rate limiter) passed from server.ts — so the limiter keys by req.user.apiKeyId.
  */
-export function createToolRoutes(): Router {
+export function createToolRoutes(postAuthChain: RequestHandler[] = []): Router {
   const router = Router();
+
+  // P2 middleware order: authenticate first, then the per-key rate limiter.
+  router.use(apiKeyAuth, ...postAuthChain);
 
   const toolSearchUseCase = new ToolSearchUseCase();
   const toolGetByNameUseCase = new ToolGetByNameUseCase();
@@ -32,7 +35,6 @@ export function createToolRoutes(): Router {
   // context window so the static System Prompt prefix stays cache-valid.
   router.post(
     '/search',
-    apiKeyAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { query, limit } = req.body as { query?: string; limit?: number };
@@ -64,7 +66,6 @@ export function createToolRoutes(): Router {
   // already knows the tool name and only needs the schema.
   router.get(
     '/:name',
-    apiKeyAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { name } = req.params as { name: string };
@@ -81,7 +82,6 @@ export function createToolRoutes(): Router {
   // server restart. Useful for plugin-based tool discovery.
   router.post(
     '/register',
-    apiKeyAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const dto = req.body as {
