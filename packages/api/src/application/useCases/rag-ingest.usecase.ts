@@ -1,6 +1,6 @@
-import { UseCase } from '../../core/UseCase';
-import { logger } from '../../core/logger';
-import { ApiError } from '../../core/ApiError';
+import { UseCase } from '../../core/UseCase.js';
+import { logger } from '../../core/logger.js';
+import { ApiError } from '../../core/ApiError.js';
 
 export interface RAGIngestDTO {
   documentId: string;

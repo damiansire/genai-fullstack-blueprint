@@ -56,5 +56,7 @@ VOLUME ["/app/data"]
 ENV PORT=8080
 EXPOSE 8080
 
-# Comando vectorial implícito de ejecución con modelo estricto de permisos
-CMD ["--experimental-strip-types", "--permission", "--allow-fs-read=*", "--allow-fs-write=/app/data/", "--allow-net", "--allow-worker", "src/server.ts"]
+# Ejecución directa de TypeScript a través del loader tsx (sin paso de build).
+# `--experimental-strip-types` no resuelve los specifiers `.js` a sus hermanos
+# `.ts`, por eso se usa tsx como runtime de referencia.
+CMD ["--import", "tsx", "src/server.ts"]

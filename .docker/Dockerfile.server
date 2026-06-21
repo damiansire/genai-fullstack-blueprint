@@ -1,63 +1,43 @@
-# Optimized Dockerfile for Node.js Backend Server
-FROM node:20-alpine AS builder
+# Dockerfile for the Node.js backend.
+#
+# This project runs TypeScript directly with no build step (see AGENTS.md).
+# There is therefore NO compile stage and no `dist/` — the container runs
+# `src/server.ts` through the `tsx` loader (the same runtime the test suite
+# uses). `node --experimental-strip-types` cannot resolve the project's `.js`
+# import specifiers to their `.ts` siblings, so `tsx` is the runtime of record.
+FROM node:22-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy root package files for workspace
+# Install only production dependencies for the api workspace.
 COPY package*.json ./
-
-# Copy workspace package files
 COPY packages/api/package*.json ./packages/api/
-COPY packages/api/tsconfig.json ./packages/api/
-COPY packages/api/tsconfig.prod.json ./packages/api/
-
-# Install all dependencies (including devDependencies for build)
-RUN npm ci --workspace=api --include-workspace-root && \
+RUN npm ci --omit=dev --workspace=api --include-workspace-root && \
     npm cache clean --force
 
-# Copy source code
+# Copy the source that is executed at runtime.
+COPY packages/api/tsconfig*.json ./packages/api/
 COPY packages/api/src ./packages/api/src
+COPY env.example ./env.example
 
-# Build TypeScript using production config
-RUN npm run build:prod --workspace=api
-
-# Remove devDependencies for production
-RUN npm prune --production --workspace=api
-
-# Production stage
-FROM node:20-alpine
-
-# Set working directory
-WORKDIR /app
-
-# Create a non-root user for security
+# Create runtime data/log dirs and a non-root user.
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G nodejs -g nodejs nodejs
-
-# Copy only production node_modules from builder (hoisted at root level)
-COPY --from=builder /app/node_modules ./node_modules
-
-# Copy compiled source code from builder
-COPY --from=builder /app/packages/api/dist ./dist
-
-# Create necessary directories and set permissions
-RUN mkdir -p /app/logs && \
+    adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G nodejs -g nodejs nodejs && \
+    mkdir -p /app/logs /app/data && \
     chown -R nodejs:nodejs /app
 
-# Switch to non-root user
 USER nodejs
 
-# Expose the port the app runs on
 EXPOSE 3000
 
-# Health check
+# Health check hits the liveness endpoint actually exposed by the server.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+    CMD node -e "require('http').get('http://localhost:3000/health/live', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Start the application
-CMD ["node", "dist/server.js"]
+# Run the TypeScript entrypoint through the tsx loader (no build step),
+# matching the `start` script in packages/api/package.json.
+WORKDIR /app/packages/api
+CMD ["node", "--import", "tsx", "--env-file=../../env.example", "src/server.ts"]

@@ -1,22 +1,29 @@
-import { TestBed } from '@angular/core/testing';
-import { AiOrchestratorService } from './ai-orchestrator.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { AiOrchestratorService } from './ai-orchestrator.service';
 
+/**
+ * Pure unit test for the orchestrator: the service has no constructor
+ * dependencies, so we instantiate it directly instead of booting Angular's
+ * TestBed. This keeps the test zoneless and free of the Angular compiler,
+ * matching the repo convention of testing domain logic without the UI.
+ */
 describe('AiOrchestratorService', () => {
   let service: AiOrchestratorService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(AiOrchestratorService);
+    service = new AiOrchestratorService();
 
-    // Mock document.startViewTransition
-    if (!global.document) {
-      (global as any).document = {};
-    }
-    
-    global.document.startViewTransition = vi.fn((cb: any) => {
+    // Stub the View Transitions API (not present under jsdom) so state
+    // transitions run synchronously.
+    (globalThis as any).document = (globalThis as any).document ?? {};
+    (globalThis as any).document.startViewTransition = vi.fn((cb: () => void) => {
       cb();
-      return { ready: Promise.resolve(), finished: Promise.resolve() } as any;
+      return {
+        ready: Promise.resolve(),
+        updateCallbackDone: Promise.resolve(),
+        finished: Promise.resolve(),
+        skipTransition: () => {},
+      };
     });
   });
 
@@ -32,29 +39,24 @@ describe('AiOrchestratorService', () => {
   });
 
   it('should update state to loading when handling intent', async () => {
-    // Act without awaiting to check immediate state
+    // Act without awaiting to observe the immediate (synchronous) loading state.
     const promise = service.handleAiIntent({});
-    
-    // In actual implementation, parseAsync throws due to empty object,
-    // so we just expect the initial isLoading to be true before it resolves/rejects
+
     expect(service.isLoading()).toBe(true);
-    
-    try {
-      await promise;
-    } catch (e) {}
+
+    // Empty payload fails Zod validation; the use case degrades gracefully.
+    await promise;
+
+    expect(service.isLoading()).toBe(false);
+    expect(service.error()).not.toBeNull();
   });
 
   it('should reset state correctly', () => {
-    // Arrange
-    service.resetState(); // ensure it starts clean
-    
-    // Act
     service.resetState();
-    
-    // Assert
+
     expect(service.response()).toBeNull();
     expect(service.isLoading()).toBe(false);
     expect(service.error()).toBeNull();
-    expect(global.document.startViewTransition).toHaveBeenCalled();
+    expect((globalThis as any).document.startViewTransition).toHaveBeenCalled();
   });
 });

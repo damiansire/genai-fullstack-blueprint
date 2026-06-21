@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../../core/logger';
-import { getContext } from '../../core/async-context';
+import { logger } from '../../core/logger.js';
+import { getContext } from '../../core/async-context.js';
 
 /**
  * AI Safety Firewall Middleware
