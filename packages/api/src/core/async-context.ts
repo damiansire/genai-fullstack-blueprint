@@ -2,6 +2,7 @@
 // Stability: 2 - Stable (node:crypto - randomUUID)
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
+import { otlpTraceExporter, type FinishedSpan } from './otlp-exporter.js';
 
 /**
  * Full agentic tree context.
@@ -30,6 +31,14 @@ export interface RequestContext {
   depth: number;
   /** Ordered stack of tool names active in the current branch. Useful for cycle detection. */
   toolCallStack: string[];
+  /** Wall-clock start (epoch ns) of this span, used to compute OTLP duration. */
+  startTimeUnixNano?: string;
+}
+
+/** Current epoch time in nanoseconds, as the string OTLP expects. */
+function nowUnixNano(): string {
+  // Date.now() gives ms; multiply to ns. Sub-ms precision isn't needed for span boundaries.
+  return (BigInt(Date.now()) * 1_000_000n).toString();
 }
 
 export const requestContext = new AsyncLocalStorage<RequestContext>();
@@ -62,6 +71,7 @@ export function createChildContext(
     parentSpanId: parentCtx.spanId,
     depth: parentCtx.depth + 1,
     toolCallStack: [...parentCtx.toolCallStack, toolName],
+    startTimeUnixNano: nowUnixNano(),
   };
 }
 
@@ -76,5 +86,35 @@ export function createRootContext(traceId: string): RequestContext {
     // parentSpanId intentionally omitted (root span has no parent)
     depth: 0,
     toolCallStack: [],
+    startTimeUnixNano: nowUnixNano(),
   };
+}
+
+/**
+ * Finish the span carried by the given context and hand it to the OTLP exporter.
+ * No-op work when the exporter is disabled (it ignores the span), so callers can
+ * call this unconditionally on request finish.
+ *
+ * @param ctx          The span context to close (typically the root request span).
+ * @param name         Span name, e.g. "POST /api/models/:id/invoke".
+ * @param statusCode   OTLP status: 0=UNSET, 1=OK, 2=ERROR.
+ * @param attributes   Extra span attributes (http.method, http.status_code, …).
+ */
+export function finishSpan(
+  ctx: RequestContext,
+  name: string,
+  statusCode: 0 | 1 | 2 = 1,
+  attributes: Record<string, string | number | boolean> = {},
+): void {
+  const span: FinishedSpan = {
+    traceId: ctx.traceId,
+    spanId: ctx.spanId,
+    name,
+    startTimeUnixNano: ctx.startTimeUnixNano ?? nowUnixNano(),
+    endTimeUnixNano: nowUnixNano(),
+    statusCode,
+    attributes: { 'span.depth': ctx.depth, ...attributes },
+  };
+  if (ctx.parentSpanId) span.parentSpanId = ctx.parentSpanId;
+  otlpTraceExporter.recordSpan(span);
 }

@@ -14,12 +14,14 @@ import { rateLimiter } from './api/middleware/rateLimiter.js';
 import { tokenRateLimiter } from './api/middleware/tokenRateLimiter.js';
 import { aiSafetyFirewall } from './api/middleware/ai-safety.middleware.js';
 import { SqliteTokenStore } from './infrastructure/rate-limit/SqliteTokenStore.js';
+import { SqliteRateLimitStore } from './infrastructure/rate-limit/SqliteRateLimitStore.js';
 import { dbService, logRequest } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:perf_hooks)
 import { performance } from 'node:perf_hooks';
 // Stability: 2 - Stable (node:crypto)
 import { randomUUID, createHash } from 'node:crypto';
-import { requestContext, createRootContext } from './core/async-context.js';
+import { requestContext, createRootContext, finishSpan } from './core/async-context.js';
+import { otlpTraceExporter } from './core/otlp-exporter.js';
 import { shutdownWorkerPools } from './infrastructure/workers/workerPool.js';
 import { createToolRoutes } from './api/routes/toolRoutes.js';
 import { createMcpSseRouter } from './infrastructure/mcp/mcp-server.js';
@@ -45,6 +47,7 @@ class Server extends EventEmitter {
   private state: ServerState = 'STOPPED';
   private httpServer: HttpServer | null = null;
   private tokenStore = new SqliteTokenStore();
+  private requestLimitStore = new SqliteRateLimitStore();
 
   constructor() {
     super();
@@ -108,7 +111,19 @@ class Server extends EventEmitter {
       
       // Patrón 5: seed a full agentic root span (depth=0) for this request.
       // All downstream Workers inherit this via createChildContext().
-      requestContext.run(createRootContext(traceId), () => {
+      const rootCtx = createRootContext(traceId);
+
+      res.on('finish', () => {
+        // Close the root HTTP span and export it via OTLP (no-op if the exporter
+        // is disabled). 2xx/3xx → OK, otherwise ERROR.
+        finishSpan(rootCtx, `${req.method} ${req.path}`, res.statusCode < 400 ? 1 : 2, {
+          'http.method': req.method,
+          'http.route': req.path,
+          'http.status_code': res.statusCode,
+        });
+      });
+
+      requestContext.run(rootCtx, () => {
         next();
       });
     });
@@ -154,10 +169,13 @@ class Server extends EventEmitter {
     // Serve OpenAPI Documentation
     this.app.use('/docs', docsRoutes);
 
-    // Apply Rate Limiter globally for /api routes
+    // Request-count limiter. Persistent backend (SQLite) so the count survives
+    // restarts and is shared across the node; swap to InMemoryRateLimitStore for
+    // a pure single-process setup. Keyed by API-key identity once auth has run.
     const apiLimiter = rateLimiter({
       windowMs: 60 * 1000, // 1 minute
-      max: 100 // limit each IP/API Key to 100 requests per windowMs
+      max: 100, // limit each API Key (or IP, pre-auth) to 100 requests per window
+      store: this.requestLimitStore,
     });
 
     // Apply Token Rate Limiter to /api routes (e.g. 50000 tokens per minute limit)
@@ -166,13 +184,26 @@ class Server extends EventEmitter {
       maxTokens: 50000
     });
 
-    // Model routes (authentication, validation, controllers)
-    const modelRoutes = createModelRoutes(modelFactory, schemaRegistry);
-    this.app.use('/api', apiLimiter, apiTokenLimiter, aiSafetyFirewall, modelRoutes);
+    // Middleware ORDER (P2 fix): authentication is the real front gate. Inside
+    // these routers the chain is `apiKeyAuth → apiLimiter → apiTokenLimiter →
+    // aiSafetyFirewall → handler`, so:
+    //   - the limiters key by `req.user.apiKeyId` (real per-tenant buckets, not a
+    //     single shared IP bucket behind a proxy/NAT), and
+    //   - the (potentially heavy) safety/PII work never runs for unauthenticated
+    //     callers — auth rejects them first.
+    // The cross-cutting chain is wired INSIDE each router (router.use) so it stays
+    // scoped to those paths and doesn't leak onto sibling /api mounts below.
+    const modelRoutes = createModelRoutes(modelFactory, schemaRegistry, [
+      apiLimiter,
+      apiTokenLimiter,
+      aiSafetyFirewall,
+    ]);
+    this.app.use('/api', modelRoutes);
 
-    // Patrón 1: Tool Search JIT — register, search, and manage tool definitions
-    const toolRoutes = createToolRoutes();
-    this.app.use('/api/tools', apiLimiter, toolRoutes);
+    // Patrón 1: Tool Search JIT — register, search, and manage tool definitions.
+    // Auth first, then the per-key limiter (scoped inside the router).
+    const toolRoutes = createToolRoutes([apiLimiter]);
+    this.app.use('/api/tools', toolRoutes);
 
     // Patrón 2: MCP Server — SSE transport for web-based MCP clients
     // stdio transport is a separate process: npm run mcp:stdio
@@ -402,6 +433,8 @@ const handleGracefulShutdown = async (signal: string) => {
   await server.stop();
   // Terminate any worker threads so the process can exit without lingering handles.
   await shutdownWorkerPools();
+  // Flush any buffered OTLP spans before exiting (no-op when the exporter is off).
+  await otlpTraceExporter.shutdown();
   process.exit(0);
 };
 

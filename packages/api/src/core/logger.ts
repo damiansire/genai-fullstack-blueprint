@@ -11,27 +11,43 @@ interface LogPayload {
   [key: string]: any;
 }
 
-// OTLP Telemetry Exporter Simulator (Native fetch, no opentelemetry SDK)
+// OTLP log export (native fetch, no opentelemetry SDK).
+//
+// Opt-in & graceful degradation: only export when a collector logs endpoint is
+// configured. Resolution follows the OTel env-var spec:
+//   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT  (verbatim)
+//   OTEL_EXPORTER_OTLP_ENDPOINT + '/v1/logs'
+// When neither is set, the batch buffer is never populated and no background
+// timer runs — zero overhead, and logs still go to the console below.
+const logsEndpoint = process.env['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']
+  ?? (process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
+    ? `${process.env['OTEL_EXPORTER_OTLP_ENDPOINT'].replace(/\/$/, '')}/v1/logs`
+    : undefined);
+const logExportEnabled = logsEndpoint !== undefined;
+
 const telemetryBatch: LogPayload[] = [];
-const OTLP_ENDPOINT = process.env['OTLP_ENDPOINT'] || 'http://localhost:4318/v1/logs';
 
 function flushTelemetry() {
-  if (telemetryBatch.length === 0) return;
+  if (!logExportEnabled || telemetryBatch.length === 0) return;
   const batchToSend = [...telemetryBatch];
   telemetryBatch.length = 0;
 
-  // Fire and forget native fetch
-  fetch(OTLP_ENDPOINT, {
+  // Fire and forget native fetch. A missing/flaky collector must never break the
+  // logger, so export errors are swallowed (and not re-logged → no feedback loop).
+  fetch(logsEndpoint!, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ logs: batchToSend })
+    body: JSON.stringify({ logs: batchToSend }),
+    signal: AbortSignal.timeout(5000),
   }).catch(() => {
-    // Silently ignore telemetry export errors so they don't loop back into the logger
+    // Intentionally ignored.
   });
 }
 
-// Flush every 5 seconds
-setInterval(flushTelemetry, 5000).unref();
+// Only run the flush timer when export is actually enabled.
+if (logExportEnabled) {
+  setInterval(flushTelemetry, 5000).unref();
+}
 
 function writeLog(level: LogLevel, message: string, meta: Record<string, any> = {}, error?: Error | unknown) {
   const payload: LogPayload = {
@@ -53,9 +69,12 @@ function writeLog(level: LogLevel, message: string, meta: Record<string, any> = 
   }
 
   const output = JSON.stringify(payload);
-  
-  // Push to telemetry batch
-  telemetryBatch.push(payload);
+
+  // Buffer for OTLP log export only when a collector is configured; otherwise the
+  // buffer would grow unbounded with nothing draining it.
+  if (logExportEnabled) {
+    telemetryBatch.push(payload);
+  }
 
   switch (level) {
     case 'error':
