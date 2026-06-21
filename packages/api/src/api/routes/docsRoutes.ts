@@ -41,7 +41,11 @@ async function buildOpenApiDocument(): Promise<unknown> {
   if (cachedDocument) return cachedDocument;
 
   // Lazy load: keep the optional dependency off the boot path.
-  const mod = (await import('@asteasolutions/zod-to-openapi')) as unknown as ZodToOpenApi;
+  // The specifier is built indirectly so `tsc` does not try to resolve the
+  // (optional, possibly-uninstalled) module at compile time — it stays a pure
+  // runtime concern that degrades to a 503 when absent (see handler below).
+  const optionalDep = '@asteasolutions/zod-to-openapi';
+  const mod = (await import(/* @vite-ignore */ optionalDep)) as unknown as ZodToOpenApi;
   const { extendZodWithOpenApi, OpenAPIRegistry, OpenApiGeneratorV3 } = mod;
 
   extendZodWithOpenApi(z);

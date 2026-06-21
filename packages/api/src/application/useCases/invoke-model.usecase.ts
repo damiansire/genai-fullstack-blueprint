@@ -28,6 +28,24 @@ export interface InvokeModelDTO {
 
 import { UseCase } from '../../core/UseCase.js';
 
+/**
+ * Deterministic JSON stringify: object keys are emitted in sorted order at every
+ * level so the cache key is invariant to key ordering. Arrays keep their order.
+ */
+export function stableStringify(value: unknown): string {
+  return JSON.stringify(value, (_key, val) => {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      return Object.keys(val as Record<string, unknown>)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, k) => {
+          acc[k] = (val as Record<string, unknown>)[k];
+          return acc;
+        }, {});
+    }
+    return val;
+  });
+}
+
 export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
   private static breakers: Map<string, CircuitBreaker> = new Map();
 
@@ -101,8 +119,11 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       }
     }
 
-    // Generate Hash for Caching (exact-match — Tier 2)
-    const hashPayload = JSON.stringify({ modelId: dto.modelId, body: requestData });
+    // Generate Hash for Caching (exact-match — Tier 2).
+    // Canonicalize with a key-sorted replacer so that semantically identical
+    // payloads with different key orders hash to the SAME value (no cache misses
+    // caused purely by JSON key ordering).
+    const hashPayload = stableStringify({ modelId: dto.modelId, body: requestData });
     const hash = createHash('sha256').update(hashPayload).digest('hex');
 
     // ───────────────────────────────────────────────────
@@ -123,6 +144,11 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       if (typeof semanticResult.response?.text === 'string') {
         semanticResult.response.text = piiService.unredact(semanticResult.response.text, piiMapping);
       }
+      // Mark cache hits so downstream metrics/observability can distinguish a
+      // HIT from a real model call (cost/latency attribution).
+      if (semanticResult.response && typeof semanticResult.response === 'object') {
+        semanticResult.response.cached = true;
+      }
       return semanticResult.response;
     }
 
@@ -138,6 +164,9 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       // Unredact before returning from cache
       if (typeof cachedResponse.text === 'string') {
          cachedResponse.text = piiService.unredact(cachedResponse.text, piiMapping);
+      }
+      if (typeof cachedResponse === 'object') {
+        cachedResponse.cached = true;
       }
       return cachedResponse;
     }
