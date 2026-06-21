@@ -220,31 +220,49 @@ export function createStreamController(modelFactory: ModelFactory) {
       const maxAllowedTokens = 1000;
       let estimatedTokens = 0;
 
-      const sendNextChunk = async () => {
-        if (isDisconnected) return;
+      // Handle client disconnect (register before draining so an early abort
+      // stops the loop on the very next iteration).
+      req.on('close', () => {
+        isDisconnected = true;
+        logger.info(`Client disconnected during stream from '${modelId}'`);
+      });
 
-        if (i < textToStream.length) {
-          // Jittering: Group tokens randomly (chunk size between 5 and 20)
+      // Yield to the event loop without injecting artificial latency.
+      // P8: the previous code added a random 30–80 ms delay PER CHUNK on the
+      // server, which inflated end-to-end latency and made the TTFT metric
+      // meaningless. Smoothing the visual cadence is the CLIENT's job (rAF
+      // char-queue in ai-stream.service.ts); the server now emits as fast as
+      // backpressure allows, deferring only via setImmediate so a long response
+      // never blocks the event loop.
+      const yieldToEventLoop = () => new Promise<void>((r) => setImmediate(r));
+
+      const drainStream = async () => {
+        while (i < textToStream.length) {
+          if (isDisconnected) return;
+
+          // Group tokens randomly (chunk size between 5 and 20) so the wire
+          // framing is non-uniform — this is framing, not throttling.
           const chunkSize = Math.floor(Math.random() * 15) + 5;
           const chunk = textToStream.slice(i, i + chunkSize);
-          
+
           estimatedTokens += Math.ceil(chunk.length / 4);
-          
+
           // Predictive circuit breaking for stream draining attack
           if (store && estimatedTokens > maxAllowedTokens) {
-             logger.warn(`[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit`);
-             res.write(`event: error\n`);
-             res.write(`data: ${JSON.stringify({ message: 'Rate limit exceeded during streaming. Stream aborted.' })}\n\n`);
-             res.end();
-             req.destroy();
-             return;
+            logger.warn(`[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit`);
+            res.write(`event: error\n`);
+            res.write(`data: ${JSON.stringify({ message: 'Rate limit exceeded during streaming. Stream aborted.' })}\n\n`);
+            res.end();
+            req.destroy();
+            return;
           }
 
           // Sanitización estricta de nuevas líneas (Defensa contra CVE-2026-33128 SSE Injection)
           const sanitizedChunk = chunk.replace(/\n/g, '\\n');
 
-          res.write(`data: ${JSON.stringify({ chunk: sanitizedChunk })}\n\n`);
-          
+          // Contract (P2): emit `{ text }` — the shared shape both clients parse.
+          res.write(`data: ${JSON.stringify({ text: sanitizedChunk })}\n\n`);
+
           // Padding (Relleno Estocástico): inject random crypto noise to destroy token length predictability
           const noiseLength = Math.floor(Math.random() * 64) + 16;
           const noise = randomBytes(noiseLength).toString('hex');
@@ -258,34 +276,29 @@ export function createStreamController(modelFactory: ModelFactory) {
             logger.info(`[OpenTelemetry] Time To First Token (TTFT)`, { ttft_ms: ttftMs, modelId });
             res.write(`data: ${JSON.stringify({ metadata: { ttft_ms: ttftMs } })}\n\n`);
           }
-          
-          // Jittering: Random micro-delays between 30ms and 80ms
-          const jitterDelayMs = Math.floor(Math.random() * 50) + 30;
-          setTimeout(sendNextChunk, jitterDelayMs);
-        } else {
-          res.write('event: done\n');
-          res.write('data: {}\n\n');
-          res.end();
-          
-          const totalTokens = result.metadata?.usageMetadata?.totalTokenCount || 0;
-          if (store && totalTokens > 0) {
-            try {
-              await store.consume(identifier, totalTokens, windowMs);
-              logger.info(`[Stream] Consumed ${totalTokens} tokens for ${identifier}`);
-            } catch (err) {
-              logger.error('[Stream] Failed to consume tokens', {}, err instanceof Error ? err : new Error(String(err)));
-            }
+
+          await yieldToEventLoop();
+        }
+
+        if (isDisconnected) return;
+
+        // Contract (P2): terminate with the `[DONE]` sentinel both clients
+        // recognize (previously `event: done` + `{}`, which neither parsed).
+        res.write('data: [DONE]\n\n');
+        res.end();
+
+        const totalTokens = result.metadata?.usageMetadata?.totalTokenCount || 0;
+        if (store && totalTokens > 0) {
+          try {
+            await store.consume(identifier, totalTokens, windowMs);
+            logger.info(`[Stream] Consumed ${totalTokens} tokens for ${identifier}`);
+          } catch (err) {
+            logger.error('[Stream] Failed to consume tokens', {}, err instanceof Error ? err : new Error(String(err)));
           }
         }
       };
 
-      sendNextChunk();
-
-      // Handle client disconnect
-      req.on('close', () => {
-        isDisconnected = true;
-        logger.info(`Client disconnected during stream from '${modelId}'`);
-      });
+      await drainStream();
 
     } catch (error) {
       logger.error(`Stream Controller: Use Case '${modelId}' failed`, {}, error);

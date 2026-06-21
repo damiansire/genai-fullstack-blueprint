@@ -1,7 +1,7 @@
-import { Injectable, inject, signal, computed, linkedSignal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { API_CONFIG } from '../tokens/api-config';
 import { ModelInvocationResponse } from '../types/api.types';
+import { createSmoothMessage, type SmoothMessageController } from '../../../core/streaming/smooth-stream';
 
 /**
  * Represents a single parsed SSE chunk from the LLM stream.
@@ -42,13 +42,17 @@ export interface StreamState {
 @Injectable({ providedIn: 'root' })
 export class AiStreamService {
   private readonly apiConfig = inject(API_CONFIG);
-  // HttpClient is injected but we use native fetch for streaming.
-  // HttpClient is kept to participate in the Angular HttpClient interceptor chain
-  // for API key headers if needed in the future.
-  private readonly http = inject(HttpClient);
 
   /** AbortController for the current stream — allows re-entrant cancellation. */
   private currentController: AbortController | null = null;
+
+  /**
+   * Smooth-render controller (P6): raw SSE chunks are enqueued char-by-char and
+   * drained on requestAnimationFrame, so `streamText` is updated at most once per
+   * frame — never once per raw chunk (the AGENTS.md streaming-render invariant).
+   * This also avoids the O(n^2) re-concatenation of updating the signal per chunk.
+   */
+  private smooth: SmoothMessageController | null = null;
 
   // ─── Public Signal State ───────────────────────────────────────────────────
 
@@ -71,9 +75,12 @@ export class AiStreamService {
   readonly streamAsResponse = computed<ModelInvocationResponse | null>(() => {
     const text = this.streamText();
     if (!text) return null;
+    // P9 fix: mirror the non-streaming invoke envelope exactly — `{ data: {
+    // result: { text } } }` — so <app-text-model-response> (which reads
+    // `data.result.text`) renders streamed text instead of "No text generated".
     return {
       success: true,
-      data: { text },
+      data: { result: { text } },
       // Metadata is populated after the stream completes (future enhancement)
     };
   });
@@ -106,15 +113,29 @@ export class AiStreamService {
     this.streamError.set(null);
     this.chunkCount.set(0);
 
+    // Fresh smooth-render controller: drains queued chars on rAF and updates the
+    // signal at most once per frame (see field docs).
+    this.smooth = createSmoothMessage({
+      onTextUpdate: (_delta, fullBuffer) => this.streamText.set(fullBuffer),
+    });
+
     try {
+      // Streaming bypasses HttpClient (needs the low-level fetch reader), so the
+      // X-API-Key interceptor does NOT run here — add the header manually so the
+      // fail-closed gateway does not 401 the stream.
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      };
+      if (this.apiConfig.apiKey) {
+        headers['X-API-Key'] = this.apiConfig.apiKey;
+      }
+
       const response = await fetch(
         `${this.apiConfig.baseUrl}/models/${modelId}/stream`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'text/event-stream',
-          },
+          headers,
           body: JSON.stringify(payload),
           signal: abortSignal,
         }
@@ -128,42 +149,43 @@ export class AiStreamService {
         throw new Error('Response body is null — server may not support streaming.');
       }
 
-      // Parse the SSE stream chunk by chunk using native Web Streams API
+      // Parse the SSE stream chunk by chunk using native Web Streams API.
       const reader = response.body
         .pipeThrough(new TextDecoderStream())
         .getReader();
+
+      // P7 fix: keep a leftover buffer between reads. SSE records are separated
+      // by a blank line (`\n\n`); a record can be split across network packets,
+      // so we only process COMPLETE records and carry the partial tail forward.
+      let buffer = '';
 
       try {
         while (true) {
           const { value, done } = await reader.read();
 
-          if (done || abortSignal.aborted) break;
+          if (abortSignal.aborted) break;
 
-          if (!value) continue;
+          if (value) buffer += value;
 
-          // An SSE message may contain multiple `data:` lines in one chunk
-          for (const line of value.split('\n')) {
-            if (!line.startsWith('data: ')) continue;
-
-            const dataStr = line.slice(6).trim(); // Remove 'data: ' prefix
-
-            if (dataStr === '[DONE]') {
+          // Process every complete record (terminated by a blank line).
+          let sepIndex: number;
+          while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
+            const rawRecord = buffer.slice(0, sepIndex);
+            buffer = buffer.slice(sepIndex + 2);
+            if (this.handleSseRecord(rawRecord)) {
+              // [DONE] sentinel (or error frame) — flush remaining queued chars
+              // immediately so nothing is stranded, then stop.
+              this.smooth?.flushQueue();
               this.isStreaming.set(false);
               return;
             }
+          }
 
-            try {
-              const parsed = JSON.parse(dataStr) as { text?: string };
-              if (parsed.text) {
-                // Append the new chunk to the accumulator Signal.
-                // Each .update() call schedules a micro-task in Angular's
-                // zoneless scheduler — only the text binding re-renders.
-                this.streamText.update((prev) => prev + parsed.text);
-                this.chunkCount.update((n) => n + 1);
-              }
-            } catch {
-              // Silently ignore incomplete JSON caused by SSE frame splits
-            }
+          if (done) {
+            // Flush any trailing record without a final blank line.
+            if (buffer.trim()) this.handleSseRecord(buffer);
+            this.smooth?.flushQueue();
+            break;
           }
         }
       } finally {
@@ -175,10 +197,64 @@ export class AiStreamService {
         return;
       }
       const message = err instanceof Error ? err.message : 'Unknown stream error';
+      // Flush whatever was decoded before the failure so partial output is shown.
+      this.smooth?.flushQueue();
       this.streamError.set(message);
     } finally {
       this.isStreaming.set(false);
     }
+  }
+
+  /**
+   * Parses one complete SSE record (a block of `field: value` lines).
+   * Honors the `event: error` frames the server emits (rate-limit / failure) so
+   * the UI surfaces an error instead of silently rendering nothing.
+   *
+   * @returns true when the `[DONE]` sentinel was seen (caller should stop).
+   */
+  private handleSseRecord(record: string): boolean {
+    let eventType = 'message';
+    const dataLines: string[] = [];
+
+    for (const line of record.split('\n')) {
+      if (line.startsWith(':')) continue; // comment / keep-alive noise
+      if (line.startsWith('event:')) {
+        eventType = line.slice(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trimStart());
+      }
+    }
+
+    if (dataLines.length === 0) return false;
+    const dataStr = dataLines.join('\n').trim();
+
+    if (dataStr === '[DONE]') return true;
+
+    if (eventType === 'error') {
+      let message = 'Stream error';
+      try {
+        const parsed = JSON.parse(dataStr) as { message?: string };
+        if (parsed.message) message = parsed.message;
+      } catch {
+        if (dataStr) message = dataStr;
+      }
+      this.streamError.set(message);
+      return true;
+    }
+
+    try {
+      const parsed = JSON.parse(dataStr) as { text?: string };
+      if (parsed.text) {
+        // Enqueue the raw chunk into the rAF char-queue instead of touching the
+        // signal here — the smooth controller drains it on animation frames and
+        // calls onTextUpdate (one signal write per frame at most).
+        this.smooth?.pushText(parsed.text);
+        this.chunkCount.update((n) => n + 1);
+      }
+    } catch {
+      // Non-JSON data (e.g. metadata frames) — ignore.
+    }
+    return false;
   }
 
   /**
@@ -190,6 +266,9 @@ export class AiStreamService {
       this.currentController.abort();
       this.currentController = null;
     }
+    // Stop the rAF loop without draining the rest of the queue.
+    this.smooth?.stopAnimation();
+    this.smooth = null;
     this.isStreaming.set(false);
   }
 
