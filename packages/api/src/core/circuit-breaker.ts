@@ -18,6 +18,8 @@ export class CircuitBreaker extends EventEmitter {
   private state: CircuitBreakerState = 'CLOSED';
   private failureCount: number = 0;
   private nextAttempt: number = Date.now();
+  /** True while a single HALF_OPEN probe is in flight, so concurrent callers fast-fail. */
+  private halfOpenInFlight: boolean = false;
   
   constructor(
     private readonly name: string,
@@ -34,9 +36,15 @@ export class CircuitBreaker extends EventEmitter {
     if (this.state === 'OPEN') {
       if (Date.now() > this.nextAttempt) {
         this.transitionTo('HALF_OPEN');
+        // This caller becomes the single probe; later concurrent callers fast-fail below.
+        this.halfOpenInFlight = true;
       } else {
         throw new Error(`CircuitBreaker [${this.name}] is OPEN. Fast-failing.`);
       }
+    } else if (this.state === 'HALF_OPEN' && this.halfOpenInFlight) {
+      // A probe is already testing recovery; do not pile a thundering herd onto
+      // the recovering backend. Only one request is allowed through HALF_OPEN.
+      throw new Error(`CircuitBreaker [${this.name}] is HALF_OPEN (probe in flight). Fast-failing.`);
     }
 
     try {
@@ -74,6 +82,7 @@ export class CircuitBreaker extends EventEmitter {
   private onSuccess(): void {
     if (this.state === 'HALF_OPEN') {
       logger.info(`CircuitBreaker [${this.name}] succeeded in HALF_OPEN state. Closing circuit.`);
+      this.halfOpenInFlight = false;
       this.transitionTo('CLOSED');
     }
     this.failureCount = 0;
@@ -84,6 +93,9 @@ export class CircuitBreaker extends EventEmitter {
     logger.warn(`CircuitBreaker [${this.name}] failed. Count: ${this.failureCount}`, { error: error.message });
 
     if (this.state === 'HALF_OPEN' || this.failureCount >= this.options.failureThreshold) {
+      // The probe failed (or we tripped open): release the flag so the next
+      // window's probe can run after the reset timeout.
+      this.halfOpenInFlight = false;
       this.transitionTo('OPEN');
     }
   }

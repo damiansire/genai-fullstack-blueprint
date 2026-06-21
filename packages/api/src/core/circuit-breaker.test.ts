@@ -69,6 +69,30 @@ describe('CircuitBreaker', () => {
     assert.equal(cb.getState(), 'OPEN');
   });
 
+  it('admits only a single probe in HALF_OPEN while one is in flight', async () => {
+    const cb = new CircuitBreaker('t', { failureThreshold: 1, resetTimeoutMs: 1000 });
+    await assert.rejects(cb.fire(fail), /boom/);
+    assert.equal(cb.getState(), 'OPEN');
+
+    mock.timers.tick(1001);
+
+    // First caller becomes the probe; it hangs so the probe stays in flight.
+    let releaseProbe!: (v: string) => void;
+    const hung = () => new Promise<string>((resolve) => { releaseProbe = resolve; });
+    const probe = cb.fire(hung);
+    assert.equal(cb.getState(), 'HALF_OPEN');
+
+    // Concurrent callers must fast-fail instead of all hitting the backend.
+    const action = mock.fn(ok);
+    await assert.rejects(cb.fire(action), /HALF_OPEN/);
+    assert.equal(action.mock.callCount(), 0, 'no extra probe must run while one is in flight');
+
+    // Let the probe succeed -> circuit closes and the flag is released.
+    releaseProbe('ok');
+    assert.equal(await probe, 'ok');
+    assert.equal(cb.getState(), 'CLOSED');
+  });
+
   it('resets the failure count on a successful call', async () => {
     const cb = new CircuitBreaker('t', { failureThreshold: 2, resetTimeoutMs: 1000 });
     await assert.rejects(cb.fire(fail), /boom/);
