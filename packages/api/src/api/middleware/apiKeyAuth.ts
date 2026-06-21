@@ -13,6 +13,15 @@ interface ApiKeyValidationResult {
 }
 
 /**
+ * Derive the access tier from the API key's permissions. A key carrying the
+ * `premium` permission resolves to the `premium` tier; everything else is `free`.
+ * This is the real identity source for `req.user.tier` consumed by `rbac.ts`.
+ */
+function tierFromPermissions(permissions: string[] | undefined): 'free' | 'premium' {
+  return permissions?.includes('premium') ? 'premium' : 'free';
+}
+
+/**
  * Middleware for API key authentication
  * Validates the X-API-Key header against a list of valid keys from environment variables
  * @param req - Express request object
@@ -40,6 +49,7 @@ export function apiKeyAuth(req: Request, _res: Response, next: NextFunction): vo
     req.user = {
       ...(validation.keyId ? { apiKeyId: validation.keyId } : {}),
       ...(validation.permissions ? { permissions: validation.permissions } : { permissions: [] }),
+      tier: tierFromPermissions(validation.permissions),
       authenticated: true
     };
 
@@ -180,6 +190,7 @@ export function optionalApiKeyAuth(req: Request, _res: Response, next: NextFunct
         req.user = {
           ...(validation.keyId ? { apiKeyId: validation.keyId } : {}),
           ...(validation.permissions ? { permissions: validation.permissions } : { permissions: [] }),
+          tier: tierFromPermissions(validation.permissions),
           authenticated: true
         };
       } else {
@@ -210,6 +221,7 @@ declare global {
       user?: {
         apiKeyId?: string;
         permissions?: string[];
+        tier?: 'free' | 'premium';
         authenticated: boolean;
       };
     }

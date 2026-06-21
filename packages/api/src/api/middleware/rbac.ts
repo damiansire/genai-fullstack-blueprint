@@ -21,7 +21,8 @@ export const rbacModelMiddleware = (req: Request, res: Response, next: NextFunct
   if (!modelId) return next();
 
   const requiredTier = MODEL_TIERS[modelId] || 'free'; // default to free
-  const userTier = (req.user as any)?.tier || 'free'; // Assume req.user has a tier property
+  // tier is populated by apiKeyAuth from the key's permissions; default to free.
+  const userTier = req.user?.tier || 'free';
 
   const requiredLevel = TIER_LEVELS[requiredTier as keyof typeof TIER_LEVELS] ?? 0;
   const userLevel = TIER_LEVELS[userTier as keyof typeof TIER_LEVELS] ?? 0;
