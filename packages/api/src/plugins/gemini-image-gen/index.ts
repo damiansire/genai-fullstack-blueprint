@@ -128,7 +128,12 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
       // Generar contenido usando fetch nativo
       logger.info('Calling Gemini API directly via fetch...');
       
-      const apiKey = process.env['GEMINI_API_KEY'] || 'dummy-key';
+      const apiKey = process.env['GEMINI_API_KEY'];
+      if (!apiKey) {
+        // Fail fast: never send a placeholder credential to Google. A missing
+        // key is a configuration error, not something to mask behind a 401.
+        throw new Error('GEMINI_API_KEY is not configured. Please set it in your .env file.');
+      }
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${apiKey}`;
 
       const apiResponse = await fetch(url, {

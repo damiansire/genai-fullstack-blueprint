@@ -129,16 +129,13 @@ function getValidApiKeys(): Array<{ id: string; key: string; permissions: string
     });
   }
 
-  // Fallback to a default API key if no keys are configured
+  // Fail closed: if no API keys are configured, deny access instead of
+  // silently installing a well-known default key (which would leave a
+  // misconfigured deploy wide open with read/write). A missing key set is a
+  // configuration error, not an open door.
   if (validKeys.length === 0) {
-    const defaultKey = process.env['DEFAULT_API_KEY'] || 'default-key-change-in-production';
-    validKeys.push({
-      id: 'default',
-      key: defaultKey,
-      permissions: ['read', 'write']
-    });
-    
-    logger.warn('⚠️  No API keys configured in environment variables. Using default key. This is not recommended for production.');
+    logger.error('No API keys configured (set API_KEY_1, API_KEY_2, ...). Refusing to authenticate any request.');
+    throw ApiError.unauthorized('Authentication is not configured on this server.');
   }
 
   return validKeys;

@@ -59,3 +59,35 @@ describe('apiKeyAuth tier population', () => {
     assert.equal(req.user?.tier, undefined, 'no tier when not authenticated');
   });
 });
+
+describe('apiKeyAuth fail-closed when no keys are configured', () => {
+  let savedKeys: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    // Snapshot and strip every API_KEY_* var so getValidApiKeys() sees an
+    // empty key set and must refuse (no silent default key).
+    savedKeys = {};
+    for (const k of Object.keys(process.env)) {
+      if (k.startsWith('API_KEY_')) {
+        savedKeys[k] = process.env[k];
+        delete process.env[k];
+      }
+    }
+  });
+
+  afterEach(() => {
+    for (const [k, v] of Object.entries(savedKeys)) {
+      if (v !== undefined) process.env[k] = v;
+    }
+  });
+
+  it('rejects with an Unauthorized error instead of installing a default key', () => {
+    const { req, res, next } = makeCtx('any-key');
+    apiKeyAuth(req, res, next);
+    assert.equal(next.mock.callCount(), 1, 'next called once');
+    const err = next.mock.calls[0]!.arguments[0] as { statusCode?: number } | undefined;
+    assert.ok(err, 'must pass an error to next (fail closed)');
+    assert.equal(err?.statusCode, 401, 'denies access with 401, never a default key');
+    assert.equal(req.user, undefined, 'no user is attached when auth is unconfigured');
+  });
+});

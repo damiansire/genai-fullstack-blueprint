@@ -42,8 +42,14 @@ export const tokenRateLimiter = (store: TokenStore, options: { windowMs: number;
       next();
     } catch (error) {
       logger.error('Error in token rate limiter', {}, error instanceof Error ? error : new Error(String(error)));
-      // Fail open to avoid breaking the application if the store temporarily fails
-      next();
+      // Fail closed: if the token store is unavailable we cannot prove the
+      // caller is under budget, so we deny the request rather than letting it
+      // through unmetered (which would silently disable rate limiting on a DB hiccup).
+      res.status(503).json({
+        success: false,
+        error: 'Service Unavailable',
+        message: 'Rate limiting is temporarily unavailable. Please retry shortly.',
+      });
     }
   };
 };
