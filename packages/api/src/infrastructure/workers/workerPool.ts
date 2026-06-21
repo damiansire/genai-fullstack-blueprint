@@ -93,21 +93,27 @@ export class WorkerPool {
 
   private handleMessage(worker: Worker, msg: any) {
     const task = this.taskMap.get(msg.id);
-    if (task) {
-      this.taskMap.delete(msg.id);
-      this.workerTasks.delete(worker);
-      if (task.timer) clearTimeout(task.timer);
-      task.asyncResource.runInAsyncScope(() => {
-        if (msg.success) {
-          // Workers reply with either `data` (jsonWorker) or `result`
-          // (cpu/tool workers). Use ?? so falsy-but-valid payloads
-          // (0, '', false, null) are not silently dropped.
-          task.resolve(msg.data ?? msg.result);
-        } else {
-          task.reject(new Error(msg.error));
-        }
-      });
+    if (!task) {
+      // The task is gone: it already timed out (which called worker.terminate())
+      // and this is a late/straggler message from a worker on its way out. Do
+      // NOT reinsert it into idleWorkers — otherwise processQueue could dispatch a
+      // queued task to a terminating/dead worker. The 'exit' -> replaceWorker path
+      // brings a fresh worker back into the pool.
+      return;
     }
+    this.taskMap.delete(msg.id);
+    this.workerTasks.delete(worker);
+    if (task.timer) clearTimeout(task.timer);
+    task.asyncResource.runInAsyncScope(() => {
+      if (msg.success) {
+        // Workers reply with either `data` (jsonWorker) or `result`
+        // (cpu/tool workers). Use ?? so falsy-but-valid payloads
+        // (0, '', false, null) are not silently dropped.
+        task.resolve(msg.data ?? msg.result);
+      } else {
+        task.reject(new Error(msg.error));
+      }
+    });
     this.idleWorkers.push(worker);
     this.processQueue();
   }
