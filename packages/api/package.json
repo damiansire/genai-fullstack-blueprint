@@ -7,7 +7,7 @@
     "build": "echo 'Build step skipped. Running native TypeScript.'",
     "dev": "node --experimental-strip-types --watch --env-file=../../env.example src/server.ts",
     "start": "node --experimental-strip-types --permission --allow-fs-read=* --allow-fs-write=/app/data/ --allow-fs-write=data/ --allow-net --allow-worker --env-file=../../env.example src/server.ts",
-    "test": "node --env-file=../../env.example --experimental-strip-types --test --experimental-test-coverage src/**/*.test.ts",
+    "test": "node --env-file=../../env.example --import tsx --test \"src/**/*.test.ts\"",
     "mcp:stdio": "node --experimental-strip-types --env-file=../../env.example src/infrastructure/mcp/mcp-server.ts --stdio"
   },
   "keywords": [],
