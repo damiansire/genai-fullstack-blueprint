@@ -27,7 +27,7 @@ export class PromptPlayground {
 
   readonly prompts = this.promptService.prompts;
   readonly isLoading = this.promptService.isLoading;
-  readonly loadError = this.promptService.error;
+  readonly loadError = computed(() => this.promptService.error()?.message ?? null);
 
   // ─── Selection & Editing ───────────────────────────────────────────────────
 

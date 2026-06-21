@@ -1,6 +1,6 @@
 import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormField } from '../../../../shared/components/dynamic-tool-form/dynamic-tool-form';
+import { FormField } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-prompt-editor',
