@@ -18,7 +18,12 @@ re-render per token.
   queue is long (`targetSpeed = max(baseSpeed, queue.length)`) so the text never
   lags far behind the model, and eases back down as it empties.
 - Use a **time accumulator** (`accumulatedTime += frameDuration`), not
-  `setInterval` — robust against dropped frames and backgrounded tabs.
+  `setInterval` — robust against a **variable frame rate** (it decouples how many
+  chars to emit from how often rAF fires). Note: `requestAnimationFrame` is
+  **paused entirely in backgrounded tabs** (HTML spec / MDN), so the stream does
+  not advance there; on refocus the first frame carries a huge `dt`, and since
+  `charsToProcess` is clamped to `queue.length` the backlog is emitted in one
+  frame (caught by the flush/clamp, but not a "smooth" catch-up).
 - **Flush the whole queue** on finish and on abort, then `cancelAnimationFrame`.
   Without an explicit flush, aborting leaves characters stranded.
 
