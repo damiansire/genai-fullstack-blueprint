@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import { ModelFactory } from '../../infrastructure/ai/factory.js';
 import { CPUWorkerService } from '../../infrastructure/workers/workerPool.js';
 import { ProcessContext } from '../../domain/ai/strategy.interface.js';
@@ -46,6 +47,63 @@ export function stableStringify(value: unknown): string {
   });
 }
 
+/**
+ * Boundary schema for the invoke body (AGENTS.md: "Validate all boundary input
+ * with zod"). It is deliberately permissive — `.passthrough()` keeps the
+ * arbitrary model params (temperature, prompt, …) that each strategy consumes —
+ * but it pins down the two structural fields the use case actually reasons about:
+ *
+ *   - `messages`: when present, MUST be an array of `{ role, … }` objects, since
+ *     the PII redaction, prompt extraction and agentic loop all iterate it.
+ *   - `stream`: when present, MUST be a boolean (it gates whether we cache).
+ *
+ * A malformed `messages` (e.g. a string, or items without a role) would
+ * otherwise blow up deep inside the loop with an opaque error; here it fails
+ * fast at the boundary with a 400.
+ */
+const invokeMessageSchema = z
+  .object({
+    role: z.string(),
+    content: z.unknown().optional(),
+  })
+  .passthrough();
+
+export const invokeBodySchema = z
+  .object({
+    messages: z.array(invokeMessageSchema).optional(),
+    stream: z.boolean().optional(),
+  })
+  .passthrough();
+
+/**
+ * Max number of messages retained in the agentic loop. Each iteration appends an
+ * `assistant` (tool_calls) + a `tool` (results) message, so an unbounded loop
+ * grows the context quadratically (each turn re-sends the whole history). We keep
+ * a sliding window of the most recent turns and always preserve a leading
+ * `system` message (the static prompt prefix) so behaviour/anchoring is stable.
+ */
+export const AGENTIC_CONTEXT_WINDOW = 12;
+
+/**
+ * Trim `messages` to the last `windowSize` entries, always preserving a leading
+ * `system` message if one exists. Pure + exported for unit testing.
+ */
+export function applySlidingWindow<T extends { role?: unknown }>(
+  messages: T[],
+  windowSize: number = AGENTIC_CONTEXT_WINDOW,
+): T[] {
+  if (messages.length <= windowSize) return messages;
+
+  const head = messages[0];
+  const hasSystemHead = head !== undefined && head.role === 'system';
+
+  if (hasSystemHead) {
+    const tail = messages.slice(messages.length - (windowSize - 1));
+    return [head, ...tail];
+  }
+  return messages.slice(messages.length - windowSize);
+}
+
 export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
   private static breakers: Map<string, CircuitBreaker> = new Map();
 
@@ -86,10 +144,19 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       throw ApiError.notFound(`Model '${dto.modelId}' is not available`);
     }
 
+    // Boundary validation (zod): fail fast on a malformed body instead of
+    // crashing deep inside PII redaction / the agentic loop with an opaque error.
+    const parsedBody = invokeBodySchema.safeParse(dto.body ?? {});
+    if (!parsedBody.success) {
+      throw ApiError.badRequest(
+        `Invalid invoke body: ${parsedBody.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ')}`,
+      );
+    }
+
     const strategy = this.modelFactory.create(dto.modelId);
 
     const requestData: any = {
-      ...dto.body,
+      ...parsedBody.data,
     };
 
     if (dto.file) {
@@ -249,6 +316,10 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       requestData.messages = requestData.messages || [];
       requestData.messages.push({ role: 'assistant', tool_calls: currentResponse.tool_calls });
       requestData.messages.push({ role: 'tool', results: toolResults });
+
+      // Sliding window: each iteration adds 2 messages and the whole history is
+      // re-sent every turn, so cap it to avoid quadratic context growth.
+      requestData.messages = applySlidingWindow(requestData.messages);
 
       // Call AI again
       currentResponse = await this.processWithFallback(strategy, dto.modelId, requestData, dto.context);
