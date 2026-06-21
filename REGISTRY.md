@@ -20,7 +20,7 @@
       - *Source*: [Node.js test runner API](https://nodejs.org/docs/latest/api/test.html) and [Node.js assert API](https://nodejs.org/docs/latest/api/assert.html)
     - **`node:sqlite` (`DatabaseSync`)**: Creation of a native database service in `src/services/db.ts` to register and persist HTTP request logs and their durations directly in SQLite synchronously, integrated into the `server.ts` middleware.
       - *Source*: [Node.js sqlite API](https://nodejs.org/docs/latest/api/sqlite.html)
-    - **`node:perf_hooks` (`performance.now()`)**: Replacement of `Date.now()` throughout the gateway (`server.ts`, `modelController.ts` and plugins) with `performance.now()`. This provides high-resolution execution time metrics immune to system clock jumps.
+    - **`node:perf_hooks` (`performance.now()`)**: Replacement of `Date.now()` with `performance.now()` in the **metrics paths** (`server.ts`, `modelController.ts` and plugins). This provides high-resolution execution time metrics immune to system clock jumps. *Not gateway-wide*: a few wall-clock timers deliberately keep `Date.now()` — notably `circuit-breaker.ts` (its reset timer, so `node:test`'s `mock.timers({ apis: ['Date'] })` can drive it) and `semantic-cache.service.ts` (deriving a non-security `vectorId`).
       - *Source*: [Node.js perf_hooks API](https://nodejs.org/docs/latest/api/perf_hooks.html)
     - **`node:timers/promises` (`setTimeout`)**: Substitution of the manual pattern based on `new Promise(resolve => setTimeout(resolve, delay))` with the native promise-based `setTimeout` function, substantially cleaning and simplifying latency simulations in the plugins.
       - *Source*: [Node.js timers/promises API](https://nodejs.org/docs/latest/api/timers.html#timers-promises-api)
