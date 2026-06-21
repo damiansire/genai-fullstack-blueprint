@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { performance } from 'node:perf_hooks';
+import { randomBytes } from 'node:crypto';
 import { ModelFactory } from '../../infrastructure/ai/factory.js';
 import { ProcessContext, ModelMetadata } from '../../domain/ai/strategy.interface.js';
 import { ApiResponse } from '../../core/types.js';
@@ -246,7 +247,7 @@ export function createStreamController(modelFactory: ModelFactory) {
           
           // Padding (Relleno Estocástico): inject random crypto noise to destroy token length predictability
           const noiseLength = Math.floor(Math.random() * 64) + 16;
-          const noise = await import('node:crypto').then(crypto => crypto.randomBytes(noiseLength).toString('hex'));
+          const noise = randomBytes(noiseLength).toString('hex');
           res.write(`: ${noise}\n\n`);
 
           i += chunkSize;
