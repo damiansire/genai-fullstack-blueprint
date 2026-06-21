@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, computed } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { API_CONFIG } from '../../core/tokens/api-config';
 import { z } from 'zod';

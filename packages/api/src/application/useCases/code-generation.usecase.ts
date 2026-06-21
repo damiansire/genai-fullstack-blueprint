@@ -65,12 +65,11 @@ function cyclomaticComplexity(code: string, lang: SupportedLanguage): number {
 /** Cognitive complexity approximation: sums nesting depth at branch points. */
 function cognitiveComplexity(code: string): number {
   const lines = code.split('\n');
-  let depth = 0;
   let score = 0;
   for (const line of lines) {
     const indent = line.search(/\S/);
     if (indent === -1) continue;
-    depth = Math.floor(indent / 2);
+    const depth = Math.floor(indent / 2);
     if (/\b(if|for|while|switch|catch)\b/.test(line)) {
       score += 1 + depth;
     }

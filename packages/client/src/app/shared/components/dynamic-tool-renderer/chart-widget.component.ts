@@ -1,7 +1,8 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-chart-widget',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="chart-container">
       <h3 class="chart-title">

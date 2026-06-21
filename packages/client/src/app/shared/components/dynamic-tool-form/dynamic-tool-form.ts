@@ -31,7 +31,6 @@ import {
   inject,
   signal,
   computed,
-  effect,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';

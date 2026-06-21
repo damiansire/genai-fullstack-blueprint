@@ -9,6 +9,7 @@
     "start": "node --import tsx --env-file-if-exists=../../env.example --env-file-if-exists=../../.env src/server.ts",
     "test": "node --env-file-if-exists=../../env.example --env-file-if-exists=../../.env --import tsx --experimental-test-module-mocks --test-force-exit --test \"src/**/*.test.ts\"",
     "mcp:stdio": "node --experimental-strip-types --env-file-if-exists=../../env.example --env-file-if-exists=../../.env src/infrastructure/mcp/mcp-server.ts --stdio",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json}\""
@@ -37,7 +38,7 @@
     "zod": "^4.4.2"
   },
   "devDependencies": {
-    "@eslint/js": "^10.5.0",
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/multer": "^2.0.0",

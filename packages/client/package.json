@@ -8,6 +8,7 @@
     "build:prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration development",
     "test": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss,json}\""
@@ -44,11 +45,11 @@
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.5.0",
-    "@angular-eslint/template-parser": "^22.0.0",
+    "@angular-eslint/template-parser": "^21.4.0",
     "@angular/build": "^21.2.0",
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
-    "angular-eslint": "^22.0.0",
+    "angular-eslint": "^21.4.0",
     "eslint": "^10.5.0",
     "jsdom": "^29.0.0",
     "prettier": "^3.8.4",

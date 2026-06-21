@@ -19,7 +19,6 @@ import { httpResource } from '@angular/common/http';
 import { API_CONFIG } from '../../core/tokens/api-config';
 import { AiStreamService } from '../../core/services/ai-stream.service';
 import { DynamicToolFormComponent } from '../../shared/components/dynamic-tool-form/dynamic-tool-form';
-import { ModelResponse } from '../../shared/components/model-response/model-response';
 
 interface ToolSummary {
   name: string;

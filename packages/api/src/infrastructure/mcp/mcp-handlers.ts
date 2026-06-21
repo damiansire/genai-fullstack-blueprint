@@ -208,7 +208,7 @@ const handlers: Record<string, Handler> = {
     const uri = (req.params?.['uri'] as string) ?? '';
 
     let content: unknown;
-    let mimeType = 'application/json';
+    const mimeType = 'application/json';
 
     switch (uri) {
       case 'gateway://models':

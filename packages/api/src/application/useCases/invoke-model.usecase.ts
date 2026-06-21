@@ -104,7 +104,7 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
 
     // 1. PII Redaction Phase (Edge Routing & Validation)
     // "identifica de manera estocástica todas las entidades sensibles... reemplazando criptográficamente nombres e importes"
-    let piiMapping: Record<string, string> = {};
+    const piiMapping: Record<string, string> = {};
     if (requestData.messages) {
       requestData.messages = requestData.messages.map((msg: any) => {
         if (typeof msg.content === 'string') {

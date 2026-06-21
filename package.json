@@ -15,7 +15,11 @@
     "start:api": "npm run start --workspace=api",
     "start:client": "npm run start --workspace=client",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "format:check": "npm run format:check --workspaces --if-present",
+    "ci": "npm run typecheck && npm run lint && npm run format:check && npm run test"
   },
   "keywords": [
     "genai",

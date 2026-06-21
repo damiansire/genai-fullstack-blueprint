@@ -64,7 +64,9 @@ const DLP_PATTERNS: Array<{ re: RegExp; weight: number }> = [
  * injection/toxicity patterns are already case-insensitive via the `i` flag.
  */
 function normalize(text: string): string {
-  let t = text.replace(/[​-‍﻿]/g, '');
+  // Quita caracteres de ancho cero (ZWSP/ZWNJ/ZWJ) y el BOM, escapados
+  // explícitamente para no dejar whitespace irregular literal en el fuente.
+  let t = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
   t = t.replace(/\s+/g, ' ');
   return t;
 }

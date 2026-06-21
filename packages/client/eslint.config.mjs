@@ -22,12 +22,20 @@ export default tseslint.config(
     extends: [...tseslint.configs.recommended, ...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,
     rules: {
-      // (1) sin console.* en la lib.
-      'no-console': 'error',
+      // (1) sin `console.log/debug/info` de depuracion en la lib; se permiten
+      //     `console.warn`/`console.error` como diagnostico legitimo de fallos
+      //     de boundary (schema mismatch) y bootstrap.
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       // (2) OnPush obligatorio: el client es zoneless y lo predica.
       '@angular-eslint/prefer-on-push-component-change-detection': 'error',
       '@angular-eslint/component-selector': 'off',
       '@angular-eslint/directive-selector': 'off',
+      // Deuda de tipado de frontera rastreada aparte (P10): visible pero no bloquea.
+      '@typescript-eslint/no-explicit-any': 'warn',
+      // Outputs con prefijo `on`/nombre de evento DOM: renombrarlos es un cambio
+      // de API publica con re-wiring de plantillas; se deja como warning.
+      '@angular-eslint/no-output-on-prefix': 'warn',
+      '@angular-eslint/no-output-native': 'warn',
     },
   },
   {

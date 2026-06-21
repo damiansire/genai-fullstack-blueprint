@@ -383,7 +383,7 @@ class Server extends EventEmitter {
    */
   private seedToolRegistry(): void {
     try {
-      registerTool('analyze_security_logs', 'Analyzes raw log text for security threats using MITRE ATT\&CK patterns. Returns a structured report with severity, indicators, and mitigations.', {
+      registerTool('analyze_security_logs', 'Analyzes raw log text for security threats using MITRE ATT&CK patterns. Returns a structured report with severity, indicators, and mitigations.', {
         type: 'object',
         properties: {
           logs: { type: 'string', description: 'Raw log text (newline-separated entries)', format: 'textarea' },
