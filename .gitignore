@@ -26,6 +26,9 @@ pids/
 *.seed
 *.pid.lock
 
+# SQLite runtime database (gateway.db + WAL/SHM)
+packages/api/data/
+
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov

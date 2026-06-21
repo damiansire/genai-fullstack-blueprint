@@ -47,6 +47,8 @@ export class DatabaseService extends EventEmitter {
   // Rate Limiting (Token Store)
   private updateRateLimitStmt: any = null;
   private getRateLimitStmt: any = null;
+  // Rate Limiting (Request-count Store)
+  private hitRequestLimitStmt: any = null;
 
   // Gemini Context Cache
   private insertContextCacheStmt: any = null;
@@ -113,6 +115,12 @@ export class DatabaseService extends EventEmitter {
             identifier TEXT PRIMARY KEY,
             tokens INTEGER NOT NULL,
             last_refill TEXT NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS rate_limit_requests (
+            identifier TEXT PRIMARY KEY,
+            count INTEGER NOT NULL,
+            reset_time INTEGER NOT NULL
           );
 
           CREATE TABLE IF NOT EXISTS gemini_context_cache (
@@ -209,6 +217,20 @@ export class DatabaseService extends EventEmitter {
         'SELECT tokens, last_refill FROM rate_limit_tokens WHERE identifier = ?'
       );
 
+      // Request-count limiter: single atomic UPSERT.
+      // Params: (identifier, count_if_new, reset_if_new, reset_for_compare)
+      // On conflict: if the stored window expired, restart at count=1 with a new
+      // reset_time; otherwise increment in place. RETURNING gives the post-state
+      // so the caller never does a separate read (no read-then-write race).
+      this.hitRequestLimitStmt = this.proxiedDb.prepare(
+        `INSERT INTO rate_limit_requests (identifier, count, reset_time)
+         VALUES (:id, 1, :reset)
+         ON CONFLICT(identifier) DO UPDATE SET
+           count = CASE WHEN :now > rate_limit_requests.reset_time THEN 1 ELSE rate_limit_requests.count + 1 END,
+           reset_time = CASE WHEN :now > rate_limit_requests.reset_time THEN :reset ELSE rate_limit_requests.reset_time END
+         RETURNING count, reset_time`
+      );
+
       // Gemini Context Cache
       this.insertContextCacheStmt = this.proxiedDb.prepare(
         'INSERT OR REPLACE INTO gemini_context_cache (id, file_name, mime_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?)'
@@ -267,6 +289,9 @@ export class DatabaseService extends EventEmitter {
       this.insertToolStmt = null;
       this.searchToolsStmt = null;
       this.getToolByNameStmt = null;
+      this.updateRateLimitStmt = null;
+      this.getRateLimitStmt = null;
+      this.hitRequestLimitStmt = null;
       // Patrón 3
       this.insertVectorStmt = null;
       this.searchVectorStmt = null;
@@ -538,6 +563,24 @@ export class DatabaseService extends EventEmitter {
     }
   }
 
+  /**
+   * Atomically records one request for `identifier` in the current window and
+   * returns the post-increment {count, resetTime}. Backs SqliteRateLimitStore.
+   * Throws on DB failure so the limiter can fail closed (never silently 0).
+   */
+  public hitRequestLimit(identifier: string, windowMs: number): { count: number; resetTime: number } {
+    if (!this.hitRequestLimitStmt) {
+      throw new Error('Rate limit store not initialized');
+    }
+    const now = Date.now();
+    const row = this.hitRequestLimitStmt.get({
+      id: identifier,
+      reset: now + windowMs,
+      now,
+    }) as { count: number; reset_time: number };
+    return { count: row.count, resetTime: row.reset_time };
+  }
+
   public getRateLimitToken(identifier: string): { tokens: number; lastRefill: string } | null {
     if (!this.getRateLimitStmt) return null;
     try {
@@ -601,5 +644,6 @@ export const { quantizeToInt8 } = DatabaseService;
 // Rate Limit and Context Cache exports
 export const updateRateLimitToken = dbService.updateRateLimitToken.bind(dbService);
 export const getRateLimitToken = dbService.getRateLimitToken.bind(dbService);
+export const hitRequestLimit = dbService.hitRequestLimit.bind(dbService);
 export const saveContextCache = dbService.saveContextCache.bind(dbService);
 export const getContextCache = dbService.getContextCache.bind(dbService);
