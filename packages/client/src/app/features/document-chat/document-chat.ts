@@ -60,8 +60,7 @@ export class DocumentChat {
     try {
       // Fake upload delay
       await new Promise(r => setTimeout(r, 1000));
-      // In a real app we would POST to /api/domain/rag/ingest
-      console.log('Document uploaded for RAG ingestion');
+      // In a real app we would POST to /api/domain/rag/ingest here.
     } finally {
       this.isUploading.set(false);
     }

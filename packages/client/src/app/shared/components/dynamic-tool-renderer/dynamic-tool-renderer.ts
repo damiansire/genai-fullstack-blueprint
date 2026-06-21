@@ -1,11 +1,12 @@
-import { Component, input, effect, Type, computed, signal, inject, Injector } from '@angular/core';
+import { Component, input, effect, Type, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
 
 @Component({
   selector: 'app-dynamic-tool-renderer',
   imports: [NgComponentOutlet],
   templateUrl: './dynamic-tool-renderer.html',
-  styleUrl: './dynamic-tool-renderer.scss'
+  styleUrl: './dynamic-tool-renderer.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DynamicToolRenderer {
   toolCall = input<any>();

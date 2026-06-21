@@ -53,7 +53,6 @@ export class TextModel implements OnDestroy {
     this.activeSessionId.set(id);
     // In a full implementation, this would fetch /api/sessions/:id/messages
     // and populate the UI with history.
-    console.log('Loading session:', id);
   }
 
   // ─── Form State ────────────────────────────────────────────────────────────

@@ -92,9 +92,10 @@
         </div>
 
         <div class="chat-input-area">
-          <input 
-            type="text" 
-            [(ngModel)]="prompt"
+          <input
+            type="text"
+            [ngModel]="prompt()"
+            (ngModelChange)="prompt.set($event)"
             aria-label="Prompt message"
             placeholder="Ask anything about your documents..."
             (keydown.enter)="onSubmit()">

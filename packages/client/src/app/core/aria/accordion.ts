@@ -1,10 +1,10 @@
-import { Directive, signal, Input, Output, EventEmitter, inject, ElementRef } from '@angular/core';
+import { Directive, signal, input, inject } from '@angular/core';
 
 @Directive({
   selector: '[ngAccordionGroup]',
 })
 export class AccordionGroup {
-  @Input() multiExpandable = false;
+  readonly multiExpandable = input(false);
   // This headless group manages the state
   private activePanels = new Set<AccordionTrigger>();
 
@@ -13,7 +13,7 @@ export class AccordionGroup {
       trigger.expanded.set(false);
       this.activePanels.delete(trigger);
     } else {
-      if (!this.multiExpandable) {
+      if (!this.multiExpandable()) {
         this.activePanels.forEach(p => p.expanded.set(false));
         this.activePanels.clear();
       }
@@ -51,9 +51,9 @@ export class AccordionTrigger {
   selector: '[ngAccordionPanel]',
   host: {
     'role': 'region',
-    '[hidden]': '!trigger?.expanded()'
+    '[hidden]': '!trigger()?.expanded()'
   }
 })
 export class AccordionPanel {
-  @Input('ngAccordionPanel') trigger!: AccordionTrigger;
+  readonly trigger = input.required<AccordionTrigger>({ alias: 'ngAccordionPanel' });
 }
