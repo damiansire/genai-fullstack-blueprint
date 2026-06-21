@@ -236,7 +236,7 @@ Optimized for scalability and clarity:
 ├── REGISTRY.md            # Master Architectural Registry (Decisions & Patterns)
 ├── package.json           # Workspace configuration
 ├── package-lock.json      # Dependency lock file
-├── .env.example           # Environment variables template
+├── env.example            # Environment variables template (copy to .env)
 └── docker-compose.yml     # Container orchestration
 ```
 

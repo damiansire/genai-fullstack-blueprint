@@ -18,7 +18,11 @@ RUN npm ci --omit=dev --workspace=api --include-workspace-root && \
 # Copy the source that is executed at runtime.
 COPY packages/api/tsconfig*.json ./packages/api/
 COPY packages/api/src ./packages/api/src
-COPY env.example ./env.example
+# NOTE: env.example is deliberately NOT copied into the production image.
+# It holds placeholder/dev secrets; real configuration is injected by the
+# orchestrator at runtime (docker-compose `environment:` / `env_file:`, or
+# the platform's secret manager). Baking the placeholder file would risk
+# shipping fake credentials and masking a missing real configuration.
 
 # Create runtime data/log dirs and a non-root user.
 RUN addgroup -g 1001 -S nodejs && \
@@ -37,7 +41,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Run the TypeScript entrypoint through the tsx loader (no build step),
-# matching the `start` script in packages/api/package.json.
+# Run the TypeScript entrypoint through the tsx loader (no build step).
+# Configuration comes from the container environment (see docker-compose), NOT
+# from a baked --env-file: in production we never load the placeholder
+# env.example. A real `.env` is still honored if the orchestrator mounts one.
 WORKDIR /app/packages/api
-CMD ["node", "--import", "tsx", "--env-file=../../env.example", "src/server.ts"]
+CMD ["node", "--import", "tsx", "--env-file-if-exists=../../.env", "src/server.ts"]
