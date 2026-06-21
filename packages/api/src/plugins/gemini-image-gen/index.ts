@@ -1,6 +1,7 @@
 import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/strategy.interface.js';
 import { performance } from 'node:perf_hooks';
 import { logger } from '../../core/logger.js';
+import { resilientTransport } from '../../infrastructure/http/resilient-transport.js';
 
 /**
  * Input parameters for Gemini Image Generation
@@ -125,9 +126,10 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
         config.responseModalities = params.responseModalities;
       }
 
-      // Generar contenido usando fetch nativo
-      logger.info('Calling Gemini API directly via fetch...');
-      
+      // Call Gemini through the shared resilient transport (header-aware retry +
+      // backoff). No hand-rolled fetch/retry per plugin.
+      logger.info('Calling Gemini API via resilient transport...');
+
       const apiKey = process.env['GEMINI_API_KEY'];
       if (!apiKey) {
         // Fail fast: never send a placeholder credential to Google. A missing
@@ -136,7 +138,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
       }
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${apiKey}`;
 
-      const apiResponse = await fetch(url, {
+      const response = await resilientTransport.fetchJson<any>(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,14 +146,6 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
           generationConfig: config
         })
       });
-
-      if (!apiResponse.ok) {
-        const errorText = await apiResponse.text();
-        throw new Error(`Gemini API Error: ${apiResponse.status} - ${errorText}`);
-      }
-
-      const result = await apiResponse.json();
-      const response = result;
       const processingTime = Math.round(performance.now() - startTime);
 
       logger.info(`✅ Gemini API responded in ${processingTime}ms`);

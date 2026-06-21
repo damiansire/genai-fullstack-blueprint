@@ -2,6 +2,7 @@ import { IModelStrategy, ProcessContext, ModelOutput } from '../../domain/ai/str
 import { performance } from 'node:perf_hooks';
 
 import { logger } from '../../core/logger.js';
+import { resilientTransport } from '../../infrastructure/http/resilient-transport.js';
 
 /**
  * Model ID for Google Text Bison
@@ -184,8 +185,9 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
     apiKey: string
   ): Promise<GoogleTextBisonOutput> {
     const url = `${this.baseUrl}/${this.modelName}:generateText?key=${apiKey}`;
-    
-    const response = await fetch(url, {
+
+    // Shared resilient transport: header-aware retry + backoff, one impl for all plugins.
+    const data = await resilientTransport.fetchJson<any>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -199,12 +201,6 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`Google API Error: ${response.status} - ${errorData}`);
-    }
-
-    const data = await response.json() as any;
     const candidate = data.candidates?.[0];
     
     if (!candidate) {
