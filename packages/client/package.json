@@ -7,7 +7,16 @@
     "build": "ng build",
     "build:prod": "ng build --configuration=production",
     "watch": "ng build --watch --configuration development",
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss,json}\""
+  },
+  "author": "Damian Sire <damiansire@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/damiansire/GenAI-Scaffold.git",
+    "directory": "packages/client"
   },
   "prettier": {
     "printWidth": 100,
@@ -35,11 +44,16 @@
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.5.0",
+    "@angular-eslint/template-parser": "^22.0.0",
     "@angular/build": "^21.2.0",
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
+    "angular-eslint": "^22.0.0",
+    "eslint": "^10.5.0",
     "jsdom": "^29.0.0",
+    "prettier": "^3.8.4",
     "typescript": "~5.9.2",
+    "typescript-eslint": "^8.61.1",
     "vite": "^8.0.10",
     "vitest": "^4.1.0"
   }

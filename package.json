@@ -14,12 +14,27 @@
     "build:client": "npm run build:prod --workspace=client",
     "start:api": "npm run start --workspace=api",
     "start:client": "npm run start --workspace=client",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "genai",
+    "scaffold",
+    "blueprint",
+    "angular",
+    "express",
+    "llm-gateway"
+  ],
+  "author": "Damian Sire <damiansire@gmail.com>",
   "license": "MIT",
-  "description": "",
+  "description": "Production-ready full-stack blueprint for building multimodal GenAI apps with an Angular 21 client and a Node.js/Express LLM gateway in an npm-workspaces monorepo.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/damiansire/GenAI-Scaffold.git"
+  },
+  "bugs": {
+    "url": "https://github.com/damiansire/GenAI-Scaffold/issues"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
