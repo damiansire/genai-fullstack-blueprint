@@ -27,6 +27,7 @@ import { randomUUID } from 'node:crypto';
 import { Router, Request, Response } from 'express';
 import { requestContext, createRootContext } from '../../core/async-context.js';
 import { logger } from '../../core/logger.js';
+import { apiKeyAuth } from '../../api/middleware/apiKeyAuth.js';
 import { handleMcpRequest } from './mcp-handlers.js';
 import type { JsonRpcRequest, JsonRpcResponse } from './mcp.types.js';
 import { JSON_RPC_ERRORS } from './mcp.types.js';
@@ -118,10 +119,10 @@ export function startMcpStdioServer(): void {
 
 /**
  * In-memory registry of active SSE connections.
- * Maps sessionId → Express Response object.
- * Used by POST /mcp/message to push responses to the correct SSE stream.
+ * Maps sessionId → { res, owner } so a POST /mcp/message can only target a
+ * session opened by the SAME authenticated API key (no cross-key hijack).
  */
-const sseClients = new Map<string, Response>();
+const sseClients = new Map<string, { res: Response; owner: string }>();
 
 /**
  * Sends a JSON-RPC response to a specific SSE client.
@@ -144,11 +145,17 @@ function sendSseEvent(res: Response, data: unknown): void {
 export function createMcpSseRouter(): Router {
   const router = Router();
 
+  // P1 fix: the MCP transport exposes log recon and arbitrary tool execution.
+  // Authenticate every connection/message with the same API key gate as the
+  // rest of the gateway. Without this, /mcp/sse + /mcp/message were anonymous.
+  router.use(apiKeyAuth);
+
   // ─── GET /mcp/sse ─────────────────────────────────────────────────────────
   // Opens a persistent SSE connection. The client receives a session ID in the
   // 'endpoint' event, which it must include in subsequent POST requests.
   router.get('/sse', (req: Request, res: Response) => {
     const sessionId = randomUUID();
+    const owner = req.user?.apiKeyId ?? 'unknown';
 
     // Standard SSE headers — mirrors the existing stream implementation
     res.setHeader('Content-Type', 'text/event-stream');
@@ -157,13 +164,13 @@ export function createMcpSseRouter(): Router {
     res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
     res.flushHeaders();
 
-    // Register this client
-    sseClients.set(sessionId, res);
+    // Register this client, bound to the authenticated key.
+    sseClients.set(sessionId, { res, owner });
 
     // MCP SSE transport: first event MUST be 'endpoint' with the POST URL
     res.write(`event: endpoint\ndata: /mcp/message?sessionId=${sessionId}\n\n`);
 
-    logger.info('[MCP/SSE] Client connected', { sessionId });
+    logger.info('[MCP/SSE] Client connected', { sessionId, owner });
 
     // Clean up on disconnect
     req.on('close', () => {
@@ -177,14 +184,24 @@ export function createMcpSseRouter(): Router {
   // Requires `sessionId` query param matching an active /mcp/sse connection.
   router.post('/message', async (req: Request, res: Response) => {
     const sessionId = (req.query['sessionId'] as string) ?? '';
-    const sseRes = sseClients.get(sessionId);
+    const client = sseClients.get(sessionId);
 
-    if (!sseRes) {
+    if (!client) {
       res.status(400).json({
         error: `No active SSE session for sessionId: ${sessionId}`,
       });
       return;
     }
+
+    // Ownership check: the message must come from the same key that opened the
+    // SSE stream — otherwise one authenticated key could drive another's stream.
+    const caller = req.user?.apiKeyId ?? 'unknown';
+    if (client.owner !== caller) {
+      res.status(403).json({ error: 'Session does not belong to this caller.' });
+      return;
+    }
+
+    const sseRes = client.res;
 
     const body = req.body as JsonRpcRequest | undefined;
 

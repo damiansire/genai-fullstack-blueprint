@@ -214,10 +214,13 @@ class Server extends EventEmitter {
     const domainRouter = createDomainRoutes();
     this.app.use('/api/domain', domainRouter);
 
-    // Enterprise Modules
-    this.app.use('/api/admin/prompts', apiLimiter, createPromptRoutes());
-    this.app.use('/api/user', apiLimiter, createUserRoutes());
-    this.app.use('/api/sessions', apiLimiter, createSessionRoutes());
+    // Enterprise Modules. Each router gates auth FIRST (router.use(apiKeyAuth))
+    // and then runs the per-key request limiter, so the limiter buckets by the
+    // authenticated req.user.apiKeyId rather than a shared pre-auth IP bucket.
+    // Admin prompt routes additionally require the `admin` permission.
+    this.app.use('/api/admin/prompts', createPromptRoutes([apiLimiter]));
+    this.app.use('/api/user', createUserRoutes([apiLimiter]));
+    this.app.use('/api/sessions', createSessionRoutes([apiLimiter]));
 
     // Seed Tool Registry with domain tools (Patrón 1 integration)
     this.seedToolRegistry();

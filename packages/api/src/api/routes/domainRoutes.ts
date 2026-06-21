@@ -66,7 +66,7 @@ export function createDomainRoutes(): Router {
   // Each SSE event is a TelemetryFrame JSON payload.
   // Client disconnect aborts the AsyncGenerator via AbortController.
   // ──────────────────────────────────────────────────────────────────────────
-  router.get('/telemetry/stream', async (req: Request, res: Response) => {
+  router.get('/telemetry/stream', apiKeyAuth, async (req: Request, res: Response) => {
     const deviceParam = (req.query['devices'] as string | undefined) ?? '';
     const deviceIds = deviceParam
       ? deviceParam.split(',').map(s => s.trim()).filter(Boolean)
