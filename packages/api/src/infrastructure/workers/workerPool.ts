@@ -99,7 +99,10 @@ export class WorkerPool {
       if (task.timer) clearTimeout(task.timer);
       task.asyncResource.runInAsyncScope(() => {
         if (msg.success) {
-          task.resolve(msg.data || msg.result);
+          // Workers reply with either `data` (jsonWorker) or `result`
+          // (cpu/tool workers). Use ?? so falsy-but-valid payloads
+          // (0, '', false, null) are not silently dropped.
+          task.resolve(msg.data ?? msg.result);
         } else {
           task.reject(new Error(msg.error));
         }
