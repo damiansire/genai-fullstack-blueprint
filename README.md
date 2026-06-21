@@ -7,7 +7,7 @@ The project is built from the ground up following strict industry best practices
 
 ---
 
-> **🏗️ Architecture:** All architectural decisions and documentation are centrally maintained in `registry.md`.
+> **🏗️ Architecture:** All architectural decisions and documentation are centrally maintained in `REGISTRY.md`.
 
 ## 🧱 Core Architectural Principles
 
@@ -127,7 +127,7 @@ curl http://localhost:3000/health  # API
 curl http://localhost:8080/health  # Frontend
 ```
 
-> **Troubleshooting Docker:** Refer to `registry.md` for current deployment architectures and known edge cases.
+> **Troubleshooting Docker:** Refer to `REGISTRY.md` for current deployment architectures and known edge cases.
 
 ---
 
@@ -233,7 +233,7 @@ Optimized for scalability and clarity:
 │   ├── Dockerfile.client  # Angular + Nginx
 │   ├── Dockerfile.server  # Node.js API
 │   └── nginx.conf         # Nginx configuration
-├── registry.md            # Master Architectural Registry (Decisions & Patterns)
+├── REGISTRY.md            # Master Architectural Registry (Decisions & Patterns)
 ├── package.json           # Workspace configuration
 ├── package-lock.json      # Dependency lock file
 ├── .env.example           # Environment variables template
@@ -270,7 +270,7 @@ Optimized for scalability and clarity:
 
 All comprehensive documentation, architecture decisions, and setup instructions have been consolidated into a single source of truth:
 
-- **[Master Architectural Registry (registry.md)](./registry.md)** - Contains API references, setup workflow, component structures, and Node.js native patterns.
+- **[Master Architectural Registry (REGISTRY.md)](./REGISTRY.md)** - Contains API references, setup workflow, component structures, and Node.js native patterns.
 
 ## 🐳 Production Deployment with Docker
 
@@ -328,7 +328,7 @@ docker compose exec client sh
 - Production TypeScript configuration relaxes strictness for deployment
 - Nginx serves the Angular app with SPA routing support and compression
 
-For detailed orchestration and operational guidelines, refer to the `registry.md`.
+For detailed orchestration and operational guidelines, refer to the `REGISTRY.md`.
 
 ---
 
