@@ -1,6 +1,8 @@
 <div class="feature-container">
   <header class="feature-header">
-    <h1><span aria-hidden="true">{{ icons.search }}</span> Image Model - Google Vision OCR</h1>
+    <h1>
+      <span aria-hidden="true">{{ icons.search }}</span> Image Model - Google Vision OCR
+    </h1>
     <p>Extract text from images using Google's Vision OCR model</p>
   </header>
 
@@ -24,7 +26,9 @@
     </section>
 
     <section class="ai-module-viewport-trigger">
-      @defer (when imageModelResource.hasValue() || imageModelResource.isLoading() || imageModelResource.error() || fileError()) {
+      @defer (
+        when imageModelResource.hasValue() || imageModelResource.isLoading() || imageModelResource.error() || fileError()
+      ) {
         <app-model-response
           [loading]="imageModelResource.isLoading()"
           [error]="fileError() || imageModelResource.error()?.message || null"

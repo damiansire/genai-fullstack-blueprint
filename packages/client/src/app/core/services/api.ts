@@ -4,5 +4,5 @@ export type {
   ModelInvocationRequest,
   ModelInvocationResponse,
   AvailableModel,
-  ModelsListResponse
+  ModelsListResponse,
 } from '../types/api.types';

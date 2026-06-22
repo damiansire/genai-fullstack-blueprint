@@ -32,14 +32,18 @@ export class ContextCacheUseCase extends UseCase<ContextCacheDTO, ContextCacheRe
     logger.info(`[ContextCache] Starting ${action} action`, { traceId });
 
     if (action === 'create') {
-      const { fileName = 'unknown', mimeType = 'application/octet-stream', sizeBytes = 0 } = request;
+      const {
+        fileName = 'unknown',
+        mimeType = 'application/octet-stream',
+        sizeBytes = 0,
+      } = request;
       const cacheId = `gemini-cache-${randomUUID()}`;
-      
+
       // Simulate Gemini API upload delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       saveContextCache(cacheId, fileName, mimeType, sizeBytes);
-      
+
       logger.info(`[ContextCache] Created cache entry: ${cacheId}`, { traceId });
 
       return {

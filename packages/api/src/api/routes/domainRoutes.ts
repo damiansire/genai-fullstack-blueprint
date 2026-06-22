@@ -14,8 +14,14 @@
 
 import { Router, Request, Response } from 'express';
 import { securityAnalysisUseCase } from '../../application/useCases/security-analysis.usecase.js';
-import { telemetryStreamUseCase, DEVICES } from '../../application/useCases/telemetry-stream.usecase.js';
-import { codeGenerationUseCase, type SupportedLanguage } from '../../application/useCases/code-generation.usecase.js';
+import {
+  telemetryStreamUseCase,
+  DEVICES,
+} from '../../application/useCases/telemetry-stream.usecase.js';
+import {
+  codeGenerationUseCase,
+  type SupportedLanguage,
+} from '../../application/useCases/code-generation.usecase.js';
 import { contextCacheUseCase } from '../../application/useCases/context-cache.usecase.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
 import { logger } from '../../core/logger.js';
@@ -69,7 +75,10 @@ export function createDomainRoutes(): Router {
   router.get('/telemetry/stream', apiKeyAuth, async (req: Request, res: Response) => {
     const deviceParam = (req.query['devices'] as string | undefined) ?? '';
     const deviceIds = deviceParam
-      ? deviceParam.split(',').map(s => s.trim()).filter(Boolean)
+      ? deviceParam
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
 
     // SSE headers
@@ -80,9 +89,8 @@ export function createDomainRoutes(): Router {
     res.flushHeaders();
 
     // Send device list as first event (for UI bootstrap)
-    const activeDevices = deviceIds.length > 0
-      ? DEVICES.filter(d => deviceIds.includes(d.id))
-      : DEVICES;
+    const activeDevices =
+      deviceIds.length > 0 ? DEVICES.filter((d) => deviceIds.includes(d.id)) : DEVICES;
     res.write(`event: devices\ndata: ${JSON.stringify(activeDevices)}\n\n`);
 
     // Abort signal: fires when the client disconnects
@@ -126,7 +134,14 @@ export function createDomainRoutes(): Router {
       return;
     }
 
-    const validLanguages: SupportedLanguage[] = ['typescript', 'javascript', 'python', 'go', 'rust', 'sql'];
+    const validLanguages: SupportedLanguage[] = [
+      'typescript',
+      'javascript',
+      'python',
+      'go',
+      'rust',
+      'sql',
+    ];
     if (!validLanguages.includes(language)) {
       res.status(400).json({
         error: `Unsupported language: ${language}`,
@@ -162,7 +177,7 @@ export function createDomainRoutes(): Router {
         action: 'create',
         fileName,
         mimeType,
-        sizeBytes
+        sizeBytes,
       });
       res.json(result);
     } catch (err) {
@@ -174,11 +189,11 @@ export function createDomainRoutes(): Router {
 
   router.get('/context-cache/:cacheId', apiKeyAuth, async (req: Request, res: Response) => {
     const { cacheId } = req.params;
-    
+
     try {
       const result = await contextCacheUseCase.execute({
         action: 'get',
-        cacheId
+        cacheId,
       });
       res.json(result);
     } catch (err) {

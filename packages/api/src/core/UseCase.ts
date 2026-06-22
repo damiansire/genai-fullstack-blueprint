@@ -36,7 +36,11 @@ export abstract class UseCase<IRequest, IResponse> {
       return result;
     } catch (error) {
       const duration = Math.round(performance.now() - start);
-      logger.error(`❌ ${useCaseName} failed after ${duration}ms`, { traceId, duration }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        `❌ ${useCaseName} failed after ${duration}ms`,
+        { traceId, duration },
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error; // Re-throw to be handled by the Express global error handler
     }
   }

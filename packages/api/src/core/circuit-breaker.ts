@@ -20,10 +20,10 @@ export class CircuitBreaker extends EventEmitter {
   private nextAttempt: number = Date.now();
   /** True while a single HALF_OPEN probe is in flight, so concurrent callers fast-fail. */
   private halfOpenInFlight: boolean = false;
-  
+
   constructor(
     private readonly name: string,
-    private readonly options: CircuitBreakerOptions
+    private readonly options: CircuitBreakerOptions,
   ) {
     super();
   }
@@ -44,7 +44,9 @@ export class CircuitBreaker extends EventEmitter {
     } else if (this.state === 'HALF_OPEN' && this.halfOpenInFlight) {
       // A probe is already testing recovery; do not pile a thundering herd onto
       // the recovering backend. Only one request is allowed through HALF_OPEN.
-      throw new Error(`CircuitBreaker [${this.name}] is HALF_OPEN (probe in flight). Fast-failing.`);
+      throw new Error(
+        `CircuitBreaker [${this.name}] is HALF_OPEN (probe in flight). Fast-failing.`,
+      );
     }
 
     try {
@@ -64,7 +66,11 @@ export class CircuitBreaker extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        reject(new Error(`CircuitBreaker [${this.name}] action timed out after ${this.options.requestTimeoutMs}ms`));
+        reject(
+          new Error(
+            `CircuitBreaker [${this.name}] action timed out after ${this.options.requestTimeoutMs}ms`,
+          ),
+        );
       }, this.options.requestTimeoutMs);
 
       action()
@@ -90,7 +96,9 @@ export class CircuitBreaker extends EventEmitter {
 
   private onFailure(error: Error): void {
     this.failureCount += 1;
-    logger.warn(`CircuitBreaker [${this.name}] failed. Count: ${this.failureCount}`, { error: error.message });
+    logger.warn(`CircuitBreaker [${this.name}] failed. Count: ${this.failureCount}`, {
+      error: error.message,
+    });
 
     if (this.state === 'HALF_OPEN' || this.failureCount >= this.options.failureThreshold) {
       // The probe failed (or we tripped open): release the flag so the next
@@ -103,7 +111,7 @@ export class CircuitBreaker extends EventEmitter {
   private transitionTo(newState: CircuitBreakerState): void {
     const oldState = this.state;
     this.state = newState;
-    
+
     if (newState === 'OPEN') {
       this.nextAttempt = Date.now() + this.options.resetTimeoutMs;
     }

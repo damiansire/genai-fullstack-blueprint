@@ -1,5 +1,8 @@
 import { Component, input, output, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CodeGenerationResult, SupportedLanguage } from '../../../../core/services/ai-orchestrator.service';
+import {
+  CodeGenerationResult,
+  SupportedLanguage,
+} from '../../../../core/services/ai-orchestrator.service';
 
 @Component({
   selector: 'app-code-result',
@@ -32,5 +35,7 @@ export class CodeResultComponent {
     return `${Math.min(100, Math.round((value / max) * 100))}%`;
   }
 
-  trackBySuggestion(_: number, s: string) { return s; }
+  trackBySuggestion(_: number, s: string) {
+    return s;
+  }
 }

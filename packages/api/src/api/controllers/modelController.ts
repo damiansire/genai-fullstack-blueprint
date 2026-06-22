@@ -7,8 +7,14 @@ import { ApiResponse } from '../../core/types.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { logger } from '../../core/logger.js';
 
-import { InvokeModelUseCase, InvokeModelDTO } from '../../application/useCases/invoke-model.usecase.js';
-import { GetModelInfoUseCase, GetModelInfoDTO } from '../../application/useCases/get-model-info.usecase.js';
+import {
+  InvokeModelUseCase,
+  InvokeModelDTO,
+} from '../../application/useCases/invoke-model.usecase.js';
+import {
+  GetModelInfoUseCase,
+  GetModelInfoDTO,
+} from '../../application/useCases/get-model-info.usecase.js';
 import { ListModelsUseCase } from '../../application/useCases/list-models.usecase.js';
 
 /**
@@ -22,18 +28,18 @@ export function createModelController(modelFactory: ModelFactory) {
   return asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const startTime = performance.now();
     const modelId = req.params['modelId'] || '';
-    
+
     try {
       // 1. Prepare DTO (Map HTTP Request to Use Case DTO)
       const context: ProcessContext = {
         apiKey: req.user?.apiKeyId,
-        userId: req.user?.apiKeyId // Using API key ID as user identifier
+        userId: req.user?.apiKeyId, // Using API key ID as user identifier
       };
 
       const dto: InvokeModelDTO = {
         modelId,
         body: req.body,
-        context
+        context,
       };
 
       if (req.file) {
@@ -44,20 +50,20 @@ export function createModelController(modelFactory: ModelFactory) {
           mimetype: req.file.mimetype,
           size: req.file.size,
           buffer: req.file.buffer,
-          path: req.file.path
+          path: req.file.path,
         };
       }
 
       if (req.files) {
         if (Array.isArray(req.files)) {
-          dto.files = req.files.map(file => ({
+          dto.files = req.files.map((file) => ({
             fieldname: file.fieldname,
             originalname: file.originalname,
             encoding: file.encoding,
             mimetype: file.mimetype,
             size: file.size,
             buffer: file.buffer,
-            path: file.path
+            path: file.path,
           }));
         } else {
           dto.files = Object.keys(req.files).reduce((acc, fieldname) => {
@@ -74,7 +80,7 @@ export function createModelController(modelFactory: ModelFactory) {
         hasFiles: !!req.files,
         bodyKeys: Object.keys(req.body),
         userAgent: req.get('User-Agent'),
-        ip: req.ip
+        ip: req.ip,
       });
 
       // 2. Execute Use Case
@@ -82,7 +88,7 @@ export function createModelController(modelFactory: ModelFactory) {
 
       // 3. Format HTTP Response
       const processingTime = Math.round(performance.now() - startTime);
-      
+
       const response: ApiResponse<any, ModelMetadata> = {
         success: true,
         data: result,
@@ -90,37 +96,44 @@ export function createModelController(modelFactory: ModelFactory) {
           ...result.metadata,
           modelId,
           processingTime,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
 
       // Handle token rate limiting consumption
       const store = res.locals['tokenStore'];
       const totalTokens = result.metadata?.usageMetadata?.totalTokenCount || 0;
-      
+
       if (store && totalTokens > 0) {
         const identifier = res.locals['rateLimitIdentifier'];
         const windowMs = res.locals['rateLimitWindowMs'];
-        
+
         try {
           await store.consume(identifier, totalTokens, windowMs);
           logger.info(`Consumed ${totalTokens} tokens for ${identifier}`);
         } catch (err) {
-          logger.error('Failed to consume tokens in store', {}, err instanceof Error ? err : new Error(String(err)));
+          logger.error(
+            'Failed to consume tokens in store',
+            {},
+            err instanceof Error ? err : new Error(String(err)),
+          );
         }
       }
 
       logger.info(`Controller: Use Case '${modelId}' completed successfully`, {
-        processingTime: `${processingTime}ms`
+        processingTime: `${processingTime}ms`,
       });
 
       res.status(200).json(response);
-
     } catch (error) {
       const processingTime = Math.round(performance.now() - startTime);
-      logger.error(`Controller: Use Case '${modelId}' failed`, {
-        processingTime: `${processingTime}ms`
-      }, error);
+      logger.error(
+        `Controller: Use Case '${modelId}' failed`,
+        {
+          processingTime: `${processingTime}ms`,
+        },
+        error,
+      );
       // Re-throw the error to be handled by the global error middleware
       throw error;
     }
@@ -138,7 +151,7 @@ export function createModelInfoController(modelFactory: ModelFactory) {
   return asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     // 1. Prepare DTO
     const dto: GetModelInfoDTO = {
-      modelId: req.params['modelId'] || ''
+      modelId: req.params['modelId'] || '',
     };
 
     // 2. Execute Use Case
@@ -147,7 +160,7 @@ export function createModelInfoController(modelFactory: ModelFactory) {
     // 3. Send Response
     res.json({
       success: true,
-      data: modelInfo
+      data: modelInfo,
     });
   });
 }
@@ -167,7 +180,7 @@ export function createModelListController(modelFactory: ModelFactory) {
     // 2. Send Response
     res.json({
       success: true,
-      data: result
+      data: result,
     });
   });
 }
@@ -182,12 +195,12 @@ export function createStreamController(modelFactory: ModelFactory) {
 
   return asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
     const modelId = req.params['modelId'] || '';
-    
+
     // Set headers for SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    
+
     // Flush headers immediately
     res.flushHeaders();
 
@@ -201,12 +214,12 @@ export function createStreamController(modelFactory: ModelFactory) {
         body: req.body,
         context: {
           apiKey: req.user?.apiKeyId,
-          userId: req.user?.apiKeyId
-        }
+          userId: req.user?.apiKeyId,
+        },
       };
 
       const result = await invokeModelUseCase.execute(dto);
-      
+
       // Simulate chunking the response text using a native stream implementation
       const textToStream = result.text || JSON.stringify(result);
       let i = 0;
@@ -249,9 +262,13 @@ export function createStreamController(modelFactory: ModelFactory) {
 
           // Predictive circuit breaking for stream draining attack
           if (store && estimatedTokens > maxAllowedTokens) {
-            logger.warn(`[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit`);
+            logger.warn(
+              `[Stream] Predictive Rate Limiting triggered for ${identifier}. Estimated tokens: ${estimatedTokens} exceeded limit`,
+            );
             res.write(`event: error\n`);
-            res.write(`data: ${JSON.stringify({ message: 'Rate limit exceeded during streaming. Stream aborted.' })}\n\n`);
+            res.write(
+              `data: ${JSON.stringify({ message: 'Rate limit exceeded during streaming. Stream aborted.' })}\n\n`,
+            );
             res.end();
             req.destroy();
             return;
@@ -293,13 +310,16 @@ export function createStreamController(modelFactory: ModelFactory) {
             await store.consume(identifier, totalTokens, windowMs);
             logger.info(`[Stream] Consumed ${totalTokens} tokens for ${identifier}`);
           } catch (err) {
-            logger.error('[Stream] Failed to consume tokens', {}, err instanceof Error ? err : new Error(String(err)));
+            logger.error(
+              '[Stream] Failed to consume tokens',
+              {},
+              err instanceof Error ? err : new Error(String(err)),
+            );
           }
         }
       };
 
       await drainStream();
-
     } catch (error) {
       logger.error(`Stream Controller: Use Case '${modelId}' failed`, {}, error);
       res.write(`event: error\n`);

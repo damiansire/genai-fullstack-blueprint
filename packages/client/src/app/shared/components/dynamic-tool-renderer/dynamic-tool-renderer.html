@@ -2,9 +2,7 @@
   @if (isEngineResolving()) {
     <div class="native-spinner-indicator" aria-label="Construyendo matriz dinámica..."></div>
   } @else if (resolvedComponentClass()) {
-    <ng-container *ngComponentOutlet="
-      resolvedComponentClass(); 
-      inputs: computedDataBindings()">
+    <ng-container *ngComponentOutlet="resolvedComponentClass(); inputs: computedDataBindings()">
     </ng-container>
   }
 </div>

@@ -34,7 +34,7 @@ export class ModelFactory {
    */
   create(modelId: string): IModelStrategy<any, any> {
     const creator = this.strategyRegistry.get(modelId);
-    
+
     if (!creator) {
       throw new Error(`Model strategy with ID '${modelId}' is not registered`);
     }

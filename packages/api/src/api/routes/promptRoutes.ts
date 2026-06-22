@@ -33,7 +33,11 @@ export const createPromptRoutes = (postAuthChain: RequestHandler[] = []): Router
       const prompts = stmt.all();
       res.json(prompts);
     } catch (err) {
-      logger.error('Failed to fetch prompts', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to fetch prompts',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to fetch prompts' });
     }
   });
@@ -50,13 +54,17 @@ export const createPromptRoutes = (postAuthChain: RequestHandler[] = []): Router
       const { content, description } = parsed.data;
 
       const stmt = (dbService as any).proxiedDb.prepare(
-        'INSERT OR REPLACE INTO prompts (name, content, description, updated_at) VALUES (?, ?, ?, ?)'
+        'INSERT OR REPLACE INTO prompts (name, content, description, updated_at) VALUES (?, ?, ?, ?)',
       );
       stmt.run(name, content, description ?? null, new Date().toISOString());
 
       res.json({ success: true, name, message: 'Prompt updated successfully' });
     } catch (err) {
-      logger.error('Failed to update prompt', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to update prompt',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to update prompt' });
     }
   });

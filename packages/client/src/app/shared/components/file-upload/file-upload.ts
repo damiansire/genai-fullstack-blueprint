@@ -1,22 +1,40 @@
-import { Component, input, output, viewChild, ElementRef, ChangeDetectionStrategy, computed, signal, model, linkedSignal, OnDestroy } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  viewChild,
+  ElementRef,
+  ChangeDetectionStrategy,
+  computed,
+  signal,
+  model,
+  linkedSignal,
+  OnDestroy,
+} from '@angular/core';
 
 @Component({
   selector: 'app-file-upload',
   imports: [],
   templateUrl: './file-upload.html',
   styleUrl: './file-upload.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FileUpload implements OnDestroy {
   accept = input('image/*');
   maxSizeMB = input(10);
-  allowedTypes = input<string[]>(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']);
-  
+  allowedTypes = input<string[]>([
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+  ]);
+
   // Prediction 3: Signals Evolve -> Replacing separate input/outputs with a unified model()
   file = model<File | null>(null);
-  
+
   error = output<string>();
-  
+
   fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   // Internal state for INP optimization (immediate visual feedback)
@@ -27,8 +45,6 @@ export class FileUpload implements OnDestroy {
   public readonly idSuffix = FileUpload.nextId++;
   public readonly inputId = `file-input-${this.idSuffix}`;
   public readonly labelId = `file-label-${this.idSuffix}`;
-
-
 
   ngOnDestroy(): void {
     const currentUrl = this.previewUrl();
@@ -41,10 +57,10 @@ export class FileUpload implements OnDestroy {
   fileSize = computed(() => {
     const file = this.file();
     if (!file) return '0 Bytes';
-    
+
     const bytes = file.size;
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -56,13 +72,13 @@ export class FileUpload implements OnDestroy {
     folder: '📁',
     document: '📄',
     image: '🖼️',
-    close: '✕'
+    close: '✕',
   };
 
   fileTypeIcon = computed(() => {
     const file = this.file();
     if (!file) return this.icons.document;
-    
+
     if (file.type.startsWith('image/')) {
       return this.icons.image;
     }
@@ -71,7 +87,7 @@ export class FileUpload implements OnDestroy {
 
   allowedTypesString = computed(() => {
     return this.allowedTypes()
-      .map(type => type.split('/')[1])
+      .map((type) => type.split('/')[1])
       .join(', ')
       .toUpperCase();
   });
@@ -81,12 +97,12 @@ export class FileUpload implements OnDestroy {
     if ('scheduler' in globalThis && 'yield' in (globalThis as any).scheduler) {
       return await (globalThis as any).scheduler.yield();
     }
-    return new Promise(resolve => setTimeout(resolve, 0));
+    return new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    
+
     if (input.files && input.files.length > 0) {
       await this.processFile(input.files[0], input);
     }
@@ -110,7 +126,7 @@ export class FileUpload implements OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     this.isDragging.set(false);
-    
+
     if (this.isProcessing()) return;
 
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
@@ -124,14 +140,16 @@ export class FileUpload implements OnDestroy {
     this.isProcessing.set(true);
 
     // INP Optimization: Yield to main thread.
-    // This allows the browser to paint the visual feedback before the parent component 
+    // This allows the browser to paint the visual feedback before the parent component
     // blocks the main thread with heavy synchronous processing.
     await this.yieldToMain();
 
     try {
       // Validate file type
       if (!this.allowedTypes().includes(file.type)) {
-        const allowedExtensions = this.allowedTypes().map(type => type.split('/')[1]).join(', ');
+        const allowedExtensions = this.allowedTypes()
+          .map((type) => type.split('/')[1])
+          .join(', ');
         this.error.emit(`Please select a valid file (${allowedExtensions.toUpperCase()})`);
         return;
       }
@@ -161,18 +179,18 @@ export class FileUpload implements OnDestroy {
       if (previous?.value) {
         URL.revokeObjectURL(previous.value);
       }
-      
+
       if (!newFile || !newFile.type.startsWith('image/')) {
         return null;
       }
       return URL.createObjectURL(newFile);
-    }
+    },
   });
 
   async clearFile(): Promise<void> {
     // INP Optimization: Immediate visual feedback for the click interaction
     this.isProcessing.set(true);
-    
+
     // Yield to main thread to ensure button click visual state is painted
     await this.yieldToMain();
 
@@ -187,4 +205,3 @@ export class FileUpload implements OnDestroy {
     }
   }
 }
-

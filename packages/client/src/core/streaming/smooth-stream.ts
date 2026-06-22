@@ -47,7 +47,10 @@ function resolveRaf(): { raf: RafScheduler; cancel: RafCanceller } {
     requestAnimationFrame?: RafScheduler;
     cancelAnimationFrame?: RafCanceller;
   };
-  if (typeof g.requestAnimationFrame === 'function' && typeof g.cancelAnimationFrame === 'function') {
+  if (
+    typeof g.requestAnimationFrame === 'function' &&
+    typeof g.cancelAnimationFrame === 'function'
+  ) {
     return {
       raf: g.requestAnimationFrame.bind(g),
       cancel: g.cancelAnimationFrame.bind(g),
@@ -105,8 +108,7 @@ export function createSmoothMessage(params: SmoothMessageParams): SmoothMessageC
     // Adaptive speed: grow toward the queue length under backpressure so the
     // text never lags far behind the model; ease back down as it drains.
     const targetSpeed = Math.max(startSpeed, outputQueue.length);
-    const speedChangeRate =
-      Math.abs(outputQueue.length - lastQueueLength) * 0.0008 + 0.005;
+    const speedChangeRate = Math.abs(outputQueue.length - lastQueueLength) * 0.0008 + 0.005;
     currentSpeed += (targetSpeed - currentSpeed) * speedChangeRate;
     lastQueueLength = outputQueue.length;
 

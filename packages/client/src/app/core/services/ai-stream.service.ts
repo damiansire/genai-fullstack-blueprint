@@ -1,7 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { API_CONFIG } from '../tokens/api-config';
 import { ModelInvocationResponse } from '../types/api.types';
-import { createSmoothMessage, type SmoothMessageController } from '../../../core/streaming/smooth-stream';
+import {
+  createSmoothMessage,
+  type SmoothMessageController,
+} from '../../../core/streaming/smooth-stream';
 
 /**
  * Represents a single parsed SSE chunk from the LLM stream.
@@ -131,15 +134,12 @@ export class AiStreamService {
         headers['X-API-Key'] = this.apiConfig.apiKey;
       }
 
-      const response = await fetch(
-        `${this.apiConfig.baseUrl}/models/${modelId}/stream`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          signal: abortSignal,
-        }
-      );
+      const response = await fetch(`${this.apiConfig.baseUrl}/models/${modelId}/stream`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: abortSignal,
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -150,9 +150,7 @@ export class AiStreamService {
       }
 
       // Parse the SSE stream chunk by chunk using native Web Streams API.
-      const reader = response.body
-        .pipeThrough(new TextDecoderStream())
-        .getReader();
+      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
 
       // P7 fix: keep a leftover buffer between reads. SSE records are separated
       // by a blank line (`\n\n`); a record can be split across network packets,

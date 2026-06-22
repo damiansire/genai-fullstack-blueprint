@@ -66,7 +66,7 @@ class Server extends EventEmitter {
 
     const portArg = typeof values.port === 'string' ? values.port : undefined;
     this.port = parseInt(portArg || process.env['PORT'] || config.server.port.toString(), 10);
-    
+
     this.setupMiddleware();
     this.setupRoutes();
 
@@ -84,12 +84,14 @@ class Server extends EventEmitter {
    */
   private setupMiddleware(): void {
     // CORS configuration
-    this.app.use(cors({
-      origin: config.server.allowedOrigins,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key']
-    }));
+    this.app.use(
+      cors({
+        origin: config.server.allowedOrigins,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
+      }),
+    );
 
     // Body parsing middleware
     this.app.use(express.json({ limit: '10mb' }));
@@ -99,16 +101,21 @@ class Server extends EventEmitter {
     this.app.use((req, res, next) => {
       const traceId = randomUUID();
       const start = performance.now();
-      
+
       // Set trace ID in response headers
       res.setHeader('X-Trace-Id', traceId);
-      
+
       res.on('finish', () => {
         const duration = Math.round(performance.now() - start);
-        logger.info(`${req.method} ${req.path}`, { duration, method: req.method, path: req.path, traceId });
+        logger.info(`${req.method} ${req.path}`, {
+          duration,
+          method: req.method,
+          path: req.path,
+          traceId,
+        });
         logRequest(req.method, req.path, duration, traceId);
       });
-      
+
       // Patrón 5: seed a full agentic root span (depth=0) for this request.
       // All downstream Workers inherit this via createChildContext().
       const rootCtx = createRootContext(traceId);
@@ -144,14 +151,14 @@ class Server extends EventEmitter {
         res.status(503).json({ status: 'not_ready', state: this.state });
         return;
       }
-      
+
       // In a real app we might do `dbService.ping()` here
       res.status(200).json({
         status: 'ready',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: config.env,
-        registeredModels: modelFactory.getRegisteredModels()
+        registeredModels: modelFactory.getRegisteredModels(),
       });
     });
 
@@ -162,7 +169,7 @@ class Server extends EventEmitter {
         version: '1.0.0',
         description: 'Multimodal AI Gateway with plugin architecture',
         availableModels: modelFactory.getRegisteredModels(),
-        totalModels: modelFactory.getRegisteredModels().length
+        totalModels: modelFactory.getRegisteredModels().length,
       });
     });
 
@@ -181,7 +188,7 @@ class Server extends EventEmitter {
     // Apply Token Rate Limiter to /api routes (e.g. 50000 tokens per minute limit)
     const apiTokenLimiter = tokenRateLimiter(this.tokenStore, {
       windowMs: 60 * 1000,
-      maxTokens: 50000
+      maxTokens: 50000,
     });
 
     // Middleware ORDER (P2 fix): authentication is the real front gate. Inside
@@ -231,7 +238,7 @@ class Server extends EventEmitter {
         error: 'Route not found',
         path: req.originalUrl,
         method: req.method,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     });
 
@@ -253,13 +260,13 @@ class Server extends EventEmitter {
 
     try {
       logger.info('Initializing AI Gateway Server...');
-      
+
       dbService.initialize();
 
       // Load all plugins
       logger.info('Loading plugins...');
       await loadPlugins(modelFactory, schemaRegistry);
-      
+
       logger.info('Server initialization completed successfully');
     } catch (error) {
       logger.error('Failed to initialize server', {}, error);
@@ -273,23 +280,23 @@ class Server extends EventEmitter {
       if (this.state === 'STOPPED') {
         await this.initialize();
       }
-      
+
       const { createServer } = await import('node:http');
-      
+
       // Node.js Security Best Practices: Mitigate CWE-444 (HTTP Request Smuggling)
       this.httpServer = createServer({ insecureHTTPParser: false }, this.app);
-      
+
       // Node.js Security Best Practices: Mitigate CWE-400 (Denial of Service)
       this.httpServer.headersTimeout = 60000; // 60 seconds
       this.httpServer.requestTimeout = 300000; // 5 minutes
       this.httpServer.timeout = 300000; // 5 minutes
       this.httpServer.keepAliveTimeout = 5000; // 5 seconds
-      
+
       this.httpServer.listen(this.port, () => {
         this.changeState('RUNNING');
         logger.info(`AI Gateway Server running on port ${this.port}`, {
           port: this.port,
-          registeredModels: modelFactory.getRegisteredModels()
+          registeredModels: modelFactory.getRegisteredModels(),
         });
       });
 
@@ -310,14 +317,16 @@ class Server extends EventEmitter {
 
         // Standard WebSocket Handshake per RFC 6455
         const magicString = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-        const acceptKey = createHash('sha1').update(key + magicString).digest('base64');
+        const acceptKey = createHash('sha1')
+          .update(key + magicString)
+          .digest('base64');
 
         const responseHeaders = [
           'HTTP/1.1 101 Switching Protocols',
           'Upgrade: websocket',
           'Connection: Upgrade',
           `Sec-WebSocket-Accept: ${acceptKey}`,
-          '\r\n'
+          '\r\n',
         ].join('\r\n');
 
         socket.write(responseHeaders);
@@ -383,38 +392,83 @@ class Server extends EventEmitter {
    */
   private seedToolRegistry(): void {
     try {
-      registerTool('analyze_security_logs', 'Analyzes raw log text for security threats using MITRE ATT&CK patterns. Returns a structured report with severity, indicators, and mitigations.', {
-        type: 'object',
-        properties: {
-          logs: { type: 'string', description: 'Raw log text (newline-separated entries)', format: 'textarea' },
+      registerTool(
+        'analyze_security_logs',
+        'Analyzes raw log text for security threats using MITRE ATT&CK patterns. Returns a structured report with severity, indicators, and mitigations.',
+        {
+          type: 'object',
+          properties: {
+            logs: {
+              type: 'string',
+              description: 'Raw log text (newline-separated entries)',
+              format: 'textarea',
+            },
+          },
+          required: ['logs'],
         },
-        required: ['logs'],
-      }, 'security');
+        'security',
+      );
 
-      registerTool('stream_telemetry', 'Opens a real-time SSE stream of IoT sensor readings. Returns device frames with Z-score anomaly detection.', {
-        type: 'object',
-        properties: {
-          devices: { type: 'string', description: 'Comma-separated device IDs to monitor (empty = all)', examples: ['TEMP-WH-001,HUM-WH-001'] },
+      registerTool(
+        'stream_telemetry',
+        'Opens a real-time SSE stream of IoT sensor readings. Returns device frames with Z-score anomaly detection.',
+        {
+          type: 'object',
+          properties: {
+            devices: {
+              type: 'string',
+              description: 'Comma-separated device IDs to monitor (empty = all)',
+              examples: ['TEMP-WH-001,HUM-WH-001'],
+            },
+          },
         },
-      }, 'iot');
+        'iot',
+      );
 
-      registerTool('generate_code', 'Generates code from a spec string with iterative quality analysis and refinement. Returns code + metrics + suggestions.', {
-        type: 'object',
-        properties: {
-          spec: { type: 'string', description: 'Natural language specification of the code to generate', format: 'textarea' },
-          language: { type: 'string', enum: ['typescript', 'javascript', 'python', 'go', 'rust', 'sql'], description: 'Target programming language', default: 'typescript' },
+      registerTool(
+        'generate_code',
+        'Generates code from a spec string with iterative quality analysis and refinement. Returns code + metrics + suggestions.',
+        {
+          type: 'object',
+          properties: {
+            spec: {
+              type: 'string',
+              description: 'Natural language specification of the code to generate',
+              format: 'textarea',
+            },
+            language: {
+              type: 'string',
+              enum: ['typescript', 'javascript', 'python', 'go', 'rust', 'sql'],
+              description: 'Target programming language',
+              default: 'typescript',
+            },
+          },
+          required: ['spec'],
         },
-        required: ['spec'],
-      }, 'devtools');
+        'devtools',
+      );
 
-      registerTool('search_tools', 'Searches the tool registry for relevant tool schemas. Use this before calling any domain tool to retrieve its exact JSON schema JIT.', {
-        type: 'object',
-        properties: {
-          query: { type: 'string', description: 'Keyword to search for in tool names and descriptions' },
-          limit: { type: 'number', description: 'Maximum number of results (default: 5, max: 20)', minimum: 1, maximum: 20 },
+      registerTool(
+        'search_tools',
+        'Searches the tool registry for relevant tool schemas. Use this before calling any domain tool to retrieve its exact JSON schema JIT.',
+        {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Keyword to search for in tool names and descriptions',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of results (default: 5, max: 20)',
+              minimum: 1,
+              maximum: 20,
+            },
+          },
+          required: ['query'],
         },
-        required: ['query'],
-      }, 'meta');
+        'meta',
+      );
 
       logger.info('[Server] Tool Registry seeded with domain tools.');
     } catch (err) {
@@ -425,7 +479,6 @@ class Server extends EventEmitter {
     }
   }
 }
-
 
 // Create and start the server
 const server = new Server();

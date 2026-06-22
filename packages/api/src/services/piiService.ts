@@ -27,7 +27,7 @@ export class PIIService {
     // Credit Cards (simplified)
     { type: 'CREDIT_CARD', regex: /\b(?:\d[ -]*?){13,16}\b/g },
     // Phone numbers (simplified)
-    { type: 'PHONE', regex: /\b\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g }
+    { type: 'PHONE', regex: /\b\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g },
   ];
 
   public redact(text: string): { redactedText: string; mapping: Record<string, string> } {
@@ -53,7 +53,7 @@ export class PIIService {
 
   public unredact(text: string, mapping: Record<string, string>): string {
     if (!text || typeof text !== 'string') return text;
-    
+
     let unredactedText = text;
     for (const [token, originalValue] of Object.entries(mapping)) {
       unredactedText = unredactedText.split(token).join(originalValue);

@@ -39,7 +39,6 @@ import type {
 
 @Injectable({ providedIn: 'root' })
 export class ToolFormService {
-
   // ─── Public API ────────────────────────────────────────────────────────────
 
   /**
@@ -50,11 +49,7 @@ export class ToolFormService {
    * @param toolDescription Human-readable description from the Tool Registry
    * @param schema          JSON Schema object from the Tool Registry response
    */
-  generateForm(
-    toolName: string,
-    toolDescription: string,
-    schema: unknown
-  ): DynamicToolForm | null {
+  generateForm(toolName: string, toolDescription: string, schema: unknown): DynamicToolForm | null {
     if (!this.isValidObjectSchema(schema)) {
       return null;
     }
@@ -68,9 +63,7 @@ export class ToolFormService {
     }
 
     // Initialize a Signal for each field
-    const values = new Map(
-      fields.map((f) => [key_of(f), signal(f.defaultValue)])
-    );
+    const values = new Map(fields.map((f) => [key_of(f), signal(f.defaultValue)]));
 
     const snapshot = (): Record<string, string | number | boolean> => {
       const result: Record<string, string | number | boolean> = {};
@@ -103,17 +96,11 @@ export class ToolFormService {
     );
   }
 
-  private buildField(
-    key: string,
-    prop: JsonSchemaProperty,
-    required: boolean
-  ): DynamicField {
+  private buildField(key: string, prop: JsonSchemaProperty, required: boolean): DynamicField {
     const controlType = this.resolveControlType(prop);
     const defaultValue = this.resolveDefaultValue(prop, controlType);
     const placeholder =
-      prop.examples?.[0] !== undefined
-        ? String(prop.examples[0])
-        : prop.description;
+      prop.examples?.[0] !== undefined ? String(prop.examples[0]) : prop.description;
 
     return {
       key,
@@ -138,19 +125,26 @@ export class ToolFormService {
     // string type — check format and enum
     if (prop.enum && prop.enum.length > 0) return 'select';
     switch (prop.format) {
-      case 'email':    return 'email';
-      case 'uri':      return 'url';
-      case 'date':     return 'date';
-      case 'time':     return 'time';
-      case 'textarea': return 'textarea';
-      case 'password': return 'password';
-      default:         return 'text';
+      case 'email':
+        return 'email';
+      case 'uri':
+        return 'url';
+      case 'date':
+        return 'date';
+      case 'time':
+        return 'time';
+      case 'textarea':
+        return 'textarea';
+      case 'password':
+        return 'password';
+      default:
+        return 'text';
     }
   }
 
   private resolveDefaultValue(
     prop: JsonSchemaProperty,
-    controlType: FieldControlType
+    controlType: FieldControlType,
   ): string | number | boolean {
     if (prop.default !== undefined) return prop.default;
     if (controlType === 'checkbox') return false;

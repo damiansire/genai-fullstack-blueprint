@@ -9,19 +9,10 @@
  *   - Mitigation checklist
  *   - Sample log injection for quick testing
  */
-import {
-  Component,
-  signal,
-  computed,
-  inject,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { API_CONFIG } from '../../core/tokens/api-config';
-import type {
-  SecurityAnalysisReport,
-  ThreatSeverity,
-} from './security.types';
+import type { SecurityAnalysisReport, ThreatSeverity } from './security.types';
 
 const SAMPLE_LOGS = `Failed password for invalid user admin from 192.168.1.45 port 43210 ssh2
 Failed password for root from 10.0.0.99 port 22 ssh2
@@ -52,8 +43,11 @@ export class SecurityDashboard {
 
   // ─── UI helpers ───────────────────────────────────────────────────────────
   readonly hasLogs = computed(() => this.logs().trim().length > 0);
-  readonly logLineCount = computed(() =>
-    this.logs().split('\n').filter(l => l.trim()).length
+  readonly logLineCount = computed(
+    () =>
+      this.logs()
+        .split('\n')
+        .filter((l) => l.trim()).length,
   );
 
   readonly severityColor = computed(() => {

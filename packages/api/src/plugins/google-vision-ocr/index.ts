@@ -19,39 +19,39 @@ export const configSchema = {
     imageFile: {
       type: 'string',
       description: 'Image file for OCR processing',
-      format: 'binary'
+      format: 'binary',
     },
     language: {
       type: 'string',
       description: 'Language hint for OCR (e.g., "en", "es", "fr")',
       pattern: '^[a-z]{2}(-[A-Z]{2})?$',
-      default: 'en'
+      default: 'en',
     },
     maxResults: {
       type: 'number',
       description: 'Maximum number of text annotations to return',
       minimum: 1,
       maximum: 100,
-      default: 10
+      default: 10,
     },
     confidenceThreshold: {
       type: 'number',
       description: 'Minimum confidence score for text detection',
       minimum: 0.0,
       maximum: 1.0,
-      default: 0.8
+      default: 0.8,
     },
     includeBoundingBoxes: {
       type: 'boolean',
       description: 'Whether to include bounding box coordinates',
-      default: true
+      default: true,
     },
     outputFormat: {
       type: 'string',
       enum: ['text', 'json', 'structured'],
       description: 'Format of the OCR output',
-      default: 'structured'
-    }
+      default: 'structured',
+    },
   },
   required: ['imageFile'],
   additionalProperties: true,
@@ -59,8 +59,8 @@ export const configSchema = {
   'x-multipart-media': {
     fieldName: 'imageFile',
     allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'],
-    maxSize: 10485760 // 10MB
-  }
+    maxSize: 10485760, // 10MB
+  },
 };
 
 /**
@@ -124,7 +124,10 @@ interface GoogleVisionOCROutput {
  * Google Vision OCR Model Strategy Implementation
  * Simulates calls to Google's Vision OCR API
  */
-export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, ModelOutput<GoogleVisionOCROutput>> {
+export class ModelStrategy implements IModelStrategy<
+  GoogleVisionOCRInput,
+  ModelOutput<GoogleVisionOCROutput>
+> {
   private readonly modelName = 'vision-ocr-v1';
 
   /**
@@ -134,8 +137,8 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
    * @returns Promise resolving to the OCR response
    */
   async process(
-    params: GoogleVisionOCRInput, 
-    context: ProcessContext
+    params: GoogleVisionOCRInput,
+    context: ProcessContext,
   ): Promise<ModelOutput<GoogleVisionOCROutput>> {
     const startTime = performance.now();
 
@@ -167,7 +170,7 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
         maxResults: params.maxResults || 10,
         confidenceThreshold: params.confidenceThreshold || 0.8,
         includeBoundingBoxes: params.includeBoundingBoxes !== false,
-        outputFormat: params.outputFormat || 'structured'
+        outputFormat: params.outputFormat || 'structured',
       };
 
       // Log the request
@@ -177,11 +180,15 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
         language: requestParams.language,
         maxResults: requestParams.maxResults,
         userId: context.userId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Simulate API call to Google Vision OCR
-      const response = await this.simulateGoogleVisionOCRCall(params, requestParams, context.apiKey);
+      const response = await this.simulateGoogleVisionOCRCall(
+        params,
+        requestParams,
+        context.apiKey,
+      );
 
       const processingTime = Math.round(performance.now() - startTime);
 
@@ -190,7 +197,7 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
         textLength: response.text.length,
         annotationsCount: response.annotations.length,
         processingTime: `${processingTime}ms`,
-        confidence: response.confidence
+        confidence: response.confidence,
       });
 
       return {
@@ -200,16 +207,19 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
           modelVersion: this.modelName,
           apiProvider: 'Google',
           timestamp: new Date().toISOString(),
-          imageProcessed: true
-        }
+          imageProcessed: true,
+        },
       };
-
     } catch (error) {
       const processingTime = Math.round(performance.now() - startTime);
-      
-      logger.error('Google Vision OCR request failed', {
-        processingTime: `${processingTime}ms`
-      }, error);
+
+      logger.error(
+        'Google Vision OCR request failed',
+        {
+          processingTime: `${processingTime}ms`,
+        },
+        error,
+      );
 
       throw error;
     }
@@ -226,7 +236,7 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
   private async simulateGoogleVisionOCRCall(
     params: GoogleVisionOCRInput,
     options: any,
-    _apiKey: string
+    _apiKey: string,
   ): Promise<GoogleVisionOCROutput> {
     // Simulate API delay
     await setTimeout(2000 + randomInt(3000));
@@ -238,7 +248,8 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
     const selectedScenario = scenarios[randomInt(scenarios.length)];
 
     // Simulate occasional errors
-    if (randomInt(100) < 3) { // 3% error rate
+    if (randomInt(100) < 3) {
+      // 3% error rate
       throw new Error('Simulated API error: Image processing failed');
     }
 
@@ -258,26 +269,26 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
   private generateOCRScenarios(mimeType: string, options: any): GoogleVisionOCROutput[] {
     const baseScenarios = [
       {
-        text: "This is a sample text extracted from an image using Google Vision OCR. The technology can recognize text in various languages and formats.",
+        text: 'This is a sample text extracted from an image using Google Vision OCR. The technology can recognize text in various languages and formats.',
         annotations: [
           {
-            text: "This is a sample text",
+            text: 'This is a sample text',
             confidence: 0.95,
             boundingBox: { x: 10, y: 20, width: 200, height: 30 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "extracted from an image",
+            text: 'extracted from an image',
             confidence: 0.92,
             boundingBox: { x: 10, y: 60, width: 180, height: 25 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "using Google Vision OCR",
+            text: 'using Google Vision OCR',
             confidence: 0.88,
             boundingBox: { x: 10, y: 100, width: 220, height: 28 },
-            language: options.language
-          }
+            language: options.language,
+          },
         ],
         language: options.language,
         confidence: 0.92,
@@ -285,37 +296,37 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
           width: 800,
           height: 600,
           format: (mimeType.split('/')[1] || 'UNKNOWN').toUpperCase(),
-          size: 1024000
+          size: 1024000,
         },
-        processingTime: 2500
+        processingTime: 2500,
       },
       {
-        text: "Document OCR: Invoice #12345\nDate: 2024-01-15\nAmount: $1,234.56\nStatus: Paid",
+        text: 'Document OCR: Invoice #12345\nDate: 2024-01-15\nAmount: $1,234.56\nStatus: Paid',
         annotations: [
           {
-            text: "Invoice #12345",
+            text: 'Invoice #12345',
             confidence: 0.98,
             boundingBox: { x: 50, y: 100, width: 150, height: 35 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Date: 2024-01-15",
+            text: 'Date: 2024-01-15',
             confidence: 0.94,
             boundingBox: { x: 50, y: 150, width: 140, height: 30 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Amount: $1,234.56",
+            text: 'Amount: $1,234.56',
             confidence: 0.96,
             boundingBox: { x: 50, y: 200, width: 160, height: 30 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Status: Paid",
-            confidence: 0.90,
+            text: 'Status: Paid',
+            confidence: 0.9,
             boundingBox: { x: 50, y: 250, width: 120, height: 28 },
-            language: options.language
-          }
+            language: options.language,
+          },
         ],
         language: options.language,
         confidence: 0.94,
@@ -323,43 +334,43 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
           width: 600,
           height: 400,
           format: (mimeType.split('/')[1] || 'UNKNOWN').toUpperCase(),
-          size: 512000
+          size: 512000,
         },
-        processingTime: 2800
+        processingTime: 2800,
       },
       {
-        text: "Handwritten Note: Remember to buy groceries\n- Milk\n- Bread\n- Eggs\n- Apples",
+        text: 'Handwritten Note: Remember to buy groceries\n- Milk\n- Bread\n- Eggs\n- Apples',
         annotations: [
           {
-            text: "Remember to buy groceries",
+            text: 'Remember to buy groceries',
             confidence: 0.85,
             boundingBox: { x: 20, y: 30, width: 250, height: 25 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Milk",
+            text: 'Milk',
             confidence: 0.88,
             boundingBox: { x: 40, y: 70, width: 50, height: 20 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Bread",
+            text: 'Bread',
             confidence: 0.87,
             boundingBox: { x: 40, y: 100, width: 60, height: 20 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Eggs",
+            text: 'Eggs',
             confidence: 0.89,
             boundingBox: { x: 40, y: 130, width: 45, height: 20 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "Apples",
+            text: 'Apples',
             confidence: 0.86,
             boundingBox: { x: 40, y: 160, width: 70, height: 20 },
-            language: options.language
-          }
+            language: options.language,
+          },
         ],
         language: options.language,
         confidence: 0.87,
@@ -367,29 +378,29 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
           width: 400,
           height: 300,
           format: (mimeType.split('/')[1] || 'UNKNOWN').toUpperCase(),
-          size: 256000
+          size: 256000,
         },
-        processingTime: 3200
-      }
+        processingTime: 3200,
+      },
     ];
 
     // Add language-specific scenarios
     if (options.language === 'es') {
       baseScenarios.push({
-        text: "Texto extraído de una imagen usando OCR. Esta tecnología puede reconocer texto en varios idiomas.",
+        text: 'Texto extraído de una imagen usando OCR. Esta tecnología puede reconocer texto en varios idiomas.',
         annotations: [
           {
-            text: "Texto extraído de una imagen",
+            text: 'Texto extraído de una imagen',
             confidence: 0.93,
             boundingBox: { x: 10, y: 20, width: 220, height: 30 },
-            language: options.language
+            language: options.language,
           },
           {
-            text: "usando OCR",
+            text: 'usando OCR',
             confidence: 0.91,
             boundingBox: { x: 10, y: 60, width: 100, height: 25 },
-            language: options.language
-          }
+            language: options.language,
+          },
         ],
         language: options.language,
         confidence: 0.92,
@@ -397,9 +408,9 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
           width: 500,
           height: 200,
           format: (mimeType.split('/')[1] || 'UNKNOWN').toUpperCase(),
-          size: 128000
+          size: 128000,
         },
-        processingTime: 2400
+        processingTime: 2400,
       });
     }
 
@@ -420,7 +431,7 @@ export class ModelStrategy implements IModelStrategy<GoogleVisionOCRInput, Model
       maxFileSize: 10485760, // 10MB
       supportedFormats: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'],
       supportsBoundingBoxes: true,
-      supportsLanguageDetection: true
+      supportsLanguageDetection: true,
     };
   }
 }

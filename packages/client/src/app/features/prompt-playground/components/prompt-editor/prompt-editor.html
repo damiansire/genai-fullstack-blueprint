@@ -1,21 +1,26 @@
 <div class="editor-header">
   <h2>{{ prompt().name }}</h2>
-  <button 
-    class="save-btn" 
+  <button
+    class="save-btn"
     [disabled]="isSaving() || $any(promptForm()).invalid()"
-    (click)="onSubmit.emit()">
+    (click)="onSubmit.emit()"
+  >
     <span class="icon" aria-hidden="true">{{ icons.save }}</span>
     {{ isSaving() ? 'Saving...' : 'Save Changes' }}
   </button>
 </div>
 
 @if (saveSuccess()) {
-  <div class="success-banner" role="status" style="color: var(--color-success); margin-bottom: 1rem;">
+  <div
+    class="success-banner"
+    role="status"
+    style="color: var(--color-success); margin-bottom: 1rem"
+  >
     <span class="icon">{{ icons.check }}</span> Prompt updated successfully and is now active.
   </div>
 }
 @if (saveError()) {
-  <div class="error-banner" role="alert" style="color: var(--color-error); margin-bottom: 1rem;">
+  <div class="error-banner" role="alert" style="color: var(--color-error); margin-bottom: 1rem">
     <span class="icon">{{ icons.warning }}</span> {{ saveError() }}
   </div>
 }
@@ -23,26 +28,39 @@
 <form (submit)="onSubmit.emit(); $event.preventDefault()" class="editor-form">
   <div class="form-group">
     <label for="promptDescription">Description</label>
-    <input 
+    <input
       id="promptDescription"
-      type="text" 
+      type="text"
       [formField]="$any(promptForm()).description"
-      placeholder="What is this prompt used for?">
+      placeholder="What is this prompt used for?"
+    />
   </div>
 
-  <div class="form-group flex-fill" style="display: flex; flex-direction: column;">
+  <div class="form-group flex-fill" style="display: flex; flex-direction: column">
     <label for="promptContent">System Prompt Content *</label>
-    <textarea 
+    <textarea
       id="promptContent"
       [formField]="$any(promptForm()).content"
-      [class.error]="$any(promptForm()).content().touched() && $any(promptForm()).content().errors().length"
-      [attr.aria-invalid]="$any(promptForm()).content().touched() && $any(promptForm()).content().errors().length ? true : null"
+      [class.error]="
+        $any(promptForm()).content().touched() && $any(promptForm()).content().errors().length
+      "
+      [attr.aria-invalid]="
+        $any(promptForm()).content().touched() && $any(promptForm()).content().errors().length
+          ? true
+          : null
+      "
       aria-describedby="content-error"
       placeholder="You are a helpful assistant..."
-      style="flex: 1;"></textarea>
-    
+      style="flex: 1"
+    ></textarea>
+
     @if ($any(promptForm()).content().touched() && $any(promptForm()).content().errors().length) {
-      <div id="content-error" class="error-message" role="alert" style="color: var(--color-error); margin-top: 0.5rem; font-size: 0.875rem;">
+      <div
+        id="content-error"
+        class="error-message"
+        role="alert"
+        style="color: var(--color-error); margin-top: 0.5rem; font-size: 0.875rem"
+      >
         {{ $any(promptForm()).content().errors()[0].message }}
       </div>
     }

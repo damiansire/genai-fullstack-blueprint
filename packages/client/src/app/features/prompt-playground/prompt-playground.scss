@@ -67,7 +67,7 @@
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     background: var(--surface-3);
-    
+
     h3 {
       margin: 0;
       font-size: 0.9rem;
@@ -123,7 +123,8 @@
     }
   }
 
-  .loading-state, .empty-state {
+  .loading-state,
+  .empty-state {
     padding: 2rem;
     text-align: center;
     color: var(--text-3);
@@ -214,7 +215,8 @@
         letter-spacing: 0.5px;
       }
 
-      input, textarea {
+      input,
+      textarea {
         background: var(--surface-1);
         border: 1px solid var(--border-color);
         border-radius: 8px;

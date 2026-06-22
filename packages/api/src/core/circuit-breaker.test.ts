@@ -78,7 +78,10 @@ describe('CircuitBreaker', () => {
 
     // First caller becomes the probe; it hangs so the probe stays in flight.
     let releaseProbe!: (v: string) => void;
-    const hung = () => new Promise<string>((resolve) => { releaseProbe = resolve; });
+    const hung = () =>
+      new Promise<string>((resolve) => {
+        releaseProbe = resolve;
+      });
     const probe = cb.fire(hung);
     assert.equal(cb.getState(), 'HALF_OPEN');
 

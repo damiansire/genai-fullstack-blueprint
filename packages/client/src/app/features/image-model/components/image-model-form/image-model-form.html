@@ -7,7 +7,9 @@
         [formField]="form().language"
         class="form-control"
         [class.error]="form().language().touched() && form().language().errors().length"
-        [attr.aria-invalid]="form().language().touched() && form().language().errors().length ? true : null"
+        [attr.aria-invalid]="
+          form().language().touched() && form().language().errors().length ? true : null
+        "
         aria-describedby="language-error"
       >
         <option value="en">English</option>
@@ -22,7 +24,9 @@
         <option value="ko">Korean</option>
       </select>
       @if (form().language().touched() && form().language().errors().length) {
-        <div id="language-error" class="error-message" role="alert">{{ form().language().errors()[0].message }}</div>
+        <div id="language-error" class="error-message" role="alert">
+          {{ form().language().errors()[0].message }}
+        </div>
       }
     </div>
 
@@ -35,11 +39,15 @@
           [formField]="form().maxResults"
           class="form-control"
           [class.error]="form().maxResults().touched() && form().maxResults().errors().length"
-          [attr.aria-invalid]="form().maxResults().touched() && form().maxResults().errors().length ? true : null"
+          [attr.aria-invalid]="
+            form().maxResults().touched() && form().maxResults().errors().length ? true : null
+          "
           aria-describedby="maxResults-error"
         />
         @if (form().maxResults().touched() && form().maxResults().errors().length) {
-          <div id="maxResults-error" class="error-message" role="alert">{{ form().maxResults().errors()[0].message }}</div>
+          <div id="maxResults-error" class="error-message" role="alert">
+            {{ form().maxResults().errors()[0].message }}
+          </div>
         }
       </div>
 
@@ -50,13 +58,23 @@
           id="confidenceThreshold"
           [formField]="form().confidenceThreshold"
           class="form-control"
-          [class.error]="form().confidenceThreshold().touched() && form().confidenceThreshold().errors().length"
-          [attr.aria-invalid]="form().confidenceThreshold().touched() && form().confidenceThreshold().errors().length ? true : null"
+          [class.error]="
+            form().confidenceThreshold().touched() && form().confidenceThreshold().errors().length
+          "
+          [attr.aria-invalid]="
+            form().confidenceThreshold().touched() && form().confidenceThreshold().errors().length
+              ? true
+              : null
+          "
           aria-describedby="confidenceThreshold-error"
           step="0.1"
         />
-        @if (form().confidenceThreshold().touched() && form().confidenceThreshold().errors().length) {
-          <div id="confidenceThreshold-error" class="error-message" role="alert">{{ form().confidenceThreshold().errors()[0].message }}</div>
+        @if (
+          form().confidenceThreshold().touched() && form().confidenceThreshold().errors().length
+        ) {
+          <div id="confidenceThreshold-error" class="error-message" role="alert">
+            {{ form().confidenceThreshold().errors()[0].message }}
+          </div>
         }
       </div>
     </div>
@@ -64,11 +82,7 @@
     <div class="form-row">
       <div class="form-group checkbox-group">
         <label class="checkbox-label">
-          <input
-            type="checkbox"
-            [formField]="form().includeBoundingBoxes"
-            class="checkbox-input"
-          />
+          <input type="checkbox" [formField]="form().includeBoundingBoxes" class="checkbox-input" />
           <span class="checkbox-text">Include Bounding Boxes</span>
         </label>
       </div>
@@ -80,7 +94,9 @@
           [formField]="form().outputFormat"
           class="form-control"
           [class.error]="form().outputFormat().touched() && form().outputFormat().errors().length"
-          [attr.aria-invalid]="form().outputFormat().touched() && form().outputFormat().errors().length ? true : null"
+          [attr.aria-invalid]="
+            form().outputFormat().touched() && form().outputFormat().errors().length ? true : null
+          "
           aria-describedby="outputFormat-error"
         >
           <option value="structured">Structured</option>
@@ -88,7 +104,9 @@
           <option value="json">JSON</option>
         </select>
         @if (form().outputFormat().touched() && form().outputFormat().errors().length) {
-          <div id="outputFormat-error" class="error-message" role="alert">{{ form().outputFormat().errors()[0].message }}</div>
+          <div id="outputFormat-error" class="error-message" role="alert">
+            {{ form().outputFormat().errors()[0].message }}
+          </div>
         }
       </div>
     </div>
@@ -107,12 +125,7 @@
         }
       </button>
 
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="onReset()"
-        [disabled]="loading()"
-      >
+      <button type="button" class="btn btn-secondary" (click)="onReset()" [disabled]="loading()">
         Reset
       </button>
     </div>

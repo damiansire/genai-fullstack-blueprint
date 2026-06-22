@@ -63,10 +63,7 @@ describe('SemanticCacheService', () => {
       const c = await semanticCache.lookup('different prompt', 'm');
       assert.equal(a.hit, false);
       assert.equal(b.hit, false);
-      assert.equal(
-        a.hit === false && b.hit === false && a.promptHash === b.promptHash,
-        true,
-      );
+      assert.equal(a.hit === false && b.hit === false && a.promptHash === b.promptHash, true);
       assert.notEqual(
         a.hit === false && c.hit === false ? a.promptHash : 'x',
         a.hit === false && c.hit === false ? c.promptHash : 'y',

@@ -14,10 +14,11 @@
       </span>
     </div>
     <div class="cg-quality__track">
-      <div class="cg-quality__fill"
+      <div
+        class="cg-quality__fill"
         [style.width]="result().metrics.qualityScore + '%'"
-        [style.background]="qualityColor()">
-      </div>
+        [style.background]="qualityColor()"
+      ></div>
     </div>
   </div>
 
@@ -30,19 +31,25 @@
     <div class="cg-metric">
       <span class="cg-metric__val">{{ result().metrics.cyclomaticComplexity }}</span>
       <span class="cg-metric__lbl">Cyclomatic</span>
-      <div class="cg-metric__bar"><div [style.width]="metricBar(result().metrics.cyclomaticComplexity, 20)"></div></div>
+      <div class="cg-metric__bar">
+        <div [style.width]="metricBar(result().metrics.cyclomaticComplexity, 20)"></div>
+      </div>
     </div>
     <div class="cg-metric">
       <span class="cg-metric__val">{{ result().metrics.cognitiveComplexity }}</span>
       <span class="cg-metric__lbl">Cognitive</span>
-      <div class="cg-metric__bar"><div [style.width]="metricBar(result().metrics.cognitiveComplexity, 30)"></div></div>
+      <div class="cg-metric__bar">
+        <div [style.width]="metricBar(result().metrics.cognitiveComplexity, 30)"></div>
+      </div>
     </div>
     <div class="cg-metric">
       <span class="cg-metric__val">{{ (result().metrics.commentRatio * 100).toFixed(0) }}%</span>
       <span class="cg-metric__lbl">Comments</span>
     </div>
     <div class="cg-metric">
-      <span class="cg-metric__val cg-metric__val--warn">{{ result().metrics.securitySmells.length }}</span>
+      <span class="cg-metric__val cg-metric__val--warn">{{
+        result().metrics.securitySmells.length
+      }}</span>
       <span class="cg-metric__lbl">Sec. Smells</span>
     </div>
     <div class="cg-metric">
@@ -79,6 +86,8 @@
         {{ copied() ? '✓ Copied' : '📋 Copy' }}
       </button>
     </div>
-    <pre class="cg-code" [attr.lang]="result().language" aria-label="Generated code" tabindex="0">{{ result().code }}</pre>
+    <pre class="cg-code" [attr.lang]="result().language" aria-label="Generated code" tabindex="0">{{
+      result().code
+    }}</pre>
   </div>
 </div>

@@ -1,5 +1,4 @@
 <div class="iot-layout">
-
   <!-- ─── Header ─────────────────────────────────────────────────────── -->
   <header class="iot-header">
     <div class="iot-header__title-row">
@@ -14,9 +13,7 @@
             <span class="iot-live-dot"></span>
             LIVE — {{ totalFrames() }} frames
           </div>
-          <button class="iot-btn iot-btn--stop" (click)="stopStream()" type="button">
-            ■ Stop
-          </button>
+          <button class="iot-btn iot-btn--stop" (click)="stopStream()" type="button">■ Stop</button>
         }
       </div>
     </div>
@@ -32,12 +29,19 @@
 
   <!-- ─── Alert Banner ────────────────────────────────────────────────── -->
   @if (hasAlerts()) {
-    <div class="iot-alert-banner" [class.iot-alert-banner--critical]="criticalCount() > 0" role="status" aria-live="polite">
+    <div
+      class="iot-alert-banner"
+      [class.iot-alert-banner--critical]="criticalCount() > 0"
+      role="status"
+      aria-live="polite"
+    >
       <span class="iot-alert-banner__icon">{{ criticalCount() > 0 ? '🚨' : '⚠️' }}</span>
       <span class="iot-alert-banner__text">
         {{ alertCount() }} alert(s) — {{ criticalCount() }} CRITICAL
       </span>
-      <button class="iot-btn iot-btn--ghost" (click)="dismissAlerts()" type="button">Dismiss</button>
+      <button class="iot-btn iot-btn--ghost" (click)="dismissAlerts()" type="button">
+        Dismiss
+      </button>
     </div>
   }
 
@@ -54,8 +58,11 @@
   @if (deviceList().length > 0) {
     <div class="iot-grid" role="list" aria-label="Device readings">
       @for (state of deviceList(); track trackById($index, state)) {
-        <article [class]="cardClass(state)" role="listitem" [attr.aria-label]="state.config.id + ' sensor'">
-
+        <article
+          [class]="cardClass(state)"
+          role="listitem"
+          [attr.aria-label]="state.config.id + ' sensor'"
+        >
           <!-- Card Header -->
           <div class="dc-header">
             <span class="dc-icon" aria-hidden="true">{{ deviceIcon(state.config.type) }}</span>
@@ -64,7 +71,10 @@
               <span class="dc-location">{{ state.config.location }}</span>
             </div>
             @if (state.latest) {
-              <span [class]="alertClass(state.latest.alertLevel)" [attr.aria-label]="'Alert level: ' + state.latest.alertLevel">
+              <span
+                [class]="alertClass(state.latest.alertLevel)"
+                [attr.aria-label]="'Alert level: ' + state.latest.alertLevel"
+              >
                 {{ state.latest.alertLevel }}
               </span>
             }
@@ -82,7 +92,12 @@
 
           <!-- Sparkline -->
           @if (state.history.length >= 2) {
-            <svg class="dc-sparkline" viewBox="0 0 120 32" aria-hidden="true" preserveAspectRatio="none">
+            <svg
+              class="dc-sparkline"
+              viewBox="0 0 120 32"
+              aria-hidden="true"
+              preserveAspectRatio="none"
+            >
               <polyline
                 [attr.points]="sparklinePath(state.history)"
                 fill="none"
@@ -99,8 +114,12 @@
           <!-- Metadata -->
           @if (state.latest?.metadata) {
             <div class="dc-meta-row">
-              <span class="dc-meta-item" title="Rolling mean">μ {{ state.latest!.metadata.rollingMean }}</span>
-              <span class="dc-meta-item" title="Z-score">z={{ state.latest!.metadata.zScore }}</span>
+              <span class="dc-meta-item" title="Rolling mean"
+                >μ {{ state.latest!.metadata.rollingMean }}</span
+              >
+              <span class="dc-meta-item" title="Z-score"
+                >z={{ state.latest!.metadata.zScore }}</span
+              >
               <span class="dc-meta-item">{{ state.frameCount }} frames</span>
             </div>
           }
@@ -108,5 +127,4 @@
       }
     </div>
   }
-
 </div>

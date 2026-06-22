@@ -12,7 +12,7 @@ export interface ChatHistoryEntry {
  * Native IndexedDB Wrapper without using dexie or other dependencies.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LocalDbService {
   private readonly DB_NAME = 'GenAIDb';

@@ -40,7 +40,7 @@ export function apiKeyAuth(req: Request, _res: Response, next: NextFunction): vo
 
     // Validate the API key
     const validation = validateApiKey(apiKey);
-    
+
     if (!validation.isValid) {
       throw ApiError.unauthorized('Invalid API key provided.');
     }
@@ -50,7 +50,7 @@ export function apiKeyAuth(req: Request, _res: Response, next: NextFunction): vo
       ...(validation.keyId ? { apiKeyId: validation.keyId } : {}),
       ...(validation.permissions ? { permissions: validation.permissions } : { permissions: [] }),
       tier: tierFromPermissions(validation.permissions),
-      authenticated: true
+      authenticated: true,
     };
 
     // Log successful authentication (optional, for monitoring)
@@ -61,7 +61,7 @@ export function apiKeyAuth(req: Request, _res: Response, next: NextFunction): vo
     // Log failed authentication attempt
     logger.warn(`❌ API key authentication failed: ${req.ip} - ${req.method} ${req.path}`, {
       userAgent: req.get('User-Agent'),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     next(error);
@@ -75,11 +75,11 @@ export function apiKeyAuth(req: Request, _res: Response, next: NextFunction): vo
 function validateApiKey(apiKey: string): ApiKeyValidationResult {
   // Get valid API keys from environment variables
   const validKeys = getValidApiKeys();
-  
+
   // Check if the provided key exists in the valid keys using constant-time comparison
   const apiKeyBuffer = Buffer.from(apiKey);
-  
-  const keyEntry = validKeys.find(entry => {
+
+  const keyEntry = validKeys.find((entry) => {
     const entryKeyBuffer = Buffer.from(entry.key);
     // timingSafeEqual requires buffers of the same length
     if (entryKeyBuffer.length !== apiKeyBuffer.length) {
@@ -87,7 +87,7 @@ function validateApiKey(apiKey: string): ApiKeyValidationResult {
     }
     return timingSafeEqual(entryKeyBuffer, apiKeyBuffer);
   });
-  
+
   if (!keyEntry) {
     return { isValid: false };
   }
@@ -95,7 +95,7 @@ function validateApiKey(apiKey: string): ApiKeyValidationResult {
   return {
     isValid: true,
     keyId: keyEntry.id,
-    permissions: keyEntry.permissions
+    permissions: keyEntry.permissions,
   };
 }
 
@@ -108,24 +108,24 @@ function getValidApiKeys(): Array<{ id: string; key: string; permissions: string
 
   // Parse API keys from environment variables
   // Format: API_KEY_1=key1:permissions, API_KEY_2=key2:permissions
-  const envKeys = Object.keys(process.env).filter(key => key.startsWith('API_KEY_'));
-  
+  const envKeys = Object.keys(process.env).filter((key) => key.startsWith('API_KEY_'));
+
   for (const envKey of envKeys) {
     const keyValue = process.env[envKey];
     if (!keyValue) continue;
 
     // Parse key and permissions (format: "key:permission1,permission2")
     const [key, permissionsStr] = keyValue.split(':');
-    
+
     // Skip if key is undefined
     if (!key) continue;
-    
-    const permissions = permissionsStr ? permissionsStr.split(',').map(p => p.trim()) : ['read'];
-    
+
+    const permissions = permissionsStr ? permissionsStr.split(',').map((p) => p.trim()) : ['read'];
+
     validKeys.push({
       id: envKey,
       key: key.trim(),
-      permissions
+      permissions,
     });
   }
 
@@ -134,7 +134,9 @@ function getValidApiKeys(): Array<{ id: string; key: string; permissions: string
   // misconfigured deploy wide open with read/write). A missing key set is a
   // configuration error, not an open door.
   if (validKeys.length === 0) {
-    logger.error('No API keys configured (set API_KEY_1, API_KEY_2, ...). Refusing to authenticate any request.');
+    logger.error(
+      'No API keys configured (set API_KEY_1, API_KEY_2, ...). Refusing to authenticate any request.',
+    );
     throw ApiError.unauthorized('Authentication is not configured on this server.');
   }
 
@@ -154,12 +156,14 @@ export function requirePermissions(requiredPermissions: string[]) {
       }
 
       const userPermissions = req.user.permissions;
-      const hasRequiredPermissions = requiredPermissions.every(permission => 
-        userPermissions.includes(permission)
+      const hasRequiredPermissions = requiredPermissions.every((permission) =>
+        userPermissions.includes(permission),
       );
 
       if (!hasRequiredPermissions) {
-        throw ApiError.forbidden(`Insufficient permissions. Required: ${requiredPermissions.join(', ')}`);
+        throw ApiError.forbidden(
+          `Insufficient permissions. Required: ${requiredPermissions.join(', ')}`,
+        );
       }
 
       next();
@@ -182,22 +186,24 @@ export function optionalApiKeyAuth(req: Request, _res: Response, next: NextFunct
 
     if (apiKey) {
       const validation = validateApiKey(apiKey);
-      
+
       if (validation.isValid) {
         req.user = {
           ...(validation.keyId ? { apiKeyId: validation.keyId } : {}),
-          ...(validation.permissions ? { permissions: validation.permissions } : { permissions: [] }),
+          ...(validation.permissions
+            ? { permissions: validation.permissions }
+            : { permissions: [] }),
           tier: tierFromPermissions(validation.permissions),
-          authenticated: true
+          authenticated: true,
         };
       } else {
         req.user = {
-          authenticated: false
+          authenticated: false,
         };
       }
     } else {
       req.user = {
-        authenticated: false
+        authenticated: false,
       };
     }
 
@@ -205,7 +211,7 @@ export function optionalApiKeyAuth(req: Request, _res: Response, next: NextFunct
   } catch (error) {
     // For optional auth, we don't throw errors, just set unauthenticated
     req.user = {
-      authenticated: false
+      authenticated: false,
     };
     next();
   }

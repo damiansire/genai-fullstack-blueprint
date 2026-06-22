@@ -6,7 +6,7 @@ import { FormField } from '@angular/forms/signals';
   imports: [FormField],
   templateUrl: './text-model-form.html',
   styleUrl: './text-model-form.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TextModelForm {
   form = input.required<any>();

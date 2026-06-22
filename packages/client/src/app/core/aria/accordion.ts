@@ -14,7 +14,7 @@ export class AccordionGroup {
       this.activePanels.delete(trigger);
     } else {
       if (!this.multiExpandable()) {
-        this.activePanels.forEach(p => p.expanded.set(false));
+        this.activePanels.forEach((p) => p.expanded.set(false));
         this.activePanels.clear();
       }
       trigger.expanded.set(true);
@@ -27,12 +27,12 @@ export class AccordionGroup {
   selector: '[ngAccordionTrigger]',
   host: {
     '[attr.aria-expanded]': 'expanded()',
-    'role': 'button',
-    'tabindex': '0',
+    role: 'button',
+    tabindex: '0',
     '(click)': 'onClick()',
     '(keydown.space)': 'onClick()',
-    '(keydown.enter)': 'onClick()'
-  }
+    '(keydown.enter)': 'onClick()',
+  },
 })
 export class AccordionTrigger {
   expanded = signal(false);
@@ -42,7 +42,7 @@ export class AccordionTrigger {
     if (this.group) {
       this.group.toggle(this);
     } else {
-      this.expanded.update(v => !v);
+      this.expanded.update((v) => !v);
     }
   }
 }
@@ -50,9 +50,9 @@ export class AccordionTrigger {
 @Directive({
   selector: '[ngAccordionPanel]',
   host: {
-    'role': 'region',
-    '[hidden]': '!trigger()?.expanded()'
-  }
+    role: 'region',
+    '[hidden]': '!trigger()?.expanded()',
+  },
 })
 export class AccordionPanel {
   readonly trigger = input.required<AccordionTrigger>({ alias: 'ngAccordionPanel' });

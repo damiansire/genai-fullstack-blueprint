@@ -1,6 +1,6 @@
 <div class="image-response">
   <h3><span aria-hidden="true">✅</span> OCR Results</h3>
-  
+
   <div class="response-content">
     <h4>Extracted Text:</h4>
     <div class="text-output">
@@ -22,8 +22,8 @@
             </div>
             @if (annotation.boundingBox) {
               <div class="annotation-bounds">
-                Position: ({{ annotation.boundingBox.x }}, {{ annotation.boundingBox.y }})
-                Size: {{ annotation.boundingBox.width }}×{{ annotation.boundingBox.height }}
+                Position: ({{ annotation.boundingBox.x }}, {{ annotation.boundingBox.y }}) Size:
+                {{ annotation.boundingBox.width }}×{{ annotation.boundingBox.height }}
               </div>
             }
           </div>
@@ -39,7 +39,9 @@
         <div class="stat">
           <span class="stat-label">Dimensions:</span>
           <span class="stat-value">
-            {{ response()?.data?.result?.imageInfo?.width }}×{{ response()?.data?.result?.imageInfo?.height }}
+            {{ response()?.data?.result?.imageInfo?.width }}×{{
+              response()?.data?.result?.imageInfo?.height
+            }}
           </span>
         </div>
         <div class="stat">

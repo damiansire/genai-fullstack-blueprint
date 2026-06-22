@@ -44,7 +44,10 @@ function toHex(input: string, bytes: number): string {
   if (hex.length >= bytes * 2) return hex.slice(0, bytes * 2).toLowerCase();
   // Deterministic pad: repeat then trim. Falls back to random for empty input.
   const base = hex || randomBytes(bytes).toString('hex');
-  return base.repeat(Math.ceil((bytes * 2) / base.length)).slice(0, bytes * 2).toLowerCase();
+  return base
+    .repeat(Math.ceil((bytes * 2) / base.length))
+    .slice(0, bytes * 2)
+    .toLowerCase();
 }
 
 function attrValue(v: string | number | boolean) {

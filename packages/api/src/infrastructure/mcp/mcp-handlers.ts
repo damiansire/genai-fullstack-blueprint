@@ -41,7 +41,12 @@ function ok<T>(id: JsonRpcRequest['id'], result: T): JsonRpcResponse<T> {
   return { jsonrpc: '2.0', id, result };
 }
 
-function err(id: JsonRpcRequest['id'], code: number, message: string, data?: unknown): JsonRpcResponse {
+function err(
+  id: JsonRpcRequest['id'],
+  code: number,
+  message: string,
+  data?: unknown,
+): JsonRpcResponse {
   const error: JsonRpcError = { code, message, ...(data !== undefined && { data }) };
   return { jsonrpc: '2.0', id, error };
 }
@@ -51,7 +56,6 @@ function err(id: JsonRpcRequest['id'], code: number, message: string, data?: unk
 type Handler = (req: JsonRpcRequest) => Promise<JsonRpcResponse>;
 
 const handlers: Record<string, Handler> = {
-
   // ─── initialize ─────────────────────────────────────────────────────────────
   // Called by every MCP client after establishing the transport connection.
   // Negotiates protocol version and declares server capabilities.
@@ -96,7 +100,10 @@ const handlers: Record<string, Handler> = {
       inputSchema: {
         type: 'object' as const,
         properties: {
-          query: { type: 'string', description: 'Keyword to search for in tool names and descriptions' },
+          query: {
+            type: 'string',
+            description: 'Keyword to search for in tool names and descriptions',
+          },
           limit: { type: 'number', description: 'Maximum number of results (default: 5, max: 20)' },
         },
         required: ['query'],
@@ -145,10 +152,7 @@ const handlers: Record<string, Handler> = {
         resultData = dbService.searchTools(query, limit);
       } else {
         // Delegate to the Worker Pool (existing infra from prior sessions)
-        resultData = await CPUWorkerService.executeTool(
-          params.name,
-          params.arguments ?? {}
-        );
+        resultData = await CPUWorkerService.executeTool(params.name, params.arguments ?? {});
       }
 
       const result: McpToolCallResult = {
@@ -160,7 +164,6 @@ const handlers: Record<string, Handler> = {
         ],
       };
       return ok(req.id, result);
-
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       logger.warn(`[MCP] tools/call failed: ${params.name}`, { error: message });
@@ -260,7 +263,11 @@ const handlers: Record<string, Handler> = {
           name: 'analyze_logs',
           description: 'Analyze recent Gateway request logs for patterns or anomalies',
           arguments: [
-            { name: 'limit', description: 'Number of recent logs to analyze (default: 50)', required: false },
+            {
+              name: 'limit',
+              description: 'Number of recent logs to analyze (default: 50)',
+              required: false,
+            },
           ],
         },
       ],

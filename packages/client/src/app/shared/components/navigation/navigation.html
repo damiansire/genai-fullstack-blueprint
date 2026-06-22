@@ -1,74 +1,141 @@
 <nav class="navigation">
   <div class="nav-container">
     <div class="nav-brand">
-      <h1><span aria-hidden="true">{{ icons.ai }}</span> AI Gateway</h1>
+      <h1>
+        <span aria-hidden="true">{{ icons.ai }}</span> AI Gateway
+      </h1>
       <p>Multimodal AI Platform</p>
     </div>
-    
+
     <ul class="nav-links">
       <li>
-        <a routerLink="/text-model" routerLinkActive="active" #rlaText="routerLinkActive" [attr.aria-current]="rlaText.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/text-model"
+          routerLinkActive="active"
+          #rlaText="routerLinkActive"
+          [attr.aria-current]="rlaText.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.text }}</span>
           <span class="nav-label">Text Generation</span>
         </a>
       </li>
       <li>
-        <a routerLink="/image-ocr" routerLinkActive="active" #rlaOcr="routerLinkActive" [attr.aria-current]="rlaOcr.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/image-ocr"
+          routerLinkActive="active"
+          #rlaOcr="routerLinkActive"
+          [attr.aria-current]="rlaOcr.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.ocr }}</span>
           <span class="nav-label">Image OCR</span>
         </a>
       </li>
       <li>
-        <a routerLink="/image-generation" routerLinkActive="active" #rlaGen="routerLinkActive" [attr.aria-current]="rlaGen.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/image-generation"
+          routerLinkActive="active"
+          #rlaGen="routerLinkActive"
+          [attr.aria-current]="rlaGen.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.generation }}</span>
           <span class="nav-label">Image Generation</span>
         </a>
       </li>
       <li>
-        <a routerLink="/tool-explorer" routerLinkActive="active" #rlaTools="routerLinkActive" [attr.aria-current]="rlaTools.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/tool-explorer"
+          routerLinkActive="active"
+          #rlaTools="routerLinkActive"
+          [attr.aria-current]="rlaTools.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.tools }}</span>
           <span class="nav-label">Tool Explorer</span>
         </a>
       </li>
       <li>
-        <a routerLink="/security" routerLinkActive="active" #rlaSec="routerLinkActive" [attr.aria-current]="rlaSec.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/security"
+          routerLinkActive="active"
+          #rlaSec="routerLinkActive"
+          [attr.aria-current]="rlaSec.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.security }}</span>
           <span class="nav-label">Security</span>
         </a>
       </li>
       <li>
-        <a routerLink="/iot" routerLinkActive="active" #rlaIot="routerLinkActive" [attr.aria-current]="rlaIot.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/iot"
+          routerLinkActive="active"
+          #rlaIot="routerLinkActive"
+          [attr.aria-current]="rlaIot.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.iot }}</span>
           <span class="nav-label">IoT</span>
         </a>
       </li>
       <li>
-        <a routerLink="/code-gen" routerLinkActive="active" #rlaCg="routerLinkActive" [attr.aria-current]="rlaCg.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/code-gen"
+          routerLinkActive="active"
+          #rlaCg="routerLinkActive"
+          [attr.aria-current]="rlaCg.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">{{ icons.codeGen }}</span>
           <span class="nav-label">Code Gen</span>
         </a>
       </li>
       <li>
-        <a routerLink="/document-chat" routerLinkActive="active" #rlaDoc="routerLinkActive" [attr.aria-current]="rlaDoc.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/document-chat"
+          routerLinkActive="active"
+          #rlaDoc="routerLinkActive"
+          [attr.aria-current]="rlaDoc.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">📄</span>
           <span class="nav-label">Doc Chat</span>
         </a>
       </li>
       <li class="nav-divider"></li>
       <li>
-        <a routerLink="/admin/prompts" routerLinkActive="active" #rlaAdmin="routerLinkActive" [attr.aria-current]="rlaAdmin.isActive ? 'page' : null" class="nav-link admin-link">
+        <a
+          routerLink="/admin/prompts"
+          routerLinkActive="active"
+          #rlaAdmin="routerLinkActive"
+          [attr.aria-current]="rlaAdmin.isActive ? 'page' : null"
+          class="nav-link admin-link"
+        >
           <span class="nav-icon" aria-hidden="true">💻</span>
           <span class="nav-label">Playground</span>
         </a>
       </li>
       <li>
-        <a routerLink="/user/quota" routerLinkActive="active" #rlaQuota="routerLinkActive" [attr.aria-current]="rlaQuota.isActive ? 'page' : null" class="nav-link">
+        <a
+          routerLink="/user/quota"
+          routerLinkActive="active"
+          #rlaQuota="routerLinkActive"
+          [attr.aria-current]="rlaQuota.isActive ? 'page' : null"
+          class="nav-link"
+        >
           <span class="nav-icon" aria-hidden="true">📊</span>
           <span class="nav-label">Quota</span>
         </a>
       </li>
       <li>
-        <button popovertarget="ai-settings-menu" popovertargetaction="toggle" class="nav-link btn-settings" aria-label="Open Settings">
+        <button
+          popovertarget="ai-settings-menu"
+          popovertargetaction="toggle"
+          class="nav-link btn-settings"
+          aria-label="Open Settings"
+        >
           <span class="nav-icon" aria-hidden="true">⚙️</span>
           <span class="nav-label">Settings</span>
         </button>
@@ -82,4 +149,3 @@
     </ul>
   </div>
 </nav>
-

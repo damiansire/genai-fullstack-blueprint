@@ -13,18 +13,19 @@
     <div class="loading-state">Loading quota data...</div>
   } @else if (quota(); as q) {
     <div class="metrics-grid">
-      
       <!-- Circular Progress Card -->
       <div class="card usage-card">
         <h3>Monthly Usage</h3>
         <div class="chart-container">
           <svg viewBox="0 0 100 100" class="circular-chart">
-            <path class="circle-bg"
+            <path
+              class="circle-bg"
               d="M50 5
                 a 45 45 0 0 1 0 90
                 a 45 45 0 0 1 0 -90"
             />
-            <path class="circle"
+            <path
+              class="circle"
               [attr.stroke-dashoffset]="strokeDashoffset()"
               [style.stroke]="statusColor()"
               d="M50 5
@@ -32,9 +33,7 @@
                 a 45 45 0 0 1 0 -90"
             />
           </svg>
-          <div class="percentage-text" [style.color]="statusColor()">
-            {{ q.usagePercentage }}%
-          </div>
+          <div class="percentage-text" [style.color]="statusColor()">{{ q.usagePercentage }}%</div>
         </div>
         <p class="limit-text">{{ q.usedTokens | number }} / {{ q.maxTokens | number }} tokens</p>
       </div>
@@ -61,7 +60,7 @@
           <span class="stat-icon">⏱️</span>
           <div class="stat-details">
             <span class="stat-label">Last Refill Date</span>
-            <span class="stat-value">{{ q.lastRefill | date:'medium' }}</span>
+            <span class="stat-value">{{ q.lastRefill | date: 'medium' }}</span>
           </div>
         </div>
       </div>

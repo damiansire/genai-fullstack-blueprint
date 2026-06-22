@@ -56,7 +56,7 @@
     gap: 0.5rem;
     font-weight: 500;
     transition: opacity 0.2s;
-    
+
     &:hover {
       opacity: 0.8;
     }
@@ -166,18 +166,36 @@
 // ─── Keyframe Animations ──────────────────────────────────────────────────────
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes streaming-pulse {
-  0%, 100% { opacity: 1;   transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.75); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
 }
 
 // CSS caret-blink: uses step-end so the cursor snaps on/off (no fade)
 // matching the behavior of native terminal cursors.
 @keyframes caret-blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }

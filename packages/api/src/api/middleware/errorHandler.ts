@@ -17,18 +17,22 @@ export function errorHandler(
   err: Error | ApiError,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void {
   const traceId = getTraceId();
 
   // Log the error for debugging using structured logger
-  logger.error(err.message, {
-    url: req.url,
-    method: req.method,
-    userAgent: req.get('User-Agent'),
-    ip: req.ip || req.connection.remoteAddress,
-    traceId
-  }, err);
+  logger.error(
+    err.message,
+    {
+      url: req.url,
+      method: req.method,
+      userAgent: req.get('User-Agent'),
+      ip: req.ip || req.connection.remoteAddress,
+      traceId,
+    },
+    err,
+  );
 
   // Handle ApiError instances
   if (err instanceof ApiError) {
@@ -41,8 +45,8 @@ export function errorHandler(
         timestamp: err.timestamp,
         path: req.path,
         method: req.method,
-        ...(config.isDevelopment && { stack: err.stack })
-      }
+        ...(config.isDevelopment && { stack: err.stack }),
+      },
     };
 
     res.status(err.statusCode).json(errorResponse);
@@ -59,8 +63,8 @@ export function errorHandler(
         statusCode: 422,
         timestamp: new Date().toISOString(),
         path: req.path,
-        method: req.method
-      }
+        method: req.method,
+      },
     };
 
     res.status(422).json(errorResponse);
@@ -77,8 +81,8 @@ export function errorHandler(
         statusCode: 400,
         timestamp: new Date().toISOString(),
         path: req.path,
-        method: req.method
-      }
+        method: req.method,
+      },
     };
 
     res.status(400).json(errorResponse);
@@ -95,8 +99,8 @@ export function errorHandler(
         statusCode: 400,
         timestamp: new Date().toISOString(),
         path: req.path,
-        method: req.method
-      }
+        method: req.method,
+      },
     };
 
     res.status(400).json(errorResponse);
@@ -110,14 +114,19 @@ export function errorHandler(
 
   if (isSystemError) {
     const sysErr = err as any;
-    const sysErrorName = typeof sysErr.code === 'number' ? getSystemErrorName(sysErr.code) : sysErr.code;
-    logger.error(`Node.js System Error [${sysErrorName || sysErr.code}]`, {
-      syscall: sysErr.syscall, // Directly maps to Unix system calls (see related man pages)
-      path: sysErr.path,
-      address: sysErr.address,
-      port: sysErr.port,
-      traceId
-    }, sysErr);
+    const sysErrorName =
+      typeof sysErr.code === 'number' ? getSystemErrorName(sysErr.code) : sysErr.code;
+    logger.error(
+      `Node.js System Error [${sysErrorName || sysErr.code}]`,
+      {
+        syscall: sysErr.syscall, // Directly maps to Unix system calls (see related man pages)
+        path: sysErr.path,
+        address: sysErr.address,
+        port: sysErr.port,
+        traceId,
+      },
+      sysErr,
+    );
   }
 
   const errorResponse = {
@@ -130,8 +139,8 @@ export function errorHandler(
       timestamp: new Date().toISOString(),
       path: req.path,
       method: req.method,
-      ...(config.isDevelopment && { stack: err.stack })
-    }
+      ...(config.isDevelopment && { stack: err.stack }),
+    },
   };
 
   res.status(500).json(errorResponse);

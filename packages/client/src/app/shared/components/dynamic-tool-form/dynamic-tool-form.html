@@ -13,7 +13,6 @@
 -->
 
 @switch (formState()) {
-
   @case ('loading') {
     <!-- Native skeletal proxy: reserves layout so CLS = 0 -->
     <div class="dtf-skeleton" aria-busy="true" aria-label="Loading tool schema...">
@@ -29,11 +28,10 @@
     <div class="dtf-error" role="alert">
       <span class="dtf-error__icon" aria-hidden="true">⚠️</span>
       <p class="dtf-error__message">
-        Could not load schema for <strong>{{ toolName() }}</strong>: {{ loadError() }}
+        Could not load schema for <strong>{{ toolName() }}</strong
+        >: {{ loadError() }}
       </p>
-      <button class="dtf-btn dtf-btn--secondary" (click)="toolResource.reload()">
-        Retry
-      </button>
+      <button class="dtf-btn dtf-btn--secondary" (click)="toolResource.reload()">Retry</button>
     </div>
   }
 
@@ -41,7 +39,6 @@
     @let form = dynamicForm();
     @if (form) {
       <article class="dtf-panel" [attr.aria-label]="form.toolName + ' configuration'">
-
         <!-- Form Header -->
         <header class="dtf-header">
           <div class="dtf-header__title-row">
@@ -54,15 +51,10 @@
         </header>
 
         <!-- Dynamic Fields -->
-        <form
-          class="dtf-form"
-          (submit)="$event.preventDefault(); onSubmit(form)"
-          novalidate
-        >
+        <form class="dtf-form" (submit)="$event.preventDefault(); onSubmit(form)" novalidate>
           <div class="dtf-fields">
             @for (field of form.fields; track trackByKey($index, field)) {
               <div class="dtf-field" [class.dtf-field--required]="field.required">
-
                 <!-- Checkbox uses a different layout -->
                 @if (field.controlType === 'checkbox') {
                   <div class="dtf-field__checkbox-row">
@@ -79,17 +71,18 @@
                       class="dtf-label dtf-label--inline"
                     >
                       {{ field.label }}
-                      @if (field.required) { <span class="dtf-required-mark" aria-hidden="true">*</span> }
+                      @if (field.required) {
+                        <span class="dtf-required-mark" aria-hidden="true">*</span>
+                      }
                     </label>
                   </div>
                 } @else {
                   <!-- Standard field: label → control → hint → error -->
-                  <label
-                    [for]="'dtf-' + form.toolName + '-' + field.key"
-                    class="dtf-label"
-                  >
+                  <label [for]="'dtf-' + form.toolName + '-' + field.key" class="dtf-label">
                     {{ field.label }}
-                    @if (field.required) { <span class="dtf-required-mark" aria-hidden="true">*</span> }
+                    @if (field.required) {
+                      <span class="dtf-required-mark" aria-hidden="true">*</span>
+                    }
                   </label>
 
                   @if (field.controlType === 'textarea') {
@@ -104,8 +97,8 @@
                       [attr.maxlength]="field.maxLength || null"
                       rows="4"
                       (input)="setFieldValue(form, field, $event)"
-                    >{{ getFieldValue(form, field) }}</textarea>
-
+                      >{{ getFieldValue(form, field) }}</textarea
+                    >
                   } @else if (field.controlType === 'select') {
                     <select
                       [id]="'dtf-' + form.toolName + '-' + field.key"
@@ -115,13 +108,11 @@
                       (change)="setFieldValue(form, field, $event)"
                     >
                       @for (option of field.options; track option) {
-                        <option
-                          [value]="option"
-                          [selected]="getFieldValue(form, field) === option"
-                        >{{ option }}</option>
+                        <option [value]="option" [selected]="getFieldValue(form, field) === option">
+                          {{ option }}
+                        </option>
                       }
                     </select>
-
                   } @else {
                     <!-- text / number / email / url / date / time / password -->
                     <input
@@ -148,12 +139,9 @@
 
                   <!-- Inline validation error -->
                   @if (isFieldInvalid(form, field)) {
-                    <p class="dtf-validation-error" role="alert">
-                      {{ field.label }} is required.
-                    </p>
+                    <p class="dtf-validation-error" role="alert">{{ field.label }} is required.</p>
                   }
                 }
-
               </div>
             }
           </div>
@@ -167,7 +155,9 @@
               aria-controls="dtf-payload-preview"
               (click)="togglePreview()"
             >
-              <span class="dtf-preview__icon" aria-hidden="true">{{ showPreview() ? '▾' : '▸' }}</span>
+              <span class="dtf-preview__icon" aria-hidden="true">{{
+                showPreview() ? '▾' : '▸'
+              }}</span>
               Payload Preview
             </button>
             @if (showPreview()) {
@@ -175,7 +165,8 @@
                 id="dtf-payload-preview"
                 class="dtf-preview__code"
                 aria-label="Current form values as JSON"
-              >{{ payloadPreview() }}</pre>
+                >{{ payloadPreview() }}</pre
+              >
             }
           </div>
 
@@ -203,10 +194,8 @@
               Cancel
             </button>
           </div>
-
         </form>
       </article>
     }
   }
-
 }

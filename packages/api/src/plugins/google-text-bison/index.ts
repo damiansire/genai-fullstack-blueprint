@@ -12,9 +12,7 @@ import { resilientTransport } from '../../infrastructure/http/resilient-transpor
  */
 const textBisonResponseSchema = z
   .object({
-    candidates: z
-      .array(z.object({ output: z.string().optional() }).passthrough())
-      .optional(),
+    candidates: z.array(z.object({ output: z.string().optional() }).passthrough()).optional(),
   })
   .passthrough();
 
@@ -34,47 +32,47 @@ export const configSchema = {
       type: 'string',
       description: 'The text prompt to send to the model',
       minLength: 1,
-      maxLength: 8192
+      maxLength: 8192,
     },
     maxTokens: {
       type: 'number',
       description: 'Maximum number of tokens to generate',
       minimum: 1,
       maximum: 1024,
-      default: 256
+      default: 256,
     },
     temperature: {
       type: 'number',
       description: 'Controls randomness in the output',
       minimum: 0.0,
       maximum: 1.0,
-      default: 0.7
+      default: 0.7,
     },
     topP: {
       type: 'number',
       description: 'Controls diversity of the output',
       minimum: 0.0,
       maximum: 1.0,
-      default: 0.9
+      default: 0.9,
     },
     topK: {
       type: 'number',
       description: 'Controls the number of top tokens to consider',
       minimum: 1,
       maximum: 100,
-      default: 40
+      default: 40,
     },
     stopSequences: {
       type: 'array',
       description: 'Sequences where the model should stop generating',
       items: {
-        type: 'string'
+        type: 'string',
       },
-      maxItems: 5
-    }
+      maxItems: 5,
+    },
   },
   required: ['prompt'],
-  additionalProperties: true
+  additionalProperties: true,
 };
 
 /**
@@ -106,7 +104,10 @@ interface GoogleTextBisonOutput {
  * Google Text Bison Model Strategy Implementation
  * Simulates calls to Google's Text Bison API
  */
-export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, ModelOutput<GoogleTextBisonOutput>> {
+export class ModelStrategy implements IModelStrategy<
+  GoogleTextBisonInput,
+  ModelOutput<GoogleTextBisonOutput>
+> {
   private readonly modelName = 'text-bison-001';
   private readonly baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -117,8 +118,8 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
    * @returns Promise resolving to the generated text response
    */
   async process(
-    params: GoogleTextBisonInput, 
-    context: ProcessContext
+    params: GoogleTextBisonInput,
+    context: ProcessContext,
   ): Promise<ModelOutput<GoogleTextBisonOutput>> {
     const startTime = performance.now();
 
@@ -140,7 +141,7 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
         temperature: params.temperature || 0.7,
         topP: params.topP || 0.9,
         topK: params.topK || 40,
-        stopSequences: params.stopSequences || []
+        stopSequences: params.stopSequences || [],
       };
 
       // Log the request
@@ -148,7 +149,7 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
         promptLength: params.prompt.length,
         maxTokens: requestParams.maxTokens,
         temperature: requestParams.temperature,
-        userId: context.userId
+        userId: context.userId,
       });
 
       // Llamada REAL a la API usando Node.js fetch
@@ -161,7 +162,7 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
         responseLength: response.text.length,
         processingTime: `${processingTime}ms`,
         finishReason: response.finishReason,
-        totalTokens: response.usage.totalTokens
+        totalTokens: response.usage.totalTokens,
       });
 
       return {
@@ -174,17 +175,20 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
           usageMetadata: {
             promptTokenCount: response.usage.promptTokens,
             candidatesTokenCount: response.usage.completionTokens,
-            totalTokenCount: response.usage.totalTokens
-          }
-        }
+            totalTokenCount: response.usage.totalTokens,
+          },
+        },
       };
-
     } catch (error) {
       const processingTime = Math.round(performance.now() - startTime);
-      
-      logger.error('Google Text Bison request failed', {
-        processingTime: `${processingTime}ms`
-      }, error);
+
+      logger.error(
+        'Google Text Bison request failed',
+        {
+          processingTime: `${processingTime}ms`,
+        },
+        error,
+      );
 
       throw error;
     }
@@ -195,8 +199,8 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
    * Usando el cliente Fetch nativo de Node.js v18+
    */
   private async executeApiCall(
-    params: GoogleTextBisonInput, 
-    apiKey: string
+    params: GoogleTextBisonInput,
+    apiKey: string,
   ): Promise<GoogleTextBisonOutput> {
     const url = `${this.baseUrl}/${this.modelName}:generateText?key=${apiKey}`;
 
@@ -213,8 +217,11 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
           topP: params.topP,
           candidateCount: 1,
           maxOutputTokens: params.maxTokens,
-          stopSequences: params.stopSequences && params.stopSequences.length > 0 ? params.stopSequences : undefined
-        })
+          stopSequences:
+            params.stopSequences && params.stopSequences.length > 0
+              ? params.stopSequences
+              : undefined,
+        }),
       },
       textBisonResponseSchema,
     );
@@ -231,8 +238,8 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
       usage: {
         promptTokens: 0, // PaLM API no siempre devuelve usage info preciso
         completionTokens: 0,
-        totalTokens: 0
-      }
+        totalTokens: 0,
+      },
     };
   }
 
@@ -248,7 +255,7 @@ export class ModelStrategy implements IModelStrategy<GoogleTextBisonInput, Model
       type: 'text-generation',
       capabilities: ['text-generation', 'completion', 'conversation'],
       maxTokens: 1024,
-      supportsStreaming: false
+      supportsStreaming: false,
     };
   }
 }

@@ -33,6 +33,6 @@ function calculateDiff(oldText: string, newText: string): any {
   // Simple stub for text diffing logic
   return {
     added: newText.length > oldText.length,
-    charsChanged: Math.abs(newText.length - oldText.length)
+    charsChanged: Math.abs(newText.length - oldText.length),
   };
 }

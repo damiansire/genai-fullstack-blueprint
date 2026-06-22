@@ -1,8 +1,6 @@
 <div class="te-layout">
-
   <!-- ─── Sidebar: Tool List ─────────────────────────────────────────────── -->
   <aside class="te-sidebar" aria-label="Tool registry">
-
     <header class="te-sidebar__header">
       <h1 class="te-sidebar__title">
         <span aria-hidden="true">{{ icons.wrench }}</span>
@@ -28,7 +26,7 @@
     @if (isToolListLoading()) {
       <!-- Skeleton for tool list -->
       <div class="te-skeleton-list" aria-busy="true" aria-label="Loading tools...">
-        @for (i of [1,2,3,4,5]; track i) {
+        @for (i of [1, 2, 3, 4, 5]; track i) {
           <div class="te-skeleton-item"></div>
         }
       </div>
@@ -62,20 +60,18 @@
 
   <!-- ─── Main: Dynamic Form + Results ──────────────────────────────────── -->
   <main class="te-main" role="main">
-
     @if (!selectedTool()) {
       <!-- Empty state: no tool selected -->
       <div class="te-empty-state">
         <div class="te-empty-state__icon" aria-hidden="true">{{ icons.wrench }}</div>
         <h2 class="te-empty-state__title">Select a tool</h2>
         <p class="te-empty-state__hint">
-          Choose a tool from the registry to see its schema
-          and execute it with a dynamically generated form.
+          Choose a tool from the registry to see its schema and execute it with a dynamically
+          generated form.
         </p>
       </div>
     } @else {
       <div class="te-workspace">
-
         <!-- Dynamic form — schema fetched from Tool Registry (Patrón 1) -->
         @defer (when !!selectedTool()) {
           <app-dynamic-tool-form
@@ -107,11 +103,12 @@
             }
 
             @if (resultJson()) {
-              <pre class="te-result__json" aria-label="Tool execution result">{{ resultJson() }}</pre>
+              <pre class="te-result__json" aria-label="Tool execution result">{{
+                resultJson()
+              }}</pre>
             }
           </section>
         }
-
       </div>
     }
   </main>

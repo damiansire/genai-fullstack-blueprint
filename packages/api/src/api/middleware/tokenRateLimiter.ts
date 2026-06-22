@@ -8,27 +8,31 @@ import { TokenStore } from '../../core/interfaces/TokenStore.js';
  * The actual consumption of tokens happens in the controller after the LLM responds,
  * because we do not know the exact token cost upfront.
  */
-export const tokenRateLimiter = (store: TokenStore, options: { windowMs: number; maxTokens: number }) => {
+export const tokenRateLimiter = (
+  store: TokenStore,
+  options: { windowMs: number; maxTokens: number },
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Identifier: API Key or IP as fallback
       const identifier = (req.user?.apiKeyId || req.ip || 'unknown-ip') as string;
-      
+
       const currentTokens = await store.getConsumedTokens(identifier, options.windowMs);
-      
+
       if (currentTokens >= options.maxTokens) {
-        logger.warn(`Token rate limit exceeded for ${identifier}`, { 
-          ip: req.ip, 
+        logger.warn(`Token rate limit exceeded for ${identifier}`, {
+          ip: req.ip,
           path: req.path,
           currentTokens,
-          maxTokens: options.maxTokens
+          maxTokens: options.maxTokens,
         });
-        
+
         res.status(429).json({
           success: false,
           error: 'Token Limit Exceeded',
-          message: 'You have exhausted your token budget for this time window. Please try again later.',
-          retryAfterMs: options.windowMs // In a real sliding window, this would be computed exactly
+          message:
+            'You have exhausted your token budget for this time window. Please try again later.',
+          retryAfterMs: options.windowMs, // In a real sliding window, this would be computed exactly
         });
         return;
       }
@@ -38,10 +42,14 @@ export const tokenRateLimiter = (store: TokenStore, options: { windowMs: number;
       res.locals['tokenStore'] = store;
       res.locals['rateLimitWindowMs'] = options.windowMs;
       res.locals['rateLimitIdentifier'] = identifier;
-      
+
       next();
     } catch (error) {
-      logger.error('Error in token rate limiter', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Error in token rate limiter',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       // Fail closed: if the token store is unavailable we cannot prove the
       // caller is under budget, so we deny the request rather than letting it
       // through unmetered (which would silently disable rate limiting on a DB hiccup).

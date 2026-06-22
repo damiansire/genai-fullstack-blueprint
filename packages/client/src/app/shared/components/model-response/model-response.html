@@ -1,5 +1,4 @@
 <section class="response-section">
-
   @if (loading() && !isStreaming()) {
     <!-- Pure loading state: spinner shown ONLY before the first chunk arrives -->
     <div class="loading-state" role="status" aria-live="polite">
@@ -10,7 +9,9 @@
 
   @if (error()) {
     <div class="error-state" role="alert">
-      <h3><span aria-hidden="true">{{ icons.error }}</span> Error</h3>
+      <h3>
+        <span aria-hidden="true">{{ icons.error }}</span> Error
+      </h3>
       <p>{{ error() }}</p>
       <button class="btn-retry" (click)="retry.emit()">
         <span aria-hidden="true">{{ icons.retry }}</span> Click to retry
@@ -62,7 +63,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-label">Timestamp:</span>
-            <span class="meta-value">{{ response()?.metadata?.timestamp | date:'medium' }}</span>
+            <span class="meta-value">{{ response()?.metadata?.timestamp | date: 'medium' }}</span>
           </div>
         </div>
       }
@@ -70,5 +71,4 @@
       <ng-content></ng-content>
     </div>
   }
-
 </section>

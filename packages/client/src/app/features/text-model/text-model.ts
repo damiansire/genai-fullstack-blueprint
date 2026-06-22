@@ -103,24 +103,17 @@ export class TextModel implements OnDestroy {
   // Signal that <app-model-response> and <app-text-model-response> consume.
   // Priority: stream > httpResource (stream is always preferred for UX).
   readonly activeResponse = computed<ModelInvocationResponse | null>(() => {
-    return (
-      this.aiStream.streamAsResponse() ??
-      this.textModelResource.value() ??
-      null
-    );
+    return this.aiStream.streamAsResponse() ?? this.textModelResource.value() ?? null;
   });
 
   // True if either the stream or the httpResource is active
   readonly isLoading = computed(
-    () => this.aiStream.isStreaming() || this.textModelResource.isLoading()
+    () => this.aiStream.isStreaming() || this.textModelResource.isLoading(),
   );
 
   // Unified error from either source
   readonly activeError = computed<string | null>(
-    () =>
-      this.aiStream.streamError() ??
-      this.textModelResource.error()?.message ??
-      null
+    () => this.aiStream.streamError() ?? this.textModelResource.error()?.message ?? null,
   );
 
   // ─── @defer trigger: show the response panel when any data arrives ──────────
@@ -129,7 +122,7 @@ export class TextModel implements OnDestroy {
       this.isLoading() ||
       this.aiStream.hasStreamContent() ||
       this.textModelResource.hasValue() ||
-      !!this.activeError()
+      !!this.activeError(),
   );
 
   // ─── Actions ───────────────────────────────────────────────────────────────

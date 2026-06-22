@@ -6,7 +6,7 @@ export interface TokenStore {
    * @param windowMs - Time window in milliseconds
    */
   consume(identifier: string, tokens: number, windowMs: number): Promise<void>;
-  
+
   /**
    * Get the total tokens consumed by the identifier in the current window.
    * @param identifier - IP or API Key

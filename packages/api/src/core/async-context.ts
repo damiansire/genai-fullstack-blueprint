@@ -61,10 +61,7 @@ export function getTraceId(): string | undefined {
  * @param toolName  The tool being invoked in the child span.
  * @param parentCtx The context serialized from the parent thread (workerData).
  */
-export function createChildContext(
-  toolName: string,
-  parentCtx: RequestContext
-): RequestContext {
+export function createChildContext(toolName: string, parentCtx: RequestContext): RequestContext {
   return {
     traceId: parentCtx.traceId,
     spanId: randomUUID(),

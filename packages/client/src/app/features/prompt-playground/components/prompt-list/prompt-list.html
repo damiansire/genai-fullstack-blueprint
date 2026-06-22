@@ -2,23 +2,24 @@
   <div class="sidebar-header">
     <h3>Registered Prompts</h3>
   </div>
-  
+
   @if (isLoading()) {
     <div class="loading-state">Loading prompts...</div>
   } @else if (loadError()) {
-    <div class="error-banner" role="alert" style="color: var(--color-error); padding: 1rem;">
+    <div class="error-banner" role="alert" style="color: var(--color-error); padding: 1rem">
       <span class="icon">{{ icons.warning }}</span> Failed to load prompts.
     </div>
   } @else {
     <ul class="prompt-list">
       @for (prompt of prompts(); track prompt.name) {
         <li>
-          <button 
-            class="prompt-btn" 
+          <button
+            class="prompt-btn"
             [class.active]="selectedPromptName() === prompt.name"
-            (click)="onSelectPrompt.emit(prompt.name)">
+            (click)="onSelectPrompt.emit(prompt.name)"
+          >
             <span class="prompt-name">{{ prompt.name }}</span>
-            <span class="prompt-date">{{ prompt.updated_at | date:'shortDate' }}</span>
+            <span class="prompt-date">{{ prompt.updated_at | date: 'shortDate' }}</span>
           </button>
         </li>
       } @empty {

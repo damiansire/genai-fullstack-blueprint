@@ -1,10 +1,4 @@
-import {
-  Component,
-  signal,
-  computed,
-  inject,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { form, required, minLength, submit } from '@angular/forms/signals';
 import { PromptListComponent } from './components/prompt-list/prompt-list';
@@ -32,17 +26,17 @@ export class PromptPlayground {
   // ─── Selection & Editing ───────────────────────────────────────────────────
 
   selectedPromptName = signal<string | null>(null);
-  
+
   draftModel = signal({
     content: '',
-    description: ''
+    description: '',
   });
 
   promptForm = form(this.draftModel, (s) => {
     required(s.content, { message: 'Prompt content is required' });
     minLength(s.content, 5, { message: 'Prompt content must be at least 5 characters' });
   });
-  
+
   // UI States
   isSaving = signal(false);
   saveSuccess = signal(false);
@@ -51,16 +45,16 @@ export class PromptPlayground {
   selectedPrompt = computed(() => {
     const name = this.selectedPromptName();
     if (!name) return null;
-    return this.prompts().find(p => p.name === name) || null;
+    return this.prompts().find((p) => p.name === name) || null;
   });
 
   selectPrompt(name: string): void {
     this.selectedPromptName.set(name);
-    const prompt = this.prompts().find(p => p.name === name);
+    const prompt = this.prompts().find((p) => p.name === name);
     if (prompt) {
       this.draftModel.set({
         content: prompt.content,
-        description: prompt.description || ''
+        description: prompt.description || '',
       });
     }
     this.saveSuccess.set(false);

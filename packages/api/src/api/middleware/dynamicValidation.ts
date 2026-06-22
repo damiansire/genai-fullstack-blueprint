@@ -34,7 +34,7 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
     allErrors: true,
     verbose: true,
     strict: false,
-    removeAdditional: false
+    removeAdditional: false,
   });
 
   // Add common JSON Schema formats (email, date, uri, etc.)
@@ -48,7 +48,7 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
     compile: (_schema: any) => (_data: any) => {
       // This is handled by the custom error formatting below
       return true;
-    }
+    },
   });
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -80,14 +80,14 @@ export function createDynamicValidationMiddleware(schemaRegistry: SchemaRegistry
             timestamp: new Date().toISOString(),
             path: req.path,
             method: req.method,
-            details: validationResult.errors
-          }
+            details: validationResult.errors,
+          },
         };
 
         logger.warn(`❌ Validation failed for model ${modelId}`, {
           errors: validationResult.errors,
           body: req.body,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
         res.status(400).json(errorResponse);
@@ -120,26 +120,27 @@ function validateRequestBody(body: any, schema: any, ajv: Ajv): ValidationResult
   if (isValid) {
     return {
       isValid: true,
-      errors: []
+      errors: [],
     };
   }
 
   // Format validation errors for better user experience
-  const errors: ValidationErrorDetail[] = validate.errors?.map(error => {
-    const field = error.instancePath ? error.instancePath.substring(1) : error.schemaPath;
-    
-    const allowedValues = getAllowedValues(error);
-    return {
-      field: field || 'root',
-      message: formatErrorMessage(error),
-      value: error.data,
-      ...(allowedValues !== undefined ? { allowedValues } : {})
-    };
-  }) || [];
+  const errors: ValidationErrorDetail[] =
+    validate.errors?.map((error) => {
+      const field = error.instancePath ? error.instancePath.substring(1) : error.schemaPath;
+
+      const allowedValues = getAllowedValues(error);
+      return {
+        field: field || 'root',
+        message: formatErrorMessage(error),
+        value: error.data,
+        ...(allowedValues !== undefined ? { allowedValues } : {}),
+      };
+    }) || [];
 
   return {
     isValid: false,
-    errors
+    errors,
   };
 }
 
@@ -154,39 +155,41 @@ function formatErrorMessage(error: any): string {
   switch (keyword) {
     case 'required':
       return `Field '${params.missingProperty}' is required`;
-    
+
     case 'type':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be of type ${params.type}`;
-    
+
     case 'format':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be a valid ${params.format}`;
-    
+
     case 'minimum':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be at least ${params.limit}`;
-    
+
     case 'maximum':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be at most ${params.limit}`;
-    
+
     case 'minLength':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be at least ${params.limit} characters long`;
-    
+
     case 'maxLength':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be at most ${params.limit} characters long`;
-    
+
     case 'pattern':
       return `Field '${error.instancePath?.substring(1) || 'root'}' does not match the required pattern`;
-    
+
     case 'enum':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must be one of: ${params.allowedValues.join(', ')}`;
-    
+
     case 'additionalProperties':
       return `Field '${error.instancePath?.substring(1) || 'root'}' contains additional properties not allowed in schema`;
-    
+
     case 'uniqueItems':
       return `Field '${error.instancePath?.substring(1) || 'root'}' must contain unique items`;
-    
+
     default:
-      return message || `Validation failed for field '${error.instancePath?.substring(1) || 'root'}'`;
+      return (
+        message || `Validation failed for field '${error.instancePath?.substring(1) || 'root'}'`
+      );
   }
 }
 

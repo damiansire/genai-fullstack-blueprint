@@ -9,4 +9,3 @@ export type ApiResponse<T = any, M = Record<string, any>> = {
   metadata?: M;
   error?: string;
 };
-

@@ -28,7 +28,11 @@ export class EmbeddingService {
       });
       logger.info('Local embedding model initialized successfully.');
     } catch (error) {
-      logger.error('Failed to initialize local embedding model', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to initialize local embedding model',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
@@ -37,7 +41,7 @@ export class EmbeddingService {
     if (!this.extractor) {
       await this.initialize();
     }
-    
+
     // Generate embeddings
     const output = await this.extractor(text, { pooling: 'mean', normalize: true });
     return output.data as Float32Array;

@@ -22,12 +22,12 @@
   flex-direction: column;
   gap: 0;
   overflow: hidden;
-  border-right: 1px solid rgba(255,255,255,0.08);
-  background: rgba(0,0,0,0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
 
   &__header {
     padding: 1.25rem 1rem 0.75rem;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   }
 
   &__title {
@@ -43,7 +43,7 @@
   &__subtitle {
     margin: 0;
     font-size: 0.75rem;
-    color: var(--color-text-secondary, rgba(241,245,249,0.45));
+    color: var(--color-text-secondary, rgba(241, 245, 249, 0.45));
   }
 }
 
@@ -54,9 +54,12 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 
-  &__icon { font-size: 0.875rem; opacity: 0.5; }
+  &__icon {
+    font-size: 0.875rem;
+    opacity: 0.5;
+  }
 
   &__input {
     flex: 1;
@@ -65,7 +68,9 @@
     outline: none;
     font-size: 0.8125rem;
     color: var(--color-text, #f1f5f9);
-    &::placeholder { color: rgba(241,245,249,0.3); }
+    &::placeholder {
+      color: rgba(241, 245, 249, 0.3);
+    }
   }
 }
 
@@ -76,9 +81,16 @@
   overflow-y: auto;
   padding: 0.5rem 0;
 
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+  }
 }
 
 .te-category {
@@ -91,7 +103,7 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-text-secondary, rgba(241,245,249,0.4));
+    color: var(--color-text-secondary, rgba(241, 245, 249, 0.4));
   }
 }
 
@@ -106,15 +118,17 @@
   border-left: 2px solid transparent;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 
   &:hover {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   &--active {
-    background: rgba(99,102,241,0.1) !important;
-    border-left-color: rgb(99,102,241);
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-left-color: rgb(99, 102, 241);
   }
 
   &__name {
@@ -128,7 +142,7 @@
 
   &__desc {
     font-size: 0.725rem;
-    color: var(--color-text-secondary, rgba(241,245,249,0.4));
+    color: var(--color-text-secondary, rgba(241, 245, 249, 0.4));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -147,7 +161,7 @@
 .te-skeleton-item {
   height: 48px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   animation: te-pulse 1.5s ease-in-out infinite;
 }
 
@@ -158,9 +172,11 @@
   gap: 0.5rem;
   padding: 2rem 1rem;
   font-size: 0.8125rem;
-  color: var(--color-text-secondary, rgba(241,245,249,0.4));
+  color: var(--color-text-secondary, rgba(241, 245, 249, 0.4));
   text-align: center;
-  p { margin: 0; }
+  p {
+    margin: 0;
+  }
 }
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
@@ -172,8 +188,13 @@
   flex-direction: column;
   gap: 1.5rem;
 
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
 }
 
 // ─── Empty State (no tool selected) ──────────────────────────────────────────
@@ -187,7 +208,7 @@
   height: 100%;
   min-height: 300px;
   text-align: center;
-  color: var(--color-text-secondary, rgba(241,245,249,0.4));
+  color: var(--color-text-secondary, rgba(241, 245, 249, 0.4));
 
   &__icon {
     font-size: 3rem;
@@ -223,15 +244,15 @@
 .te-form-placeholder {
   height: 320px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.03);
-  border: 1px dashed rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 // ─── Result Panel ─────────────────────────────────────────────────────────────
 
 .te-result {
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   animation: te-slideIn 0.18s ease-out;
 
@@ -240,8 +261,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: rgba(0,0,0,0.15);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   }
 
   &__title {
@@ -264,7 +285,7 @@
     font-size: 0.8rem;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     color: rgb(134, 239, 172);
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     white-space: pre-wrap;
     word-break: break-all;
     overflow-x: auto;
@@ -304,7 +325,7 @@
 
   .te-sidebar {
     border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     max-height: 240px;
   }
 }
@@ -312,11 +333,22 @@
 // ─── Keyframes ────────────────────────────────────────────────────────────────
 
 @keyframes te-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 @keyframes te-slideIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

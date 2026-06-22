@@ -29,10 +29,10 @@ export type ThreatSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
 
 export interface ThreatIndicator {
   category: string;
-  technique: string;   // MITRE ATT&CK technique ID
+  technique: string; // MITRE ATT&CK technique ID
   severity: ThreatSeverity;
-  evidence: string[];  // matching log lines
-  confidence: number;  // 0.0 – 1.0
+  evidence: string[]; // matching log lines
+  confidence: number; // 0.0 – 1.0
   recommendation: string;
 }
 
@@ -42,7 +42,7 @@ export interface SecurityAnalysisReport {
   logLines: number;
   processingMs: number;
   overallSeverity: ThreatSeverity;
-  riskScore: number;       // 0-100
+  riskScore: number; // 0-100
   threats: ThreatIndicator[];
   summary: string;
   mitigations: string[];
@@ -80,7 +80,8 @@ const THREAT_PATTERNS: Array<{
     pattern: /(union\s+select|drop\s+table|exec\s*\(|xp_cmdshell|1=1|or\s+'1'='1')/gi,
     severity: 'CRITICAL',
     weight: 25,
-    recommendation: 'Immediately review WAF rules, audit all database queries, and enable parameterized queries.',
+    recommendation:
+      'Immediately review WAF rules, audit all database queries, and enable parameterized queries.',
   },
   {
     category: 'XSS Attempt',
@@ -88,7 +89,8 @@ const THREAT_PATTERNS: Array<{
     pattern: /(<script>|javascript:|on\w+\s*=|eval\s*\(|document\.cookie)/gi,
     severity: 'HIGH',
     weight: 18,
-    recommendation: 'Enable strict CSP headers, sanitize all user inputs, and audit client-side code.',
+    recommendation:
+      'Enable strict CSP headers, sanitize all user inputs, and audit client-side code.',
   },
   {
     category: 'Port Scanning',
@@ -152,9 +154,9 @@ const SEVERITY_RANK: Record<ThreatSeverity, number> = {
 
 function maxSeverity(threats: ThreatIndicator[]): ThreatSeverity {
   if (threats.length === 0) return 'INFO';
-  return threats.reduce((max, t) =>
-    SEVERITY_RANK[t.severity] > SEVERITY_RANK[max] ? t.severity : max,
-    'INFO' as ThreatSeverity
+  return threats.reduce(
+    (max, t) => (SEVERITY_RANK[t.severity] > SEVERITY_RANK[max] ? t.severity : max),
+    'INFO' as ThreatSeverity,
   );
 }
 
@@ -171,7 +173,7 @@ export class SecurityAnalysisUseCase extends UseCase<string, SecurityAnalysisRep
   protected async executeImpl(logs: string): Promise<SecurityAnalysisReport> {
     const start = performance.now();
     const traceId = getContext()?.traceId;
-    const logLines = logs.split('\n').filter(l => l.trim().length > 0);
+    const logLines = logs.split('\n').filter((l) => l.trim().length > 0);
 
     logger.info('[SecurityAnalysis] Analyzing logs', { lines: logLines.length, traceId });
 
@@ -206,20 +208,21 @@ export class SecurityAnalysisUseCase extends UseCase<string, SecurityAnalysisRep
     const riskScore = Math.min(
       100,
       threats.reduce((sum, t) => {
-        const pattern = THREAT_PATTERNS.find(p => p.category === t.category);
+        const pattern = THREAT_PATTERNS.find((p) => p.category === t.category);
         return sum + (pattern?.weight ?? 5) * t.confidence;
-      }, 0)
+      }, 0),
     );
 
     // Phase 4: Report assembly
     const overallSeverity = maxSeverity(threats);
-    const uniqueMitigations = [...new Set(threats.map(t => t.recommendation))];
+    const uniqueMitigations = [...new Set(threats.map((t) => t.recommendation))];
 
-    const summary = threats.length === 0
-      ? 'No significant threats detected in the provided logs.'
-      : `Detected ${threats.length} threat indicator(s) with ${overallSeverity} overall severity. ` +
-        `Risk score: ${Math.round(riskScore)}/100. ` +
-        `Primary concern: ${threats[0]!.category} (${threats[0]!.technique}).`;
+    const summary =
+      threats.length === 0
+        ? 'No significant threats detected in the provided logs.'
+        : `Detected ${threats.length} threat indicator(s) with ${overallSeverity} overall severity. ` +
+          `Risk score: ${Math.round(riskScore)}/100. ` +
+          `Primary concern: ${threats[0]!.category} (${threats[0]!.technique}).`;
 
     const report: SecurityAnalysisReport = {
       analysisId: createHash('sha256').update(logs).digest('hex').slice(0, 16),

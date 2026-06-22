@@ -89,11 +89,7 @@ export class DynamicToolFormComponent {
   readonly dynamicForm = computed<DynamicToolForm | null>(() => {
     const toolData = this.toolResource.value();
     if (!toolData) return null;
-    return this.toolFormService.generateForm(
-      toolData.name,
-      toolData.description,
-      toolData.schema
-    );
+    return this.toolFormService.generateForm(toolData.name, toolData.description, toolData.schema);
   });
 
   // ─── View state ───────────────────────────────────────────────────────────

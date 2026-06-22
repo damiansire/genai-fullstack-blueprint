@@ -131,7 +131,9 @@ export class WorkerPool {
           this.taskMap.delete(task.id);
           this.workerTasks.delete(worker);
           task.asyncResource.runInAsyncScope(() =>
-            task.reject(new Error(`Worker task ${task.id} timed out after ${this.taskTimeoutMs}ms`)),
+            task.reject(
+              new Error(`Worker task ${task.id} timed out after ${this.taskTimeoutMs}ms`),
+            ),
           );
           // The worker may be wedged; recycle it.
           worker.terminate();
@@ -215,15 +217,15 @@ export async function shutdownWorkerPools(): Promise<void> {
 
 export class CPUWorkerService {
   public static runCpuIntensiveTask(payload: any, iterations?: number): Promise<any> {
-     return getCpuPool().runTask({ payload, iterations });
+    return getCpuPool().runTask({ payload, iterations });
   }
 
   public static executeTool(toolName: string, args: any, agentContext?: object): Promise<any> {
-     return getToolPool().runTask({ toolName, args, agentContext });
+    return getToolPool().runTask({ toolName, args, agentContext });
   }
 
   public static parseJsonZeroCopy(buffer: ArrayBuffer, schemaName: string = 'Any'): Promise<any> {
-     return getJsonPool().runTask({ buffer, schemaName }, [buffer]);
+    return getJsonPool().runTask({ buffer, schemaName }, [buffer]);
   }
 
   /**
@@ -232,6 +234,6 @@ export class CPUWorkerService {
    * seam: the heavy scan never blocks the Event Loop.
    */
   public static classifySafety(text: string): Promise<any> {
-     return getSafetyPool().runTask({ text });
+    return getSafetyPool().runTask({ text });
   }
 }

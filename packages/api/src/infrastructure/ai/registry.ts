@@ -23,7 +23,9 @@ export class SchemaRegistry {
 
     // Basic validation to ensure it's a valid JSON Schema
     if (!schema || typeof schema !== 'object') {
-      throw new Error(`Invalid schema provided for model ID '${modelId}'. Schema must be a valid JSON Schema object.`);
+      throw new Error(
+        `Invalid schema provided for model ID '${modelId}'. Schema must be a valid JSON Schema object.`,
+      );
     }
 
     this.schemaMap.set(modelId, schema);
@@ -37,7 +39,7 @@ export class SchemaRegistry {
    */
   getSchema(modelId: string): any {
     const schema = this.schemaMap.get(modelId);
-    
+
     if (!schema) {
       throw new Error(`Schema for model ID '${modelId}' is not registered`);
     }

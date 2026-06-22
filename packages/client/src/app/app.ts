@@ -7,7 +7,6 @@ import { Navigation } from './shared/components/navigation/navigation';
   imports: [RouterOutlet, Navigation],
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {
-}
+export class App {}

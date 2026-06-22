@@ -13,28 +13,31 @@ import { ModelResponse } from '../../shared/components/model-response/model-resp
   imports: [FileUpload, ImageModelForm, ImageModelResponse, ModelResponse],
   templateUrl: './image-model.html',
   styleUrl: './image-model.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageModel {
   private readonly apiConfig = inject(API_CONFIG);
 
   icons = {
-    search: '🔍'
+    search: '🔍',
   };
 
   selectedFile = signal<File | null>(null);
   fileError = signal<string | null>(null);
 
-  requestParams = signal<{
-    file: File;
-    params: {
-      language: string;
-      maxResults: number;
-      confidenceThreshold: number;
-      includeBoundingBoxes: boolean;
-      outputFormat: string;
-    };
-  } | undefined>(undefined);
+  requestParams = signal<
+    | {
+        file: File;
+        params: {
+          language: string;
+          maxResults: number;
+          confidenceThreshold: number;
+          includeBoundingBoxes: boolean;
+          outputFormat: string;
+        };
+      }
+    | undefined
+  >(undefined);
 
   imageModelResource = httpResource<ModelInvocationResponse>(() => {
     const params = this.requestParams();
@@ -52,7 +55,7 @@ export class ImageModel {
       url: `${this.apiConfig.baseUrl}/models/google-vision-ocr/invoke`,
       method: 'POST',
       body: formData,
-      headers: {}
+      headers: {},
     };
   });
 
@@ -61,7 +64,7 @@ export class ImageModel {
     maxResults: 10,
     confidenceThreshold: 0.8,
     includeBoundingBoxes: true,
-    outputFormat: 'structured'
+    outputFormat: 'structured',
   });
 
   imageForm = form(this.imageModel, (s) => {
@@ -99,8 +102,8 @@ export class ImageModel {
           maxResults: model.maxResults,
           confidenceThreshold: model.confidenceThreshold,
           includeBoundingBoxes: model.includeBoundingBoxes,
-          outputFormat: model.outputFormat
-        }
+          outputFormat: model.outputFormat,
+        },
       });
     });
   }
@@ -111,7 +114,7 @@ export class ImageModel {
       maxResults: 10,
       confidenceThreshold: 0.8,
       includeBoundingBoxes: true,
-      outputFormat: 'structured'
+      outputFormat: 'structured',
     });
     this.selectedFile.set(null);
     this.fileError.set(null);

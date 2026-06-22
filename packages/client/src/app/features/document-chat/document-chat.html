@@ -1,5 +1,5 @@
 <div class="chat-layout">
-  <app-chat-sidebar 
+  <app-chat-sidebar
     [activeSessionId]="activeSessionId()"
     (onSelectSession)="loadSession($event)"
     (onNewChat)="resetForm()"
@@ -7,7 +7,9 @@
 
   <div class="rag-container">
     <header class="feature-header">
-      <h1><span aria-hidden="true">{{ icons.doc }}</span> Chat with Documents (RAG)</h1>
+      <h1>
+        <span aria-hidden="true">{{ icons.doc }}</span> Chat with Documents (RAG)
+      </h1>
       <p>Upload enterprise documents and chat with verified internal context.</p>
     </header>
 
@@ -16,25 +18,27 @@
       <div class="document-panel">
         <div class="panel-header">
           <h3>Source Document</h3>
-          
+
           <div class="upload-controls">
-            <input 
-              type="file" 
-              id="docUpload" 
-              class="hidden-input" 
+            <input
+              type="file"
+              id="docUpload"
+              class="hidden-input"
               accept=".txt,.pdf,.md"
-              (change)="onFileSelected($event)">
-            
+              (change)="onFileSelected($event)"
+            />
+
             <label for="docUpload" class="upload-btn outline">
-              <span aria-hidden="true">{{ icons.upload }}</span> 
+              <span aria-hidden="true">{{ icons.upload }}</span>
               {{ selectedDocument() ? selectedDocument()!.name : 'Select File' }}
             </label>
 
             @if (selectedDocument()) {
-              <button 
-                class="upload-btn primary" 
+              <button
+                class="upload-btn primary"
                 [disabled]="isUploading()"
-                (click)="uploadDocument()">
+                (click)="uploadDocument()"
+              >
                 {{ isUploading() ? 'Ingesting vectors...' : 'Process (RAG)' }}
               </button>
             }
@@ -50,7 +54,7 @@
           } @else {
             <div class="simulated-pdf">
               <p>{{ documentContent() }}</p>
-              
+
               <div class="highlight-overlay">
                 <!-- In a real implementation, highlights match the citations from the LLM -->
                 <mark class="citation-highlight">multi-tenant asegura que los datos</mark>
@@ -70,7 +74,7 @@
               <small>Example: "How does multi-tenant architecture protect data?"</small>
             </div>
           }
-          
+
           <app-model-response
             [loading]="isLoading()"
             [error]="activeError()"
@@ -98,13 +102,15 @@
             (ngModelChange)="prompt.set($event)"
             aria-label="Prompt message"
             placeholder="Ask anything about your documents..."
-            (keydown.enter)="onSubmit()">
-          
-          <button 
-            class="send-btn" 
+            (keydown.enter)="onSubmit()"
+          />
+
+          <button
+            class="send-btn"
             aria-label="Send message"
             [disabled]="isLoading() || !prompt().trim()"
-            (click)="onSubmit()">
+            (click)="onSubmit()"
+          >
             <span aria-hidden="true">{{ icons.send }}</span>
           </button>
         </div>

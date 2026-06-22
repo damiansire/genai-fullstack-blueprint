@@ -7,7 +7,7 @@ export const promptSchema = z.object({
   name: z.string(),
   content: z.string(),
   description: z.string().nullable(),
-  updated_at: z.string()
+  updated_at: z.string(),
 });
 
 export const promptsArraySchema = z.array(promptSchema);
@@ -19,14 +19,14 @@ export class PromptService {
 
   private readonly _promptsResource = httpResource<unknown>(() => ({
     url: `${this.apiConfig.baseUrl}/admin/prompts`,
-    method: 'GET'
+    method: 'GET',
   }));
 
   // AI-First Rule 3: Strict Validation at the boundary using Zod
   readonly prompts = computed<Prompt[]>(() => {
     const rawData = this._promptsResource.value();
     if (!rawData) return [];
-    
+
     const parsed = promptsArraySchema.safeParse(rawData);
     if (!parsed.success) {
       console.error('API Error: Prompts payload schema mismatch', parsed.error);

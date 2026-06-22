@@ -56,7 +56,7 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
     try {
       const tenantId = tenantOf(req);
       const stmt = (dbService as any).proxiedDb.prepare(
-        'SELECT * FROM sessions WHERE tenant_id = ? ORDER BY updated_at DESC'
+        'SELECT * FROM sessions WHERE tenant_id = ? ORDER BY updated_at DESC',
       );
       const sessions = stmt.all(tenantId);
       res.json(sessions);
@@ -65,7 +65,11 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
         res.status(err.statusCode).json({ error: err.message });
         return;
       }
-      logger.error('Failed to fetch sessions', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to fetch sessions',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to fetch sessions' });
     }
   });
@@ -85,7 +89,7 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
       const now = new Date().toISOString();
 
       const stmt = (dbService as any).proxiedDb.prepare(
-        'INSERT INTO sessions (id, tenant_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO sessions (id, tenant_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       );
       stmt.run(id, tenantId, title, now, now);
 
@@ -95,7 +99,11 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
         res.status(err.statusCode).json({ error: err.message });
         return;
       }
-      logger.error('Failed to create session', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to create session',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to create session' });
     }
   });
@@ -108,7 +116,7 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
       assertSessionOwnership(id!, tenantId);
 
       const stmt = (dbService as any).proxiedDb.prepare(
-        'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC'
+        'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
       );
       const messages = stmt.all(id);
       res.json(messages);
@@ -117,7 +125,11 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
         res.status(err.statusCode).json({ error: err.message });
         return;
       }
-      logger.error('Failed to fetch messages', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to fetch messages',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to fetch messages' });
     }
   });
@@ -139,12 +151,12 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
       const now = new Date().toISOString();
 
       const insertMsg = (dbService as any).proxiedDb.prepare(
-        'INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)',
       );
       insertMsg.run(msgId, id, role, content, now);
 
       const updateSession = (dbService as any).proxiedDb.prepare(
-        'UPDATE sessions SET updated_at = ? WHERE id = ? AND tenant_id = ?'
+        'UPDATE sessions SET updated_at = ? WHERE id = ? AND tenant_id = ?',
       );
       updateSession.run(now, id, tenantId);
 
@@ -154,7 +166,11 @@ export const createSessionRoutes = (postAuthChain: RequestHandler[] = []): Route
         res.status(err.statusCode).json({ error: err.message });
         return;
       }
-      logger.error('Failed to add message', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to add message',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to add message' });
     }
   });

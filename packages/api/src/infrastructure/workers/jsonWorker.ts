@@ -10,11 +10,11 @@ if (!isMainThread && parentPort) {
     const { id, buffer, schemaName } = message;
     try {
       const start = performance.now();
-      
+
       // Zero-copy decoding
       const textDecoder = new TextDecoder('utf-8');
       const jsonString = textDecoder.decode(buffer as ArrayBuffer);
-      
+
       // Parse JSON
       const parsedData = JSON.parse(jsonString);
 
@@ -37,13 +37,13 @@ if (!isMainThread && parentPort) {
         id,
         success: true,
         data: validatedData,
-        processingTimeMs: Math.round(end - start)
+        processingTimeMs: Math.round(end - start),
       });
     } catch (error) {
       parentPort!.postMessage({
         id,
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   });

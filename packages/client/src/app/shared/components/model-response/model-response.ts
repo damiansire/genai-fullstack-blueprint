@@ -1,10 +1,4 @@
-import {
-  Component,
-  input,
-  output,
-  ChangeDetectionStrategy,
-  computed,
-} from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ModelInvocationResponse } from '../../../core/services/api';
 

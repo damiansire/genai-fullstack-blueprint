@@ -7,13 +7,17 @@
         [formField]="form().prompt"
         class="form-control"
         [class.error]="form().prompt().touched() && form().prompt().errors().length"
-        [attr.aria-invalid]="form().prompt().touched() && form().prompt().errors().length ? true : null"
+        [attr.aria-invalid]="
+          form().prompt().touched() && form().prompt().errors().length ? true : null
+        "
         aria-describedby="prompt-error"
         placeholder="Enter your prompt here..."
         rows="4"
       ></textarea>
       @if (form().prompt().touched() && form().prompt().errors().length) {
-        <div id="prompt-error" class="error-message" role="alert">{{ form().prompt().errors()[0].message }}</div>
+        <div id="prompt-error" class="error-message" role="alert">
+          {{ form().prompt().errors()[0].message }}
+        </div>
       }
     </div>
 
@@ -26,11 +30,15 @@
           [formField]="form().maxTokens"
           class="form-control"
           [class.error]="form().maxTokens().touched() && form().maxTokens().errors().length"
-          [attr.aria-invalid]="form().maxTokens().touched() && form().maxTokens().errors().length ? true : null"
+          [attr.aria-invalid]="
+            form().maxTokens().touched() && form().maxTokens().errors().length ? true : null
+          "
           aria-describedby="maxTokens-error"
         />
         @if (form().maxTokens().touched() && form().maxTokens().errors().length) {
-          <div id="maxTokens-error" class="error-message" role="alert">{{ form().maxTokens().errors()[0].message }}</div>
+          <div id="maxTokens-error" class="error-message" role="alert">
+            {{ form().maxTokens().errors()[0].message }}
+          </div>
         }
       </div>
 
@@ -42,12 +50,16 @@
           [formField]="form().temperature"
           class="form-control"
           [class.error]="form().temperature().touched() && form().temperature().errors().length"
-          [attr.aria-invalid]="form().temperature().touched() && form().temperature().errors().length ? true : null"
+          [attr.aria-invalid]="
+            form().temperature().touched() && form().temperature().errors().length ? true : null
+          "
           aria-describedby="temperature-error"
           step="0.1"
         />
         @if (form().temperature().touched() && form().temperature().errors().length) {
-          <div id="temperature-error" class="error-message" role="alert">{{ form().temperature().errors()[0].message }}</div>
+          <div id="temperature-error" class="error-message" role="alert">
+            {{ form().temperature().errors()[0].message }}
+          </div>
         }
       </div>
     </div>
@@ -61,12 +73,16 @@
           [formField]="form().topP"
           class="form-control"
           [class.error]="form().topP().touched() && form().topP().errors().length"
-          [attr.aria-invalid]="form().topP().touched() && form().topP().errors().length ? true : null"
+          [attr.aria-invalid]="
+            form().topP().touched() && form().topP().errors().length ? true : null
+          "
           aria-describedby="topP-error"
           step="0.1"
         />
         @if (form().topP().touched() && form().topP().errors().length) {
-          <div id="topP-error" class="error-message" role="alert">{{ form().topP().errors()[0].message }}</div>
+          <div id="topP-error" class="error-message" role="alert">
+            {{ form().topP().errors()[0].message }}
+          </div>
         }
       </div>
 
@@ -78,21 +94,21 @@
           [formField]="form().topK"
           class="form-control"
           [class.error]="form().topK().touched() && form().topK().errors().length"
-          [attr.aria-invalid]="form().topK().touched() && form().topK().errors().length ? true : null"
+          [attr.aria-invalid]="
+            form().topK().touched() && form().topK().errors().length ? true : null
+          "
           aria-describedby="topK-error"
         />
         @if (form().topK().touched() && form().topK().errors().length) {
-          <div id="topK-error" class="error-message" role="alert">{{ form().topK().errors()[0].message }}</div>
+          <div id="topK-error" class="error-message" role="alert">
+            {{ form().topK().errors()[0].message }}
+          </div>
         }
       </div>
     </div>
 
     <div class="form-actions">
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [disabled]="loading() || form()().invalid()"
-      >
+      <button type="submit" class="btn btn-primary" [disabled]="loading() || form()().invalid()">
         @if (loading()) {
           <span class="spinner" role="status" aria-label="Loading"></span>
           Processing...
@@ -101,12 +117,7 @@
         }
       </button>
 
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="onReset()"
-        [disabled]="loading()"
-      >
+      <button type="button" class="btn btn-secondary" (click)="onReset()" [disabled]="loading()">
         Reset
       </button>
     </div>

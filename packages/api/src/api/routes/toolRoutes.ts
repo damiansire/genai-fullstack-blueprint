@@ -33,75 +33,66 @@ export function createToolRoutes(postAuthChain: RequestHandler[] = []): Router {
   // args: { query: "..." } }. The agentic loop in invoke-model.usecase.ts
   // calls this endpoint and injects the returned schemas at the END of the
   // context window so the static System Prompt prefix stays cache-valid.
-  router.post(
-    '/search',
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const { query, limit } = req.body as { query?: string; limit?: number };
+  router.post('/search', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { query, limit } = req.body as { query?: string; limit?: number };
 
-        if (!query) {
-          throw ApiError.badRequest('Body must include a "query" string');
-        }
-
-        const results = await toolSearchUseCase.execute({
-          query,
-          ...(limit !== undefined && { limit }),
-        });
-
-        // Return schemas formatted for direct injection into LLM context
-        res.json({
-          count: results.length,
-          system_hint:
-            'Inject these schemas at the end of the context window to preserve cache preamble.',
-          tools: results,
-        });
-      } catch (err) {
-        next(err);
+      if (!query) {
+        throw ApiError.badRequest('Body must include a "query" string');
       }
+
+      const results = await toolSearchUseCase.execute({
+        query,
+        ...(limit !== undefined && { limit }),
+      });
+
+      // Return schemas formatted for direct injection into LLM context
+      res.json({
+        count: results.length,
+        system_hint:
+          'Inject these schemas at the end of the context window to preserve cache preamble.',
+        tools: results,
+      });
+    } catch (err) {
+      next(err);
     }
-  );
+  });
 
   // ─── GET /api/tools/:name ────────────────────────────────────────────────────
   // Exact-match retrieval used during recursive agentic loops when the model
   // already knows the tool name and only needs the schema.
-  router.get(
-    '/:name',
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const { name } = req.params as { name: string };
-        const tool = await toolGetByNameUseCase.execute({ name });
-        res.json(tool);
-      } catch (err) {
-        next(err);
-      }
+  router.get('/:name', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { name } = req.params as { name: string };
+      const tool = await toolGetByNameUseCase.execute({ name });
+      res.json(tool);
+    } catch (err) {
+      next(err);
     }
-  );
+  });
 
   // ─── POST /api/tools/register ────────────────────────────────────────────────
   // Allows registering or updating tool definitions at runtime without a
   // server restart. Useful for plugin-based tool discovery.
-  router.post(
-    '/register',
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const dto = req.body as {
-          name?: string;
-          description?: string;
-          schema?: object;
-          category?: string;
-        };
-        const result = await registerToolUseCase.execute({
-          name: dto.name ?? '',
-          description: dto.description ?? '',
-          schema: dto.schema ?? {},
-          ...(dto.category !== undefined && { category: dto.category }),
-        });
-        res.status(201).json(result);
-      } catch (err) {
-        next(err);
-      }
+  router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const dto = req.body as {
+        name?: string;
+        description?: string;
+        schema?: object;
+        category?: string;
+      };
+      const result = await registerToolUseCase.execute({
+        name: dto.name ?? '',
+        description: dto.description ?? '',
+        schema: dto.schema ?? {},
+        ...(dto.category !== undefined && { category: dto.category }),
+      });
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
     }
-  );
+  });
 
   return router;
 }

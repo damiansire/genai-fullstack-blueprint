@@ -26,7 +26,10 @@ const geminiResponseSchema = z
       .array(
         z
           .object({
-            content: z.object({ parts: z.array(geminiPartSchema).optional() }).passthrough().optional(),
+            content: z
+              .object({ parts: z.array(geminiPartSchema).optional() })
+              .passthrough()
+              .optional(),
           })
           .passthrough(),
       )
@@ -75,22 +78,22 @@ export const configSchema = {
       type: 'string',
       description: 'Descriptive text prompt for image generation or editing',
       minLength: 1,
-      maxLength: 8192
+      maxLength: 8192,
     },
     aspectRatio: {
       type: 'string',
       description: 'Aspect ratio for generated image',
       enum: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
-      default: '1:1'
+      default: '1:1',
     },
     responseModalities: {
       type: 'array',
       description: 'Output modalities (Image, Text, or both)',
       items: {
         type: 'string',
-        enum: ['Image', 'Text']
+        enum: ['Image', 'Text'],
       },
-      default: ['Image', 'Text']
+      default: ['Image', 'Text'],
     },
     inputImages: {
       type: 'array',
@@ -99,28 +102,34 @@ export const configSchema = {
         type: 'object',
         properties: {
           data: { type: 'string', description: 'Base64 encoded image data' },
-          mimeType: { type: 'string', description: 'Image MIME type' }
+          mimeType: { type: 'string', description: 'Image MIME type' },
         },
-        required: ['data', 'mimeType']
-      }
-    }
+        required: ['data', 'mimeType'],
+      },
+    },
   },
-  required: ['prompt']
+  required: ['prompt'],
 };
 
 /**
  * Gemini 2.5 Flash Image Generation Strategy (Nano Banana)
  * Supports text-to-image and image editing capabilities
  */
-export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelOutput<GeminiImageGenOutput>> {
+export class ModelStrategy implements IModelStrategy<
+  GeminiImageGenInput,
+  ModelOutput<GeminiImageGenOutput>
+> {
   readonly modelName = 'gemini-2.5-flash-image';
-  readonly description = 'Gemini 2.5 Flash Image Generation - Text-to-Image, Image Editing, Style Transfer';
-  
+  readonly description =
+    'Gemini 2.5 Flash Image Generation - Text-to-Image, Image Editing, Style Transfer';
+
   constructor() {
     const apiKey = process.env['GEMINI_API_KEY'];
-    
+
     if (!apiKey) {
-      logger.warn('GEMINI_API_KEY not found in environment variables. Image generation will fail. Please set GEMINI_API_KEY in your .env file');
+      logger.warn(
+        'GEMINI_API_KEY not found in environment variables. Image generation will fail. Please set GEMINI_API_KEY in your .env file',
+      );
     }
   }
 
@@ -129,7 +138,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
    */
   async process(
     params: GeminiImageGenInput,
-    _context: ProcessContext
+    _context: ProcessContext,
   ): Promise<ModelOutput<GeminiImageGenOutput>> {
     const startTime = performance.now();
 
@@ -137,7 +146,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
       logger.info('Processing Gemini Image Generation request', {
         prompt: `${params.prompt.substring(0, 100)}...`,
         aspectRatio: params.aspectRatio || '1:1',
-        inputImages: params.inputImages?.length || 0
+        inputImages: params.inputImages?.length || 0,
       });
 
       // Check for API key
@@ -151,8 +160,8 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
       // Configure the request
       const config: any = {
         imageConfig: {
-          aspectRatio: params.aspectRatio || '1:1'
-        }
+          aspectRatio: params.aspectRatio || '1:1',
+        },
       };
 
       if (params.responseModalities && params.responseModalities.length > 0) {
@@ -178,8 +187,8 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts }],
-            generationConfig: config
-          })
+            generationConfig: config,
+          }),
         },
         geminiResponseSchema,
       );
@@ -204,8 +213,8 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
           aspectRatio: params.aspectRatio || '1:1',
           hasInputImages: (params.inputImages?.length || 0) > 0,
           mode: params.inputImages?.length ? 'image-editing' : 'text-to-image',
-          imagesGenerated: output.images.length
-        }
+          imagesGenerated: output.images.length,
+        },
       };
     } catch (error) {
       logger.error('Gemini Image Generation error', {}, error);
@@ -213,7 +222,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
       if (error instanceof Error) {
         throw new Error(`Gemini Image Generation failed: ${error.message}`);
       }
-      
+
       throw new Error('Gemini Image Generation failed: Unknown error');
     }
   }
@@ -230,15 +239,15 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
         parts.push({
           inlineData: {
             mimeType: image.mimeType,
-            data: image.data
-          }
+            data: image.data,
+          },
         });
       }
     }
 
     // Add text prompt
     parts.push({
-      text: params.prompt
+      text: params.prompt,
     });
 
     return parts;
@@ -249,7 +258,7 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
    */
   private extractOutputFromResponse(response: GeminiResponse): GeminiImageGenOutput {
     const output: GeminiImageGenOutput = {
-      images: []
+      images: [],
     };
 
     // Process all candidates (usually just one)
@@ -266,12 +275,12 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
               output.text += '\n' + part.text;
             }
           }
-          
+
           // Extract images
           if (part.inlineData) {
             output.images.push({
               data: part.inlineData.data,
-              mimeType: part.inlineData.mimeType || 'image/png'
+              mimeType: part.inlineData.mimeType || 'image/png',
             });
           }
         }
@@ -280,5 +289,4 @@ export class ModelStrategy implements IModelStrategy<GeminiImageGenInput, ModelO
 
     return output;
   }
-
 }

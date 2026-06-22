@@ -78,10 +78,11 @@ export class ToolGetByNameUseCase extends UseCase<{ name: string }, ToolResult> 
 // RegisterToolUseCase — for adding/updating tool definitions at runtime
 // ─────────────────────────────────────────────────────────────────────────────
 
-export class RegisterToolUseCase extends UseCase<RegisterToolDTO, { registered: true; name: string }> {
-  protected async executeImpl(
-    dto?: RegisterToolDTO
-  ): Promise<{ registered: true; name: string }> {
+export class RegisterToolUseCase extends UseCase<
+  RegisterToolDTO,
+  { registered: true; name: string }
+> {
+  protected async executeImpl(dto?: RegisterToolDTO): Promise<{ registered: true; name: string }> {
     if (!dto?.name || !dto.description || !dto.schema) {
       throw ApiError.badRequest('name, description, and schema are required');
     }

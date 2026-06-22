@@ -6,7 +6,7 @@
   </header>
 
   <!-- DUMB COMPONENT 1: Configuración aislada -->
-  <app-code-config 
+  <app-code-config
     [languages]="languages"
     [langIcons]="langIcons"
     [activeLanguage]="language()"
@@ -16,7 +16,8 @@
     (onLanguageSelect)="selectLanguage($event)"
     (onSpecChange)="onSpecInput($event)"
     (onGenerate)="generate()"
-    (onLoadExample)="loadExample()">
+    (onLoadExample)="loadExample()"
+  >
   </app-code-config>
 
   <!-- ─── Error ───────────────────────────────────────────────────────── -->
@@ -26,11 +27,12 @@
 
   <!-- DUMB COMPONENT 2: Resultados aislados -->
   @if (result(); as r) {
-    <app-code-result 
+    <app-code-result
       [result]="r"
       [langIcons]="langIcons"
       [copied]="copied()"
-      (onCopyCode)="copyCode()">
+      (onCopyCode)="copyCode()"
+    >
     </app-code-result>
   }
 </div>

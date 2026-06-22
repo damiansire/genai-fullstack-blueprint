@@ -25,7 +25,7 @@ export const createUserRoutes = (postAuthChain: RequestHandler[] = []): Router =
       }
 
       const stmt = (dbService as any).proxiedDb.prepare(
-        'SELECT tokens, last_refill FROM rate_limit_tokens WHERE identifier = ?'
+        'SELECT tokens, last_refill FROM rate_limit_tokens WHERE identifier = ?',
       );
       const row = stmt.get(identifier);
 
@@ -41,7 +41,11 @@ export const createUserRoutes = (postAuthChain: RequestHandler[] = []): Router =
         usagePercentage: Math.round(((maxTokens - currentTokens) / maxTokens) * 100),
       });
     } catch (err) {
-      logger.error('Failed to fetch user quota', {}, err instanceof Error ? err : new Error(String(err)));
+      logger.error(
+        'Failed to fetch user quota',
+        {},
+        err instanceof Error ? err : new Error(String(err)),
+      );
       res.status(500).json({ error: 'Failed to fetch user quota' });
     }
   });

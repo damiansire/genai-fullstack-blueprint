@@ -64,7 +64,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  
+
   h3 {
     margin: 0 0 1.5rem 0;
     color: var(--text-1);
@@ -95,7 +95,9 @@
     stroke-width: 8;
     stroke-linecap: round;
     stroke-dasharray: 283;
-    transition: stroke-dashoffset 1s ease-out, stroke 0.3s ease;
+    transition:
+      stroke-dashoffset 1s ease-out,
+      stroke 0.3s ease;
   }
 
   .percentage-text {

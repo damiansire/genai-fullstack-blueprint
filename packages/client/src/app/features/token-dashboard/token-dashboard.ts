@@ -24,7 +24,7 @@ export class TokenDashboard {
 
   quotaResource = httpResource<QuotaResponse>(() => ({
     url: `${this.apiConfig.baseUrl}/user/quota`,
-    method: 'GET'
+    method: 'GET',
   }));
 
   quota = computed(() => this.quotaResource.value());

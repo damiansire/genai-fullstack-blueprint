@@ -42,7 +42,11 @@ export class AiOrchestratorService {
   /**
    * Generates a context cache for a given payload (simulating RAG document upload)
    */
-  async cacheContext(fileName: string, mimeType: string, payload: string): Promise<ContextCacheResult> {
+  async cacheContext(
+    fileName: string,
+    mimeType: string,
+    payload: string,
+  ): Promise<ContextCacheResult> {
     const sizeBytes = new Blob([payload]).size;
     const res = await fetch(`${this.apiConfig.baseUrl}/domain/context-cache`, {
       method: 'POST',
@@ -60,7 +64,11 @@ export class AiOrchestratorService {
   /**
    * Generates code by optionally utilizing a pre-cached context ID
    */
-  async generateCode(spec: string, language: SupportedLanguage, cacheId?: string): Promise<CodeGenerationResult> {
+  async generateCode(
+    spec: string,
+    language: SupportedLanguage,
+    cacheId?: string,
+  ): Promise<CodeGenerationResult> {
     const res = await fetch(`${this.apiConfig.baseUrl}/domain/code/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

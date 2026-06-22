@@ -1,6 +1,8 @@
 <div class="feature-container feature-container--wide">
   <header class="feature-header">
-    <h1 class="gradient-title"><span aria-hidden="true">{{ icons.banana }}</span> Nano Banana - Image Generation</h1>
+    <h1 class="gradient-title">
+      <span aria-hidden="true">{{ icons.banana }}</span> Nano Banana - Image Generation
+    </h1>
     <p>Generate and edit images with Gemini 2.5 Flash</p>
   </header>
 
@@ -8,11 +10,19 @@
     <div class="left-column">
       <!-- Mode Indicator -->
       <div class="mode-section">
-        <span class="mode-badge" [class.text-mode]="generationMode() === 'text-to-image'" [class.edit-mode]="generationMode() === 'image-editing'">
+        <span
+          class="mode-badge"
+          [class.text-mode]="generationMode() === 'text-to-image'"
+          [class.edit-mode]="generationMode() === 'image-editing'"
+        >
           @if (generationMode() === 'text-to-image') {
-            <span><span aria-hidden="true">{{ icons.text }}</span> Text-to-Image Mode</span>
+            <span
+              ><span aria-hidden="true">{{ icons.text }}</span> Text-to-Image Mode</span
+            >
           } @else {
-            <span><span aria-hidden="true">{{ icons.edit }}</span> Image Editing Mode</span>
+            <span
+              ><span aria-hidden="true">{{ icons.edit }}</span> Image Editing Mode</span
+            >
           }
         </span>
       </div>
@@ -20,7 +30,10 @@
       <!-- File Upload for Image Editing -->
       @if (generationMode() === 'image-editing' || selectedFiles().length > 0) {
         <div class="upload-section">
-          <h3><span aria-hidden="true">{{ icons.camera }}</span> Input Images (For Editing/Composition)</h3>
+          <h3>
+            <span aria-hidden="true">{{ icons.camera }}</span> Input Images (For
+            Editing/Composition)
+          </h3>
           @defer (when generationMode() === 'image-editing') {
             <app-file-upload
               [file]="selectedFiles()[0] || null"
@@ -46,28 +59,34 @@
               id="prompt"
               [formField]="imageGenForm.prompt"
               class="form-control"
-              [class.error]="imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length"
-              [attr.aria-invalid]="imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length ? true : null"
+              [class.error]="
+                imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length
+              "
+              [attr.aria-invalid]="
+                imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length
+                  ? true
+                  : null
+              "
               aria-describedby="prompt-error"
               placeholder="Describe the image you want to generate or how to edit it..."
               rows="5"
             ></textarea>
             @if (imageGenForm.prompt().touched() && imageGenForm.prompt().errors().length) {
-              <div id="prompt-error" class="error-message" role="alert">{{ imageGenForm.prompt().errors()[0].message }}</div>
+              <div id="prompt-error" class="error-message" role="alert">
+                {{ imageGenForm.prompt().errors()[0].message }}
+              </div>
             }
             <div class="prompt-tip">
-              <span aria-hidden="true">{{ icons.bulb }}</span> <strong>Tip:</strong> Describe the scene in detail, not just keywords. Include lighting, style, camera angles for best results.
+              <span aria-hidden="true">{{ icons.bulb }}</span> <strong>Tip:</strong> Describe the
+              scene in detail, not just keywords. Include lighting, style, camera angles for best
+              results.
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label for="aspectRatio" class="form-label">Aspect Ratio</label>
-              <select
-                id="aspectRatio"
-                [formField]="imageGenForm.aspectRatio"
-                class="form-control"
-              >
+              <select id="aspectRatio" [formField]="imageGenForm.aspectRatio" class="form-control">
                 @for (ratio of aspectRatios; track ratio.value) {
                   <option [value]="ratio.value">{{ ratio.label }} - {{ ratio.resolution }}</option>
                 }
@@ -77,7 +96,9 @@
 
           <!-- Example Prompts -->
           <div class="examples-section">
-            <h4><span aria-hidden="true">{{ icons.clipboard }}</span> Example Prompts</h4>
+            <h4>
+              <span aria-hidden="true">{{ icons.clipboard }}</span> Example Prompts
+            </h4>
             <div class="examples-grid">
               @for (example of examples; track example.category) {
                 <button
@@ -122,7 +143,9 @@
 
     <!-- Response Section -->
     <div class="right-column">
-      @defer (when imageGenResource.hasValue() || imageGenResource.isLoading() || imageGenResource.error() || fileError()) {
+      @defer (
+        when imageGenResource.hasValue() || imageGenResource.isLoading() || imageGenResource.error() || fileError()
+      ) {
         <app-model-response
           [loading]="imageGenResource.isLoading()"
           [error]="fileError() || imageGenResource.error()?.message || null"
@@ -131,18 +154,27 @@
         >
           @if (imageGenResource.value()?.data?.result) {
             <div class="image-gen-response">
-              <h3><span aria-hidden="true">{{ icons.sparkles }}</span> Generated Image</h3>
+              <h3>
+                <span aria-hidden="true">{{ icons.sparkles }}</span> Generated Image
+              </h3>
 
               @if (imageGenResource.value()?.data?.result?.text) {
                 <div class="description-box">
-                  <h4><span aria-hidden="true">{{ icons.text }}</span> Description</h4>
+                  <h4>
+                    <span aria-hidden="true">{{ icons.text }}</span> Description
+                  </h4>
                   <p>{{ imageGenResource.value()?.data?.result?.text }}</p>
                 </div>
               }
 
-              @if (imageGenResource.value()?.data?.result?.images && imageGenResource.value()!.data.result.images.length > 0) {
+              @if (
+                imageGenResource.value()?.data?.result?.images &&
+                imageGenResource.value()!.data.result.images.length > 0
+              ) {
                 <div class="images-container">
-                  <h4><span aria-hidden="true">{{ icons.image }}</span> Generated Images</h4>
+                  <h4>
+                    <span aria-hidden="true">{{ icons.image }}</span> Generated Images
+                  </h4>
                   <div class="images-grid">
                     @for (image of imageGenResource.value()!.data.result.images; track $index) {
                       <div class="image-card">
@@ -153,7 +185,7 @@
                           width="512"
                           height="512"
                           loading="lazy"
-                          style="aspect-ratio: 1/1;"
+                          style="aspect-ratio: 1/1"
                         />
                         <div class="image-actions">
                           <a

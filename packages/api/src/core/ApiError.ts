@@ -1,5 +1,3 @@
-
-
 /**
  * Custom API Error class for handling application-specific errors
  * Extends the native Error class with additional properties for HTTP responses
@@ -18,10 +16,10 @@ export class ApiError extends Error {
   constructor(
     statusCode: number = 500,
     message: string = 'Internal Server Error',
-    isOperational: boolean = true
+    isOperational: boolean = true,
   ) {
     super(message);
-    
+
     this.name = 'ApiError';
     this.statusCode = statusCode;
     this.isOperational = isOperational;
@@ -115,7 +113,7 @@ export class ApiError extends Error {
       message: this.message,
       statusCode: this.statusCode,
       timestamp: this.timestamp,
-      isOperational: this.isOperational
+      isOperational: this.isOperational,
     };
 
     if (includeStack) {

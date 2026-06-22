@@ -32,11 +32,7 @@
 
 import { createHash } from 'node:crypto';
 import { embeddingService } from '../services/embeddingService.js';
-import {
-  isVecEnabled,
-  findSemanticMatch,
-  storeSemanticVector,
-} from './database/db.js';
+import { isVecEnabled, findSemanticMatch, storeSemanticVector } from './database/db.js';
 import { logger } from '../core/logger.js';
 import { getContext } from '../core/async-context.js';
 
@@ -104,11 +100,14 @@ class SemanticCacheService {
     try {
       embedding = await embeddingService.generateEmbedding(promptText);
     } catch (err) {
-      logger.warn('[SemanticCache] Embedding generation failed, falling back to exact-match cache', {
-        modelId,
-        traceId,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.warn(
+        '[SemanticCache] Embedding generation failed, falling back to exact-match cache',
+        {
+          modelId,
+          traceId,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      );
       return { hit: false, embedding: new Float32Array(768), promptHash };
     }
 
@@ -147,16 +146,11 @@ class SemanticCacheService {
    * @param response    The LLM response object to cache.
    * @param modelId     The model that produced the response.
    */
-  store(
-    embedding: Float32Array,
-    promptHash: string,
-    response: object,
-    modelId: string
-  ): void {
+  store(embedding: Float32Array, promptHash: string, response: object, modelId: string): void {
     if (!isVecEnabled()) return;
 
     // Compact vectorId: 47-bit timestamp XOR 16-bit random → fits in SQLite INTEGER
-    const vectorId = (Date.now() & 0x7fffffffffff) ^ (Math.floor(Math.random() * 65536));
+    const vectorId = (Date.now() & 0x7fffffffffff) ^ Math.floor(Math.random() * 65536);
 
     try {
       storeSemanticVector(vectorId, embedding, promptHash, response, modelId);

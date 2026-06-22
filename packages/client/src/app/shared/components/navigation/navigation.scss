@@ -39,68 +39,68 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-      }
-      
-      &.btn-settings {
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: inherit;
-        anchor-name: --settings-anchor;
-      }
+  }
 
-/* Native Popover with Anchor Positioning API */
-#ai-settings-menu[popover] {
-  position: absolute;
-  position-anchor: --settings-anchor;
-  position-area: bottom span-left;
-  position-try-fallbacks: flip-block, flip-inline;
-  position-visibility: no-overflow;
-  
-  margin: 0;
-  margin-top: 8px;
-  padding: 12px;
-  background-color: var(--theme-surface, #ffffff);
-  border: 1px solid var(--theme-border, #e0e0e0);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  color: #333;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 200px;
-  
-  /* Popover hidden state natively managed by the browser */
-  &:popover-open {
-    display: flex;
-  }
-  
-  .popover-header {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 4px;
-  }
-  
-  button[role="menuitem"] {
+  &.btn-settings {
     background: transparent;
     border: none;
-    padding: 8px 12px;
-    text-align: left;
-    border-radius: 4px;
     cursor: pointer;
-    font-size: 0.95rem;
-    
-    &:hover {
-      background-color: #f5f5f5;
+    font-family: inherit;
+    font-size: inherit;
+    anchor-name: --settings-anchor;
+  }
+
+  /* Native Popover with Anchor Positioning API */
+  #ai-settings-menu[popover] {
+    position: absolute;
+    position-anchor: --settings-anchor;
+    position-area: bottom span-left;
+    position-try-fallbacks: flip-block, flip-inline;
+    position-visibility: no-overflow;
+
+    margin: 0;
+    margin-top: 8px;
+    padding: 12px;
+    background-color: var(--theme-surface, #ffffff);
+    border: 1px solid var(--theme-border, #e0e0e0);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+
+    /* Popover hidden state natively managed by the browser */
+    &:popover-open {
+      display: flex;
+    }
+
+    .popover-header {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 4px;
+    }
+
+    button[role='menuitem'] {
+      background: transparent;
+      border: none;
+      padding: 8px 12px;
+      text-align: left;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95rem;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
     }
   }
-}
 
   p {
     margin: 0;

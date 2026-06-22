@@ -2,14 +2,16 @@
   <div [id]="labelId">
     <ng-content select="label, [file-label]"></ng-content>
   </div>
-  <div class="file-upload-area" 
-       [class.has-file]="file()" 
-       [class.processing]="isProcessing()" 
-       [class.is-dragging]="isDragging()"
-       [attr.aria-busy]="isProcessing()"
-       (dragover)="onDragOver($event)"
-       (dragleave)="onDragLeave($event)"
-       (drop)="onDrop($event)">
+  <div
+    class="file-upload-area"
+    [class.has-file]="file()"
+    [class.processing]="isProcessing()"
+    [class.is-dragging]="isDragging()"
+    [attr.aria-busy]="isProcessing()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
     <input
       #fileInput
       type="file"
@@ -20,7 +22,7 @@
       class="file-input"
       [disabled]="isProcessing()"
     />
-    
+
     @if (!file()) {
       <div class="file-upload-placeholder">
         <div class="upload-icon" aria-hidden="true">
@@ -41,11 +43,17 @@
       </div>
     } @else {
       <div class="file-selected">
-
         <div class="file-info">
           @defer (on viewport) {
             @if (previewUrl()) {
-              <img [src]="previewUrl()" [alt]="file()!.name" class="image-preview" width="120" height="120" style="object-fit: cover; aspect-ratio: 1/1;" />
+              <img
+                [src]="previewUrl()"
+                [alt]="file()!.name"
+                class="image-preview"
+                width="120"
+                height="120"
+                style="object-fit: cover; aspect-ratio: 1/1"
+              />
             } @else {
               <span class="file-icon" aria-hidden="true">
                 @if (isProcessing()) {

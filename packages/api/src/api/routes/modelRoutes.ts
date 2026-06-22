@@ -5,11 +5,11 @@ import { SchemaRegistry } from '../../infrastructure/ai/registry.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
 import { rbacModelMiddleware } from '../middleware/rbac.js';
 import { createDynamicValidationMiddleware } from '../middleware/dynamicValidation.js';
-import { 
-  createModelController, 
-  createModelInfoController, 
+import {
+  createModelController,
+  createModelInfoController,
   createModelListController,
-  createStreamController
+  createStreamController,
 } from '../controllers/modelController.js';
 
 /**
@@ -34,7 +34,7 @@ export function createModelRoutes(
 
   // Create middleware instances
   const dynamicValidation = createDynamicValidationMiddleware(schemaRegistry);
-  
+
   // Create controller instances
   const modelController = createModelController(modelFactory);
   const modelInfoController = createModelInfoController(modelFactory);
@@ -50,10 +50,10 @@ export function createModelRoutes(
     try {
       // Check if the model schema requires file upload
       const schema = schemaRegistry.getSchema(modelId);
-      
+
       // Check if schema has file-related properties
       const hasFileRequirements = checkSchemaForFileRequirements(schema);
-      
+
       if (!hasFileRequirements) {
         // No file requirements, return a pass-through middleware
         return (_req: any, _res: any, next: any) => next();
@@ -61,12 +61,12 @@ export function createModelRoutes(
 
       // Configure multer for file uploads
       const storage = multer.memoryStorage();
-      
+
       const upload = multer({
         storage,
         limits: {
           fileSize: 10 * 1024 * 1024, // 10MB limit
-          files: 5 // Maximum 5 files
+          files: 5, // Maximum 5 files
         },
         fileFilter: (_req, file, cb) => {
           // Basic file type validation
@@ -77,7 +77,7 @@ export function createModelRoutes(
             'image/webp',
             'text/plain',
             'application/pdf',
-            'application/json'
+            'application/json',
           ];
 
           if (allowedTypes.includes(file.mimetype)) {
@@ -85,7 +85,7 @@ export function createModelRoutes(
           } else {
             cb(new Error(`File type ${file.mimetype} is not allowed`));
           }
-        }
+        },
       });
 
       return upload.any(); // Accept any number of files with any field name
@@ -107,7 +107,7 @@ export function createModelRoutes(
 
     // Check for file-related properties in schema
     const fileKeywords = ['file', 'files', 'upload', 'image', 'document'];
-    
+
     function checkObject(obj: any): boolean {
       if (typeof obj !== 'object' || obj === null) {
         return false;
@@ -116,7 +116,7 @@ export function createModelRoutes(
       // Check properties
       if (obj.properties) {
         for (const key of Object.keys(obj.properties)) {
-          if (fileKeywords.some(keyword => key.toLowerCase().includes(keyword))) {
+          if (fileKeywords.some((keyword) => key.toLowerCase().includes(keyword))) {
             return true;
           }
           if (checkObject(obj.properties[key])) {
@@ -128,7 +128,7 @@ export function createModelRoutes(
       // Check required fields
       if (obj.required && Array.isArray(obj.required)) {
         for (const field of obj.required) {
-          if (fileKeywords.some(keyword => field.toLowerCase().includes(keyword))) {
+          if (fileKeywords.some((keyword) => field.toLowerCase().includes(keyword))) {
             return true;
           }
         }
@@ -140,8 +140,8 @@ export function createModelRoutes(
       }
 
       // Check anyOf, oneOf, allOf
-      const checkArray = (arr: any[]) => arr.some(item => checkObject(item));
-      
+      const checkArray = (arr: any[]) => arr.some((item) => checkObject(item));
+
       if (obj.anyOf && checkArray(obj.anyOf)) return true;
       if (obj.oneOf && checkArray(obj.oneOf)) return true;
       if (obj.allOf && checkArray(obj.allOf)) return true;
@@ -157,23 +157,19 @@ export function createModelRoutes(
   /**
    * GET /models - List all available models
    */
-  router.get('/models',
-    modelListController
-  );
+  router.get('/models', modelListController);
 
   /**
    * GET /models/:modelId - Get information about a specific model
    */
-  router.get('/models/:modelId',
-    rbacModelMiddleware,
-    modelInfoController
-  );
+  router.get('/models/:modelId', rbacModelMiddleware, modelInfoController);
 
   /**
    * POST /models/:modelId/invoke - Invoke a specific model
    * Applies authentication, dynamic validation, and file upload middleware
    */
-  router.post('/models/:modelId/invoke',
+  router.post(
+    '/models/:modelId/invoke',
     rbacModelMiddleware,
     (req, res, next) => {
       // Apply dynamic multer middleware based on model requirements
@@ -182,13 +178,14 @@ export function createModelRoutes(
       multerMiddleware(req, res, next);
     },
     dynamicValidation,
-    modelController
+    modelController,
   );
 
   /**
    * POST /models/:modelId/stream - Stream model response via SSE
    */
-  router.post('/models/:modelId/stream',
+  router.post(
+    '/models/:modelId/stream',
     rbacModelMiddleware,
     (req, res, next) => {
       const modelId = req.params['modelId'] || '';
@@ -196,7 +193,7 @@ export function createModelRoutes(
       multerMiddleware(req, res, next);
     },
     dynamicValidation,
-    streamController
+    streamController,
   );
 
   return router;
@@ -208,5 +205,7 @@ export function createModelRoutes(
  */
 export function createDefaultModelRoutes(): Router {
   // This will be set up when the server initializes
-  throw new Error('createDefaultModelRoutes() should be called after ModelFactory and SchemaRegistry are initialized');
+  throw new Error(
+    'createDefaultModelRoutes() should be called after ModelFactory and SchemaRegistry are initialized',
+  );
 }

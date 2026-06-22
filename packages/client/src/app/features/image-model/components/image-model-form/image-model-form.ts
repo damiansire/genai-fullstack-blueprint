@@ -6,7 +6,7 @@ import { FormField } from '@angular/forms/signals';
   imports: [FormField],
   templateUrl: './image-model-form.html',
   styleUrl: './image-model-form.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageModelForm {
   form = input.required<any>();

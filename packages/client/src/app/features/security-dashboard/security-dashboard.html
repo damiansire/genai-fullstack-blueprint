@@ -1,5 +1,4 @@
 <div class="sd-layout">
-
   <!-- ─── Header ──────────────────────────────────────────────────────── -->
   <header class="sd-header">
     <div class="sd-header__title-row">
@@ -7,7 +6,8 @@
       <span class="sd-header__subtitle">MITRE ATT&amp;CK Pattern Detection</span>
     </div>
     <p class="sd-header__desc">
-      Paste raw log text to detect threats, score risk, and get actionable mitigations — zero LLM cost.
+      Paste raw log text to detect threats, score risk, and get actionable mitigations — zero LLM
+      cost.
     </p>
   </header>
 
@@ -22,7 +22,12 @@
         <button class="sd-btn sd-btn--ghost" (click)="loadSample()" type="button">
           Load Sample
         </button>
-        <button class="sd-btn sd-btn--ghost" (click)="clearAll()" type="button" [disabled]="!hasLogs()">
+        <button
+          class="sd-btn sd-btn--ghost"
+          (click)="clearAll()"
+          type="button"
+          [disabled]="!hasLogs()"
+        >
           Clear
         </button>
       </div>
@@ -63,11 +68,14 @@
   <!-- ─── Report ───────────────────────────────────────────────────────── -->
   @if (report(); as r) {
     <section class="sd-report" aria-label="Analysis report" aria-live="polite">
-
       <!-- Summary Row -->
       <div class="sd-summary">
         <!-- Risk Gauge -->
-        <div class="sd-gauge" [style.background]="riskGradient()" aria-label="Risk score {{ r.riskScore }} out of 100">
+        <div
+          class="sd-gauge"
+          [style.background]="riskGradient()"
+          aria-label="Risk score {{ r.riskScore }} out of 100"
+        >
           <div class="sd-gauge__inner">
             <span class="sd-gauge__score">{{ r.riskScore }}</span>
             <span class="sd-gauge__label">Risk</span>
@@ -92,7 +100,10 @@
 
         <!-- Overall Severity -->
         <div class="sd-severity-panel">
-          <div class="sd-severity-badge" [class]="'sd-severity--' + r.overallSeverity.toLowerCase()">
+          <div
+            class="sd-severity-badge"
+            [class]="'sd-severity--' + r.overallSeverity.toLowerCase()"
+          >
             {{ r.overallSeverity }}
           </div>
           <p class="sd-summary-text">{{ r.summary }}</p>
@@ -105,7 +116,10 @@
           <h2 class="sd-section__title">Threat Indicators</h2>
           <div class="sd-threats">
             @for (threat of r.threats; track trackByCategory($index, threat)) {
-              <article class="sd-threat-card" [class]="'sd-threat--' + threat.severity.toLowerCase()">
+              <article
+                class="sd-threat-card"
+                [class]="'sd-threat--' + threat.severity.toLowerCase()"
+              >
                 <div class="sd-threat__header">
                   <div>
                     <span class="sd-threat__technique">{{ threat.technique }}</span>
@@ -117,19 +131,31 @@
                 <!-- Confidence bar -->
                 <div class="sd-confidence">
                   <span class="sd-confidence__label">Confidence</span>
-                  <div class="sd-confidence__track" aria-label="Confidence: {{ (threat.confidence * 100) | number:'1.0-0' }}%">
-                    <div class="sd-confidence__bar" [style.width]="confidenceWidth(threat.confidence)"></div>
+                  <div
+                    class="sd-confidence__track"
+                    aria-label="Confidence: {{ threat.confidence * 100 | number: '1.0-0' }}%"
+                  >
+                    <div
+                      class="sd-confidence__bar"
+                      [style.width]="confidenceWidth(threat.confidence)"
+                    ></div>
                   </div>
-                  <span class="sd-confidence__value">{{ (threat.confidence * 100).toFixed(0) }}%</span>
+                  <span class="sd-confidence__value"
+                    >{{ (threat.confidence * 100).toFixed(0) }}%</span
+                  >
                 </div>
 
                 <!-- Evidence -->
                 @if (threat.evidence.length > 0) {
                   <details class="sd-evidence">
-                    <summary class="sd-evidence__toggle">{{ threat.evidence.length }} evidence line(s)</summary>
+                    <summary class="sd-evidence__toggle">
+                      {{ threat.evidence.length }} evidence line(s)
+                    </summary>
                     <ul class="sd-evidence__list">
                       @for (line of threat.evidence; track $index) {
-                        <li class="sd-evidence__item"><code>{{ line }}</code></li>
+                        <li class="sd-evidence__item">
+                          <code>{{ line }}</code>
+                        </li>
                       }
                     </ul>
                   </details>
@@ -157,8 +183,6 @@
           </ul>
         </div>
       }
-
     </section>
   }
-
 </div>

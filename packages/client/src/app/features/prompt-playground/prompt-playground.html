@@ -16,7 +16,8 @@
       [selectedPromptName]="selectedPromptName()"
       [isLoading]="isLoading()"
       [loadError]="loadError()"
-      (onSelectPrompt)="selectPrompt($event)">
+      (onSelectPrompt)="selectPrompt($event)"
+    >
     </app-prompt-list>
 
     <!-- Right Content: Editor -->
@@ -29,7 +30,8 @@
           [isSaving]="isSaving()"
           [saveSuccess]="saveSuccess()"
           [saveError]="saveError()"
-          (onSubmit)="onSubmit()">
+          (onSubmit)="onSubmit()"
+        >
         </app-prompt-editor>
       } @else {
         <div class="empty-selection">

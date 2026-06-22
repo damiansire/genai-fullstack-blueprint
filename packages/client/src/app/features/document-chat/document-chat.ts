@@ -23,14 +23,14 @@ export class DocumentChat {
   activeSessionId = signal<string | null>(null);
   selectedDocument = signal<File | null>(null);
   isUploading = signal(false);
-  
+
   // Chat State
   prompt = signal('');
 
   // Example document viewer text
   documentContent = signal<string>(
     'En un ecosistema B2B, la arquitectura multi-tenant asegura que los datos de la Empresa A jamás sean visibles para la Empresa B. ' +
-    'El RAG (Retrieval-Augmented Generation) es clave para reducir alucinaciones, inyectando contexto verificado extraído de manuales internos.'
+      'El RAG (Retrieval-Augmented Generation) es clave para reducir alucinaciones, inyectando contexto verificado extraído de manuales internos.',
   );
 
   loadSession(id: string): void {
@@ -59,7 +59,7 @@ export class DocumentChat {
     this.isUploading.set(true);
     try {
       // Fake upload delay
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
       // In a real app we would POST to /api/domain/rag/ingest here.
     } finally {
       this.isUploading.set(false);
@@ -75,7 +75,7 @@ export class DocumentChat {
       maxTokens: 512,
       stream: true,
     });
-    
+
     this.prompt.set('');
   }
 

@@ -35,12 +35,12 @@ interface PluginModule {
  */
 export async function loadPlugins(
   factory: ModelFactory,
-  schemaRegistry: SchemaRegistry
+  schemaRegistry: SchemaRegistry,
 ): Promise<void> {
   // In production (compiled), plugins are in dist/plugins relative to this file
   // In development, they're in src/plugins
   const pluginsDir = path.join(__dirname, '..', '..', 'plugins');
-  
+
   try {
     // Check if plugins directory exists
     await fs.access(pluginsDir);
@@ -53,15 +53,17 @@ export async function loadPlugins(
     // Read all subdirectories in the plugins folder
     const entries = await fs.readdir(pluginsDir, { withFileTypes: true });
     const pluginDirectories = entries
-      .filter(entry => entry.isDirectory())
-      .map(entry => entry.name);
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
 
     if (pluginDirectories.length === 0) {
       logger.info('No plugin directories found. Skipping plugin loading.');
       return;
     }
 
-    logger.info(`Found ${pluginDirectories.length} plugin directories: ${pluginDirectories.join(', ')}`);
+    logger.info(
+      `Found ${pluginDirectories.length} plugin directories: ${pluginDirectories.join(', ')}`,
+    );
 
     // Load each plugin
     const loadPromises = pluginDirectories.map(async (pluginDir) => {
@@ -69,17 +71,27 @@ export async function loadPlugins(
         await loadSinglePlugin(pluginDir, factory, schemaRegistry);
         logger.info(`✅ Successfully loaded plugin: ${pluginDir}`);
       } catch (error) {
-        logger.error(`❌ Failed to load plugin '${pluginDir}'`, {}, error instanceof Error ? error : new Error(String(error)));
+        logger.error(
+          `❌ Failed to load plugin '${pluginDir}'`,
+          {},
+          error instanceof Error ? error : new Error(String(error)),
+        );
         // Continue loading other plugins even if one fails
       }
     });
 
     // Wait for all plugins to load (or fail)
     await Promise.allSettled(loadPromises);
-    
-    logger.info(`Plugin loading completed. Registered ${factory.getRegisteredModels().length} strategies and ${schemaRegistry.getRegisteredModels().length} schemas.`);
+
+    logger.info(
+      `Plugin loading completed. Registered ${factory.getRegisteredModels().length} strategies and ${schemaRegistry.getRegisteredModels().length} schemas.`,
+    );
   } catch (error) {
-    logger.error('Error reading plugins directory', {}, error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Error reading plugins directory',
+      {},
+      error instanceof Error ? error : new Error(String(error)),
+    );
     throw error;
   }
 }
@@ -93,15 +105,15 @@ export async function loadPlugins(
 async function loadSinglePlugin(
   pluginDir: string,
   factory: ModelFactory,
-  schemaRegistry: SchemaRegistry
+  schemaRegistry: SchemaRegistry,
 ): Promise<void> {
   // Path relative to this compiled file
   const pluginPath = path.join(__dirname, '..', '..', 'plugins', pluginDir);
-  
+
   // Try to import index.js (compiled) first, then index.ts (development)
   const possibleFiles = ['index.js', 'index.ts'];
   let modulePath: string | null = null;
-  
+
   for (const filename of possibleFiles) {
     const fullPath = path.join(pluginPath, filename);
     try {
@@ -122,15 +134,15 @@ async function loadSinglePlugin(
   // Use file:// URL for dynamic imports
   const moduleUrl = new URL(`file://${modulePath}`);
   const pluginModule = await import(moduleUrl.href);
-  
+
   // Validate plugin module structure
   validatePluginModule(pluginModule, pluginDir);
-  
+
   const { modelId, configSchema, ModelStrategy } = pluginModule as PluginModule;
-  
+
   // Register the strategy in the factory
   factory.register(modelId, () => new ModelStrategy());
-  
+
   // Register the schema in the registry
   schemaRegistry.register(modelId, configSchema);
 }
@@ -143,29 +155,29 @@ async function loadSinglePlugin(
  */
 function validatePluginModule(module: any, pluginDir: string): void {
   const requiredExports = ['modelId', 'configSchema', 'ModelStrategy'];
-  const missingExports = requiredExports.filter(exportName => !(exportName in module));
-  
+  const missingExports = requiredExports.filter((exportName) => !(exportName in module));
+
   assert.ok(
     missingExports.length === 0,
     `Plugin '${pluginDir}' is missing required exports: ${missingExports.join(', ')}. ` +
-    `Required exports: modelId (string), configSchema (object), ModelStrategy (constructor function)`
+      `Required exports: modelId (string), configSchema (object), ModelStrategy (constructor function)`,
   );
 
   // Additional type validation using strict equality and truthiness assertions
   assert.strictEqual(
     typeof module.modelId,
     'string',
-    `Plugin '${pluginDir}': modelId must be a string, got ${typeof module.modelId}`
+    `Plugin '${pluginDir}': modelId must be a string, got ${typeof module.modelId}`,
   );
 
   assert.ok(
     typeof module.configSchema === 'object' && module.configSchema !== null,
-    `Plugin '${pluginDir}': configSchema must be an object, got ${typeof module.configSchema}`
+    `Plugin '${pluginDir}': configSchema must be an object, got ${typeof module.configSchema}`,
   );
 
   assert.strictEqual(
     typeof module.ModelStrategy,
     'function',
-    `Plugin '${pluginDir}': ModelStrategy must be a constructor function, got ${typeof module.ModelStrategy}`
+    `Plugin '${pluginDir}': ModelStrategy must be a constructor function, got ${typeof module.ModelStrategy}`,
   );
 }

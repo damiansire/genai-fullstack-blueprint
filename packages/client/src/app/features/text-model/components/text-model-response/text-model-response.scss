@@ -25,7 +25,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    
+
     span[aria-hidden] {
       -webkit-text-fill-color: initial;
     }
@@ -59,8 +59,8 @@
 .ai-disclosure {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(0,0,0,0.05);
-  
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+
   small {
     display: flex;
     align-items: center;
@@ -69,7 +69,7 @@
     font-style: normal;
     font-size: 0.8rem;
     font-weight: 500;
-    background: linear-gradient(to right, rgba(99,102,241,0.05), transparent);
+    background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent);
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     border-left: 2px solid #6366f1;
@@ -78,7 +78,7 @@
 
 .generative-ui {
   margin-top: 0.5rem;
-  
+
   h4 {
     margin: 0 0 1rem 0;
     font-size: 1.05rem;
@@ -92,13 +92,13 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1.5rem;
-  background: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 1rem;
   border: 1px dashed #cbd5e1;
   color: #64748b;
   font-weight: 500;
   animation: pulseOpacity 2s infinite ease-in-out;
-  
+
   span {
     animation: spin 3s linear infinite;
     display: inline-block;
@@ -124,16 +124,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 
   &:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     color: #0f172a;
   }
-  
+
   &:active {
     transform: translateY(1px);
   }
@@ -146,34 +146,41 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 1.25rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0,0,0,0.05);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
   color: #1e293b;
   width: 100%;
   max-width: 320px;
   opacity: 0;
   transform: translateY(10px) scale(0.95);
-  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), display 0.3s ease allow-discrete;
-  
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    display 0.3s ease allow-discrete;
+
   &:popover-open {
     opacity: 1;
     transform: translateY(0) scale(1);
-    
+
     @starting-style {
       opacity: 0;
       transform: translateY(10px) scale(0.95);
     }
   }
-  
+
   &::backdrop {
     background: rgba(15, 23, 42, 0.2);
     backdrop-filter: blur(3px);
     opacity: 0;
-    transition: opacity 0.3s ease, display 0.3s ease allow-discrete;
+    transition:
+      opacity 0.3s ease,
+      display 0.3s ease allow-discrete;
   }
-  
+
   &:popover-open::backdrop {
     opacity: 1;
-    
+
     @starting-style {
       opacity: 0;
     }
@@ -184,7 +191,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     background: rgba(248, 250, 252, 0.5);
     border-radius: 1.25rem 1.25rem 0 0;
 
@@ -208,7 +215,7 @@
       cursor: pointer;
       color: #64748b;
       transition: all 0.2s;
-      
+
       &:hover {
         background: #e2e8f0;
         color: #0f172a;
@@ -229,15 +236,15 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: 0.75rem;
-    border-bottom: 1px dashed rgba(0,0,0,0.05);
-    
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+
     &:last-child {
       border-bottom: none;
       padding-bottom: 0;
       margin-top: 0.5rem;
       padding-top: 0.75rem;
-      border-top: 1px solid rgba(0,0,0,0.05);
-      
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+
       .stat-label {
         font-weight: 700;
         color: #0f172a;
@@ -251,13 +258,13 @@
       }
     }
   }
-  
+
   .stat-label {
     color: #475569;
     font-size: 0.9rem;
     font-weight: 500;
   }
-  
+
   .stat-value {
     font-weight: 700;
     color: #1e293b;
@@ -270,11 +277,20 @@
 }
 
 @keyframes pulseOpacity {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

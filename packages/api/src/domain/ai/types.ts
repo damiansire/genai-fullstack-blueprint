@@ -41,4 +41,3 @@ export type ModelOutput<T = any> = {
   /** Additional metadata about the processing */
   metadata?: ModelMetadata;
 };
-

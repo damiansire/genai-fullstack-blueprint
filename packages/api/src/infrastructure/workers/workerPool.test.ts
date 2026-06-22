@@ -19,10 +19,7 @@ describe('WorkerPool', () => {
   });
 
   it('rejects when the worker reports failure (success:false)', async () => {
-    await assert.rejects(
-      pool.runTask({ cmd: 'fail', reason: 'nope' }),
-      /nope/,
-    );
+    await assert.rejects(pool.runTask({ cmd: 'fail', reason: 'nope' }), /nope/);
   });
 
   it('handles more concurrent tasks than workers via the queue', async () => {
@@ -36,10 +33,7 @@ describe('WorkerPool', () => {
   it('rejects a hung task once the per-task timeout elapses', async () => {
     // Dedicated pool with a tiny timeout so the hang is settled quickly.
     const hangPool = new WorkerPool(1, 'testFixtureWorker', 150);
-    await assert.rejects(
-      hangPool.runTask({ cmd: 'hang' }),
-      /timed out after 150ms/,
-    );
+    await assert.rejects(hangPool.runTask({ cmd: 'hang' }), /timed out after 150ms/);
   });
 
   it('settles the in-flight task and recovers when a worker crashes', async () => {

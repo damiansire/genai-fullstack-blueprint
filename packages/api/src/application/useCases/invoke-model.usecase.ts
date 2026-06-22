@@ -111,24 +111,43 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
     super();
   }
 
-  private async processWithFallback(strategy: any, modelId: string, requestData: any, context: ProcessContext): Promise<any> {
+  private async processWithFallback(
+    strategy: any,
+    modelId: string,
+    requestData: any,
+    context: ProcessContext,
+  ): Promise<any> {
     if (!InvokeModelUseCase.breakers.has(modelId)) {
-      InvokeModelUseCase.breakers.set(modelId, new CircuitBreaker(modelId, {
-        failureThreshold: 3,
-        resetTimeoutMs: 30000,
-        requestTimeoutMs: 15000
-      }));
+      InvokeModelUseCase.breakers.set(
+        modelId,
+        new CircuitBreaker(modelId, {
+          failureThreshold: 3,
+          resetTimeoutMs: 30000,
+          requestTimeoutMs: 15000,
+        }),
+      );
     }
     const breaker = InvokeModelUseCase.breakers.get(modelId)!;
 
     try {
       return await breaker.fire(() => strategy.process(requestData, context));
     } catch (error) {
-      if (breaker.getState() === 'OPEN' && modelId !== 'llama-3.1-8b' && this.modelFactory.isRegistered('llama-3.1-8b')) {
+      if (
+        breaker.getState() === 'OPEN' &&
+        modelId !== 'llama-3.1-8b' &&
+        this.modelFactory.isRegistered('llama-3.1-8b')
+      ) {
         logger.warn(`Model ${modelId} circuit is OPEN, falling back to local SLM llama-3.1-8b`);
         const fallbackStrategy = this.modelFactory.create('llama-3.1-8b');
         const fallbackReq = { ...requestData };
-        fallbackReq.messages = [...(fallbackReq.messages || []), { role: 'system', content: '[SYSTEM_FALLBACK]: Degradación Elegante Activa. El modelo primario está fallando.' }];
+        fallbackReq.messages = [
+          ...(fallbackReq.messages || []),
+          {
+            role: 'system',
+            content:
+              '[SYSTEM_FALLBACK]: Degradación Elegante Activa. El modelo primario está fallando.',
+          },
+        ];
         return await fallbackStrategy.process(fallbackReq, context);
       }
       throw error;
@@ -182,7 +201,9 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
         return msg;
       });
       if (Object.keys(piiMapping).length > 0) {
-        logger.info('PII Redaction applied before external API call', { tokens: Object.keys(piiMapping).length });
+        logger.info('PII Redaction applied before external API call', {
+          tokens: Object.keys(piiMapping).length,
+        });
       }
     }
 
@@ -200,16 +221,20 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
     // Embedding is generated here and reused at store time (no double inference).
     // Silently degrades to MISS when sqlite-vec is not loaded.
     // ───────────────────────────────────────────────────
-    const promptText = requestData.messages
-      ?.map((m: any) => (typeof m.content === 'string' ? m.content : ''))
-      .join(' ') ?? JSON.stringify(requestData);
+    const promptText =
+      requestData.messages
+        ?.map((m: any) => (typeof m.content === 'string' ? m.content : ''))
+        .join(' ') ?? JSON.stringify(requestData);
 
     const semanticResult = await semanticCache.lookup(promptText, dto.modelId);
 
     if (semanticResult.hit) {
       // Unredact PII before returning semantic hit
       if (typeof semanticResult.response?.text === 'string') {
-        semanticResult.response.text = piiService.unredact(semanticResult.response.text, piiMapping);
+        semanticResult.response.text = piiService.unredact(
+          semanticResult.response.text,
+          piiMapping,
+        );
       }
       // Mark cache hits so downstream metrics/observability can distinguish a
       // HIT from a real model call (cost/latency attribution).
@@ -230,7 +255,7 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       logger.info(`Cache HIT for model ${dto.modelId}`, { hash });
       // Unredact before returning from cache
       if (typeof cachedResponse.text === 'string') {
-         cachedResponse.text = piiService.unredact(cachedResponse.text, piiMapping);
+        cachedResponse.text = piiService.unredact(cachedResponse.text, piiMapping);
       }
       if (typeof cachedResponse === 'object') {
         cachedResponse.cached = true;
@@ -239,14 +264,21 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
     }
 
     // Agentic Loop
-    let currentResponse = await this.processWithFallback(strategy, dto.modelId, requestData, dto.context);
+    let currentResponse = await this.processWithFallback(
+      strategy,
+      dto.modelId,
+      requestData,
+      dto.context,
+    );
     const maxIterations = 5;
     let iterations = 0;
 
     while (currentResponse && currentResponse.tool_calls && iterations < maxIterations) {
       iterations++;
-      logger.info(`Agentic Loop Iteration ${iterations}: Executing tools`, { tools: currentResponse.tool_calls });
-      
+      logger.info(`Agentic Loop Iteration ${iterations}: Executing tools`, {
+        tools: currentResponse.tool_calls,
+      });
+
       // Execute tools in parallel using native worker threads
       const toolPromises = currentResponse.tool_calls.map(async (toolCall: any) => {
         // ───────────────────────────────────────────────────
@@ -296,20 +328,20 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
         const result = await CPUWorkerService.executeTool(
           toolCall.name,
           toolCall.args,
-          childContext
+          childContext,
         );
-        
+
         // If the result is a huge JSON string, simulate transferring ownership to a Worker for zero-copy parsing
         if (typeof result === 'string' && result.length > 10000 && result.startsWith('{')) {
-           const encoder = new TextEncoder();
-           const buffer = encoder.encode(result).buffer as ArrayBuffer;
-           const parsedResult = await CPUWorkerService.parseJsonZeroCopy(buffer, 'ToolResultSchema');
-           return { id: toolCall.id, result: parsedResult };
+          const encoder = new TextEncoder();
+          const buffer = encoder.encode(result).buffer as ArrayBuffer;
+          const parsedResult = await CPUWorkerService.parseJsonZeroCopy(buffer, 'ToolResultSchema');
+          return { id: toolCall.id, result: parsedResult };
         }
 
         return { id: toolCall.id, result };
       });
-      
+
       const toolResults = await Promise.all(toolPromises);
 
       // Append tool results to requestData (simulate sending them back to the AI)
@@ -322,7 +354,12 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
       requestData.messages = applySlidingWindow(requestData.messages);
 
       // Call AI again
-      currentResponse = await this.processWithFallback(strategy, dto.modelId, requestData, dto.context);
+      currentResponse = await this.processWithFallback(
+        strategy,
+        dto.modelId,
+        requestData,
+        dto.context,
+      );
     }
 
     if (iterations >= maxIterations) {
@@ -339,7 +376,11 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
     }
 
     // Unredact before returning to user
-    if (currentResponse && typeof currentResponse.text === 'string' && Object.keys(piiMapping).length > 0) {
+    if (
+      currentResponse &&
+      typeof currentResponse.text === 'string' &&
+      Object.keys(piiMapping).length > 0
+    ) {
       currentResponse.text = piiService.unredact(currentResponse.text, piiMapping);
     }
 

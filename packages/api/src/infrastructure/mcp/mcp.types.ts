@@ -40,11 +40,11 @@ export interface JsonRpcError {
 
 // Standard JSON-RPC error codes
 export const JSON_RPC_ERRORS = {
-  PARSE_ERROR:      -32700,
-  INVALID_REQUEST:  -32600,
+  PARSE_ERROR: -32700,
+  INVALID_REQUEST: -32600,
   METHOD_NOT_FOUND: -32601,
-  INVALID_PARAMS:   -32602,
-  INTERNAL_ERROR:   -32603,
+  INVALID_PARAMS: -32602,
+  INTERNAL_ERROR: -32603,
 } as const;
 
 // ─── MCP Capability Types ─────────────────────────────────────────────────────

@@ -1,4 +1,12 @@
-import { Component, input, effect, Type, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  input,
+  effect,
+  Type,
+  computed,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
 
 @Component({
@@ -10,7 +18,7 @@ import { NgComponentOutlet } from '@angular/common';
 })
 export class DynamicToolRenderer {
   toolCall = input<any>();
-  
+
   isEngineResolving = signal<boolean>(false);
   resolvedComponentClass = signal<Type<any> | null>(null);
 
@@ -18,7 +26,7 @@ export class DynamicToolRenderer {
     effect(() => {
       const call = this.toolCall();
       this.resolvedComponentClass.set(null);
-      
+
       if (!call || !call.name) return;
 
       this.isEngineResolving.set(true);
@@ -29,8 +37,8 @@ export class DynamicToolRenderer {
             const { ChartWidgetComponent } = await import('./chart-widget.component');
             this.resolvedComponentClass.set(ChartWidgetComponent);
           } else {
-             // Fallback or other components
-             this.resolvedComponentClass.set(null);
+            // Fallback or other components
+            this.resolvedComponentClass.set(null);
           }
         } catch (e) {
           console.error('Failed to load component dynamically', e);
@@ -49,7 +57,7 @@ export class DynamicToolRenderer {
     if (call?.name === 'render_chart') {
       return {
         data: call.args?.data || [50, 80, 20, 100],
-        label: call.args?.label || 'AI Generated Data'
+        label: call.args?.label || 'AI Generated Data',
       };
     }
     return {};

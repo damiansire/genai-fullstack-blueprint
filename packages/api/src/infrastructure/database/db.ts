@@ -65,7 +65,7 @@ export class DatabaseService extends EventEmitter {
 
       const dbPath = path.join(dataDir, 'gateway.db');
       this.db = new DatabaseSync(dbPath);
-      
+
       // Habilitar Write-Ahead Logging (WAL) para concurrencia masiva (Mitigación de thread bottleneck)
       this.db.exec('PRAGMA journal_mode = WAL;');
 
@@ -82,7 +82,7 @@ export class DatabaseService extends EventEmitter {
             };
           }
           return target[prop];
-        }
+        },
       });
 
       this.proxiedDb.exec(`
@@ -190,31 +190,39 @@ export class DatabaseService extends EventEmitter {
         });
       }
 
-      this.insertLogStmt = this.proxiedDb.prepare('INSERT INTO request_logs (trace_id, timestamp, method, path, duration_ms) VALUES (?, ?, ?, ?, ?)');
-      this.selectLogsStmt = this.proxiedDb.prepare('SELECT * FROM request_logs ORDER BY id DESC LIMIT ?');
-      this.insertCacheStmt = this.proxiedDb.prepare('INSERT OR REPLACE INTO semantic_cache (hash, response, created_at) VALUES (?, ?, ?)');
-      this.selectCacheStmt = this.proxiedDb.prepare('SELECT response FROM semantic_cache WHERE hash = ?');
+      this.insertLogStmt = this.proxiedDb.prepare(
+        'INSERT INTO request_logs (trace_id, timestamp, method, path, duration_ms) VALUES (?, ?, ?, ?, ?)',
+      );
+      this.selectLogsStmt = this.proxiedDb.prepare(
+        'SELECT * FROM request_logs ORDER BY id DESC LIMIT ?',
+      );
+      this.insertCacheStmt = this.proxiedDb.prepare(
+        'INSERT OR REPLACE INTO semantic_cache (hash, response, created_at) VALUES (?, ?, ?)',
+      );
+      this.selectCacheStmt = this.proxiedDb.prepare(
+        'SELECT response FROM semantic_cache WHERE hash = ?',
+      );
 
       // Patrón 1: Tool Search JIT — prepared statements
       this.insertToolStmt = this.proxiedDb.prepare(
-        'INSERT OR REPLACE INTO tools (name, description, schema_json, category, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT OR REPLACE INTO tools (name, description, schema_json, category, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
       );
       // Simple keyword search across name + description — no external FTS engine needed
       this.searchToolsStmt = this.proxiedDb.prepare(
         `SELECT name, description, schema_json, category FROM tools
          WHERE name LIKE ? OR description LIKE ? OR category LIKE ?
-         ORDER BY name ASC LIMIT ?`
+         ORDER BY name ASC LIMIT ?`,
       );
       this.getToolByNameStmt = this.proxiedDb.prepare(
-        'SELECT name, description, schema_json, category FROM tools WHERE name = ?'
+        'SELECT name, description, schema_json, category FROM tools WHERE name = ?',
       );
 
       // Rate Limiting Tokens
       this.updateRateLimitStmt = this.proxiedDb.prepare(
-        'INSERT OR REPLACE INTO rate_limit_tokens (identifier, tokens, last_refill) VALUES (?, ?, ?)'
+        'INSERT OR REPLACE INTO rate_limit_tokens (identifier, tokens, last_refill) VALUES (?, ?, ?)',
       );
       this.getRateLimitStmt = this.proxiedDb.prepare(
-        'SELECT tokens, last_refill FROM rate_limit_tokens WHERE identifier = ?'
+        'SELECT tokens, last_refill FROM rate_limit_tokens WHERE identifier = ?',
       );
 
       // Request-count limiter: single atomic UPSERT.
@@ -228,27 +236,33 @@ export class DatabaseService extends EventEmitter {
          ON CONFLICT(identifier) DO UPDATE SET
            count = CASE WHEN :now > rate_limit_requests.reset_time THEN 1 ELSE rate_limit_requests.count + 1 END,
            reset_time = CASE WHEN :now > rate_limit_requests.reset_time THEN :reset ELSE rate_limit_requests.reset_time END
-         RETURNING count, reset_time`
+         RETURNING count, reset_time`,
       );
 
       // Gemini Context Cache
       this.insertContextCacheStmt = this.proxiedDb.prepare(
-        'INSERT OR REPLACE INTO gemini_context_cache (id, file_name, mime_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?)'
+        'INSERT OR REPLACE INTO gemini_context_cache (id, file_name, mime_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?)',
       );
       this.selectContextCacheStmt = this.proxiedDb.prepare(
-        'SELECT id, file_name, mime_type, size_bytes, created_at FROM gemini_context_cache WHERE id = ?'
+        'SELECT id, file_name, mime_type, size_bytes, created_at FROM gemini_context_cache WHERE id = ?',
       );
 
       // Prompt Playground
-      this.proxiedDb.prepare(
-        'INSERT OR IGNORE INTO prompts (name, content, description, updated_at) VALUES (?, ?, ?, ?)'
-      ).run('generate_code', 'You are an expert coder. Generate code...', 'Default code gen prompt', new Date().toISOString());
-
+      this.proxiedDb
+        .prepare(
+          'INSERT OR IGNORE INTO prompts (name, content, description, updated_at) VALUES (?, ?, ?, ?)',
+        )
+        .run(
+          'generate_code',
+          'You are an expert coder. Generate code...',
+          'Default code gen prompt',
+          new Date().toISOString(),
+        );
 
       // Patrón 3: vector prepared statements (only when extension loaded)
       if (this.vecExtensionLoaded) {
         this.insertVectorStmt = this.proxiedDb.prepare(
-          'INSERT INTO semantic_vectors(rowid, embedding) VALUES (?, ?)'
+          'INSERT INTO semantic_vectors(rowid, embedding) VALUES (?, ?)',
         );
         // KNN search: returns the rowid of the nearest neighbor within distance threshold
         this.searchVectorStmt = this.proxiedDb.prepare(
@@ -256,20 +270,20 @@ export class DatabaseService extends EventEmitter {
            FROM semantic_vectors
            WHERE embedding MATCH ?
              AND k = ?
-           ORDER BY distance`
+           ORDER BY distance`,
         );
         this.insertVectorMetaStmt = this.proxiedDb.prepare(
           `INSERT OR REPLACE INTO semantic_cache_meta
            (vector_id, prompt_hash, response, model_id, created_at)
-           VALUES (?, ?, ?, ?, ?)`
+           VALUES (?, ?, ?, ?, ?)`,
         );
         this.getVectorMetaStmt = this.proxiedDb.prepare(
           `UPDATE semantic_cache_meta SET hit_count = hit_count + 1
            WHERE vector_id = ?
-           RETURNING prompt_hash, response, model_id, hit_count`
+           RETURNING prompt_hash, response, model_id, hit_count`,
         );
       }
-      
+
       this.emit('connected');
     } catch (err) {
       this.emit('error', err);
@@ -302,13 +316,22 @@ export class DatabaseService extends EventEmitter {
     }
   }
 
-  public logRequest(method: string, reqPath: string, durationMs: number = 0, traceId?: string): void {
+  public logRequest(
+    method: string,
+    reqPath: string,
+    durationMs: number = 0,
+    traceId?: string,
+  ): void {
     if (!this.insertLogStmt) return;
     try {
       const finalTraceId = traceId || getTraceId() || null;
       this.insertLogStmt.run(finalTraceId, new Date().toISOString(), method, reqPath, durationMs);
     } catch (error) {
-      logger.error('Failed to log request to SQLite', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to log request to SQLite',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -317,7 +340,11 @@ export class DatabaseService extends EventEmitter {
     try {
       return this.selectLogsStmt.all(limit);
     } catch (error) {
-      logger.error('Failed to retrieve logs from SQLite', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to retrieve logs from SQLite',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return [];
     }
   }
@@ -328,7 +355,11 @@ export class DatabaseService extends EventEmitter {
       const row = this.selectCacheStmt.get(hash);
       return row ? JSON.parse(row.response) : null;
     } catch (error) {
-      logger.error('Failed to get cache', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to get cache',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return null;
     }
   }
@@ -338,7 +369,11 @@ export class DatabaseService extends EventEmitter {
     try {
       this.insertCacheStmt.run(hash, JSON.stringify(response), new Date().toISOString());
     } catch (error) {
-      logger.error('Failed to set cache', {}, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to set cache',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -387,7 +422,7 @@ export class DatabaseService extends EventEmitter {
     embedding: Float32Array,
     promptHash: string,
     response: object,
-    modelId: string
+    modelId: string,
   ): void {
     if (!this.vecExtensionLoaded || !this.insertVectorStmt || !this.insertVectorMetaStmt) return;
     try {
@@ -398,11 +433,14 @@ export class DatabaseService extends EventEmitter {
         promptHash,
         JSON.stringify(response),
         modelId,
-        new Date().toISOString()
+        new Date().toISOString(),
       );
     } catch (error) {
-      logger.error('[Vec] storeSemanticVector failed', { vectorId, modelId },
-        error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        '[Vec] storeSemanticVector failed',
+        { vectorId, modelId },
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -421,7 +459,7 @@ export class DatabaseService extends EventEmitter {
   public findSemanticMatch(
     queryEmbedding: Float32Array,
     topK: number = 3,
-    distThreshold: number = 0.15
+    distThreshold: number = 0.15,
   ): { response: any; modelId: string; hitCount: number } | null {
     if (!this.vecExtensionLoaded || !this.searchVectorStmt || !this.getVectorMetaStmt) return null;
     try {
@@ -443,12 +481,14 @@ export class DatabaseService extends EventEmitter {
       }
 
       // Increment hit_count and return cached data atomically
-      const meta = this.getVectorMetaStmt.get(best.rowid) as {
-        prompt_hash: string;
-        response: string;
-        model_id: string;
-        hit_count: number;
-      } | undefined;
+      const meta = this.getVectorMetaStmt.get(best.rowid) as
+        | {
+            prompt_hash: string;
+            response: string;
+            model_id: string;
+            hit_count: number;
+          }
+        | undefined;
 
       if (!meta) return null;
 
@@ -464,8 +504,11 @@ export class DatabaseService extends EventEmitter {
         hitCount: meta.hit_count,
       };
     } catch (error) {
-      logger.error('[Vec] findSemanticMatch failed', {},
-        error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        '[Vec] findSemanticMatch failed',
+        {},
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return null;
     }
   }
@@ -492,7 +535,7 @@ export class DatabaseService extends EventEmitter {
     name: string,
     description: string,
     schemaJson: object,
-    category: string = 'general'
+    category: string = 'general',
   ): void {
     if (!this.insertToolStmt) return;
     try {
@@ -500,7 +543,11 @@ export class DatabaseService extends EventEmitter {
       this.insertToolStmt.run(name, description, JSON.stringify(schemaJson), category, now, now);
       logger.info(`[ToolRegistry] Registered tool: ${name}`, { category });
     } catch (error) {
-      logger.error('Failed to register tool', { name }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to register tool',
+        { name },
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -511,7 +558,7 @@ export class DatabaseService extends EventEmitter {
    */
   public searchTools(
     query: string,
-    limit: number = 5
+    limit: number = 5,
   ): Array<{ name: string; description: string; schema: object; category: string }> {
     if (!this.searchToolsStmt) return [];
     try {
@@ -524,7 +571,11 @@ export class DatabaseService extends EventEmitter {
         category: row.category,
       }));
     } catch (error) {
-      logger.error('Failed to search tools', { query }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to search tools',
+        { query },
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return [];
     }
   }
@@ -533,7 +584,7 @@ export class DatabaseService extends EventEmitter {
    * Retrieves a single tool's full schema by its exact name.
    */
   public getToolByName(
-    name: string
+    name: string,
   ): { name: string; description: string; schema: object; category: string } | null {
     if (!this.getToolByNameStmt) return null;
     try {
@@ -546,7 +597,11 @@ export class DatabaseService extends EventEmitter {
         category: row.category,
       };
     } catch (error) {
-      logger.error('Failed to get tool by name', { name }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to get tool by name',
+        { name },
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return null;
     }
   }
@@ -559,7 +614,11 @@ export class DatabaseService extends EventEmitter {
     try {
       this.updateRateLimitStmt.run(identifier, tokens, lastRefill);
     } catch (error) {
-      logger.error('Failed to update rate limit token', { identifier }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to update rate limit token',
+        { identifier },
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -568,7 +627,10 @@ export class DatabaseService extends EventEmitter {
    * returns the post-increment {count, resetTime}. Backs SqliteRateLimitStore.
    * Throws on DB failure so the limiter can fail closed (never silently 0).
    */
-  public hitRequestLimit(identifier: string, windowMs: number): { count: number; resetTime: number } {
+  public hitRequestLimit(
+    identifier: string,
+    windowMs: number,
+  ): { count: number; resetTime: number } {
     if (!this.hitRequestLimitStmt) {
       throw new Error('Rate limit store not initialized');
     }
@@ -588,7 +650,11 @@ export class DatabaseService extends EventEmitter {
       if (!row) return null;
       return { tokens: row.tokens, lastRefill: row.last_refill };
     } catch (error) {
-      logger.error('Failed to get rate limit token', { identifier }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to get rate limit token',
+        { identifier },
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return null;
     }
   }
@@ -603,11 +669,21 @@ export class DatabaseService extends EventEmitter {
       this.insertContextCacheStmt.run(id, fileName, mimeType, sizeBytes, now);
       logger.info(`[ContextCache] Saved cache ID: ${id}`);
     } catch (error) {
-      logger.error('Failed to save context cache', { id }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to save context cache',
+        { id },
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
-  public getContextCache(id: string): { id: string; fileName: string; mimeType: string; sizeBytes: number; createdAt: string } | null {
+  public getContextCache(id: string): {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+  } | null {
     if (!this.selectContextCacheStmt) return null;
     try {
       const row = this.selectContextCacheStmt.get(id) as any;
@@ -620,7 +696,11 @@ export class DatabaseService extends EventEmitter {
         createdAt: row.created_at,
       };
     } catch (error) {
-      logger.error('Failed to get context cache', { id }, error instanceof Error ? error : new Error(String(error)));
+      logger.error(
+        'Failed to get context cache',
+        { id },
+        error instanceof Error ? error : new Error(String(error)),
+      );
       return null;
     }
   }

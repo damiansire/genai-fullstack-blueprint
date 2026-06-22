@@ -19,8 +19,9 @@ interface LogPayload {
 //   OTEL_EXPORTER_OTLP_ENDPOINT + '/v1/logs'
 // When neither is set, the batch buffer is never populated and no background
 // timer runs — zero overhead, and logs still go to the console below.
-const logsEndpoint = process.env['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']
-  ?? (process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
+const logsEndpoint =
+  process.env['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT'] ??
+  (process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
     ? `${process.env['OTEL_EXPORTER_OTLP_ENDPOINT'].replace(/\/$/, '')}/v1/logs`
     : undefined);
 const logExportEnabled = logsEndpoint !== undefined;
@@ -49,20 +50,25 @@ if (logExportEnabled) {
   setInterval(flushTelemetry, 5000).unref();
 }
 
-function writeLog(level: LogLevel, message: string, meta: Record<string, any> = {}, error?: Error | unknown) {
+function writeLog(
+  level: LogLevel,
+  message: string,
+  meta: Record<string, any> = {},
+  error?: Error | unknown,
+) {
   const payload: LogPayload = {
     level,
     message,
     traceId: getTraceId() || meta['traceId'] || null,
     timestamp: new Date().toISOString(),
-    ...meta
+    ...meta,
   };
 
   if (error && error instanceof Error) {
     payload['error'] = {
       name: error.name,
       message: error.message,
-      stack: config.isDevelopment ? error.stack : undefined
+      stack: config.isDevelopment ? error.stack : undefined,
     };
   } else if (error) {
     payload['error'] = error;
@@ -94,11 +100,12 @@ function writeLog(level: LogLevel, message: string, meta: Record<string, any> = 
 
 export const logger = {
   info: (message: string, meta?: Record<string, any>) => writeLog('info', message, meta),
-  error: (message: string, meta?: Record<string, any>, error?: Error | unknown) => writeLog('error', message, meta, error),
+  error: (message: string, meta?: Record<string, any>, error?: Error | unknown) =>
+    writeLog('error', message, meta, error),
   warn: (message: string, meta?: Record<string, any>) => writeLog('warn', message, meta),
   debug: (message: string, meta?: Record<string, any>) => {
     if (config.isDevelopment) {
       writeLog('debug', message, meta);
     }
-  }
+  },
 };

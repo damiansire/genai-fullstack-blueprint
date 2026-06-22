@@ -13,16 +13,16 @@ export class ListModelsUseCase extends UseCase<void, ListModelsResponse> {
 
   protected async executeImpl(): Promise<ListModelsResponse> {
     const registeredModels = this.modelFactory.getRegisteredModels();
-    
-    const models = registeredModels.map(modelId => ({
+
+    const models = registeredModels.map((modelId) => ({
       modelId,
       available: true,
-      registeredAt: new Date().toISOString()
+      registeredAt: new Date().toISOString(),
     }));
 
     return {
       models,
-      total: models.length
+      total: models.length,
     };
   }
 }

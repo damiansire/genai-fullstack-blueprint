@@ -21,7 +21,11 @@ import type { SafetyVerdict } from '../../infrastructure/workers/safetyWorker.js
  */
 const FAIL_CLOSED = false;
 
-export const aiSafetyFirewall = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const aiSafetyFirewall = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const ctx = getContext();
   const traceId = ctx?.traceId || 'unknown';
 
@@ -32,7 +36,10 @@ export const aiSafetyFirewall = async (req: Request, res: Response, next: NextFu
   // ── PII masking (cheap, in-place) ──────────────────────────────────────────
   const maskPII = (text: string): string => {
     if (typeof text !== 'string') return text;
-    let masked = text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]');
+    let masked = text.replace(
+      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+      '[REDACTED_EMAIL]',
+    );
     masked = masked.replace(/\b(?:\d[ -]*?){13,16}\b/g, '[REDACTED_CC]');
     return masked;
   };

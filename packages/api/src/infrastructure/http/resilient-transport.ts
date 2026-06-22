@@ -10,9 +10,9 @@ import { logger } from '../../core/logger.js';
  * validated, narrowed result.
  */
 export interface ResponseValidator<T> {
-  safeParse(input: unknown):
-    | { success: true; data: T }
-    | { success: false; error: { message: string } };
+  safeParse(
+    input: unknown,
+  ): { success: true; data: T } | { success: false; error: { message: string } };
 }
 
 /**
@@ -145,9 +145,7 @@ export class ResilientTransport {
   private async attempt(url: string, opts: ResilientRequestOptions): Promise<Response> {
     const timeoutMs = opts.timeoutMs ?? this.cfg.defaultTimeoutMs;
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
-    const signal = opts.signal
-      ? AbortSignal.any([opts.signal, timeoutSignal])
-      : timeoutSignal;
+    const signal = opts.signal ? AbortSignal.any([opts.signal, timeoutSignal]) : timeoutSignal;
 
     const init: RequestInit = {
       method: opts.method ?? 'GET',
@@ -161,7 +159,12 @@ export class ResilientTransport {
     if (!res.ok) {
       const bodyText = await res.text().catch(() => res.statusText);
       const retryAfterMs = parseRetryAfter(res.headers);
-      throw new TransportHttpError(res.status, bodyText, isRetryableStatus(res.status), retryAfterMs);
+      throw new TransportHttpError(
+        res.status,
+        bodyText,
+        isRetryableStatus(res.status),
+        retryAfterMs,
+      );
     }
 
     return res;

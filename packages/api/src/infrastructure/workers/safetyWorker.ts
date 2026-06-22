@@ -41,8 +41,14 @@ export interface SafetyVerdict {
 const INJECTION_PATTERNS: Array<{ re: RegExp; weight: number }> = [
   { re: /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|prompts?|rules)/i, weight: 0.9 },
   { re: /disregard\s+(the\s+)?(system|previous)\s+(prompt|instructions?)/i, weight: 0.9 },
-  { re: /(reveal|show|print|repeat)\s+(your|the)\s+(system\s+prompt|instructions|rules)/i, weight: 0.85 },
-  { re: /\b(you\s+are\s+now|act\s+as|pretend\s+to\s+be)\b.*\b(dan|developer\s+mode|jailbreak)\b/i, weight: 0.85 },
+  {
+    re: /(reveal|show|print|repeat)\s+(your|the)\s+(system\s+prompt|instructions|rules)/i,
+    weight: 0.85,
+  },
+  {
+    re: /\b(you\s+are\s+now|act\s+as|pretend\s+to\s+be)\b.*\b(dan|developer\s+mode|jailbreak)\b/i,
+    weight: 0.85,
+  },
   { re: /\bbypass\b.*\b(filter|safety|guard|restriction)/i, weight: 0.8 },
   { re: /\b(jailbreak|prompt\s*injection)\b/i, weight: 0.75 },
 ];
@@ -79,12 +85,20 @@ export function classify(rawText: string): SafetyVerdict {
   const start = performance.now();
   const text = normalize(rawText);
 
-  let best = { score: 0, category: 'none' as SafetyVerdict['category'], reason: 'no safety signal' };
+  let best = {
+    score: 0,
+    category: 'none' as SafetyVerdict['category'],
+    reason: 'no safety signal',
+  };
 
   const scan = (patterns: typeof INJECTION_PATTERNS, category: SafetyVerdict['category']) => {
     for (const { re, weight } of patterns) {
       if (re.test(text) && weight > best.score) {
-        best = { score: weight, category, reason: `matched ${category} pattern: ${re.source.slice(0, 48)}` };
+        best = {
+          score: weight,
+          category,
+          reason: `matched ${category} pattern: ${re.source.slice(0, 48)}`,
+        };
       }
     }
   };

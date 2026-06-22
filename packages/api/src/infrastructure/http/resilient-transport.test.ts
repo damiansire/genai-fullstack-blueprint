@@ -4,7 +4,11 @@ import assert from 'node:assert/strict';
 import { ResilientTransport, TransportHttpError } from './resilient-transport.js';
 
 /** Build a fake Response with a given status, body and headers. */
-function fakeResponse(status: number, body: string, headers: Record<string, string> = {}): Response {
+function fakeResponse(
+  status: number,
+  body: string,
+  headers: Record<string, string> = {},
+): Response {
   return new Response(body, { status, headers });
 }
 

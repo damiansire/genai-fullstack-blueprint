@@ -17,9 +17,7 @@ import { InMemoryRateLimitStore } from '../../infrastructure/rate-limit/InMemory
  *
  * Built-in over dependencies: no `express-rate-limit`.
  */
-export const rateLimiter = (
-  options: { windowMs: number; max: number; store?: RateLimitStore },
-) => {
+export const rateLimiter = (options: { windowMs: number; max: number; store?: RateLimitStore }) => {
   const store: RateLimitStore = options.store ?? new InMemoryRateLimitStore();
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

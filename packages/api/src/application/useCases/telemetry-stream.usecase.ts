@@ -58,13 +58,76 @@ export interface DeviceConfig {
 // ─── Device Registry ─────────────────────────────────────────────────────────
 
 export const DEVICES: DeviceConfig[] = [
-  { id: 'TEMP-WH-001', type: 'temperature', unit: '°C',  location: 'Warehouse A',    baseValue: 22,   amplitude: 3,    noiseLevel: 0.3, periodMs: 8000  },
-  { id: 'TEMP-WH-002', type: 'temperature', unit: '°C',  location: 'Warehouse B',    baseValue: 18,   amplitude: 5,    noiseLevel: 0.5, periodMs: 8000  },
-  { id: 'HUM-WH-001',  type: 'humidity',    unit: '%RH', location: 'Warehouse A',    baseValue: 55,   amplitude: 8,    noiseLevel: 1.0, periodMs: 10000 },
-  { id: 'PRES-PP-001', type: 'pressure',    unit: 'bar', location: 'Pipeline Seg-3', baseValue: 8.2,  amplitude: 0.5,  noiseLevel: 0.05,periodMs: 5000  },
-  { id: 'VIB-MC-001',  type: 'vibration',   unit: 'g',   location: 'Machine Line-1', baseValue: 0.12, amplitude: 0.05, noiseLevel: 0.01,periodMs: 3000  },
-  { id: 'PWR-FL-001',  type: 'power',       unit: 'kW',  location: 'Floor 1',        baseValue: 45,   amplitude: 12,   noiseLevel: 2.0, periodMs: 7000  },
-  { id: 'GPS-TR-001',  type: 'gps',         unit: 'km/h',location: 'Route 66',       baseValue: 80,   amplitude: 20,   noiseLevel: 2.0, periodMs: 4000  },
+  {
+    id: 'TEMP-WH-001',
+    type: 'temperature',
+    unit: '°C',
+    location: 'Warehouse A',
+    baseValue: 22,
+    amplitude: 3,
+    noiseLevel: 0.3,
+    periodMs: 8000,
+  },
+  {
+    id: 'TEMP-WH-002',
+    type: 'temperature',
+    unit: '°C',
+    location: 'Warehouse B',
+    baseValue: 18,
+    amplitude: 5,
+    noiseLevel: 0.5,
+    periodMs: 8000,
+  },
+  {
+    id: 'HUM-WH-001',
+    type: 'humidity',
+    unit: '%RH',
+    location: 'Warehouse A',
+    baseValue: 55,
+    amplitude: 8,
+    noiseLevel: 1.0,
+    periodMs: 10000,
+  },
+  {
+    id: 'PRES-PP-001',
+    type: 'pressure',
+    unit: 'bar',
+    location: 'Pipeline Seg-3',
+    baseValue: 8.2,
+    amplitude: 0.5,
+    noiseLevel: 0.05,
+    periodMs: 5000,
+  },
+  {
+    id: 'VIB-MC-001',
+    type: 'vibration',
+    unit: 'g',
+    location: 'Machine Line-1',
+    baseValue: 0.12,
+    amplitude: 0.05,
+    noiseLevel: 0.01,
+    periodMs: 3000,
+  },
+  {
+    id: 'PWR-FL-001',
+    type: 'power',
+    unit: 'kW',
+    location: 'Floor 1',
+    baseValue: 45,
+    amplitude: 12,
+    noiseLevel: 2.0,
+    periodMs: 7000,
+  },
+  {
+    id: 'GPS-TR-001',
+    type: 'gps',
+    unit: 'km/h',
+    location: 'Route 66',
+    baseValue: 80,
+    amplitude: 20,
+    noiseLevel: 2.0,
+    periodMs: 4000,
+  },
 ];
 
 // ─── Rolling Statistics (Z-score anomaly detection) ──────────────────────────
@@ -103,7 +166,7 @@ class RollingStats {
 
 /** Generates a sinusoidal value with Gaussian noise — simulates real sensor drift. */
 function simulateReading(device: DeviceConfig, t: number): number {
-  const sine = device.baseValue + device.amplitude * Math.sin(2 * Math.PI * t / 30000);
+  const sine = device.baseValue + device.amplitude * Math.sin((2 * Math.PI * t) / 30000);
   const noise = (Math.random() - 0.5) * 2 * device.noiseLevel;
   // Inject random spike 1% of the time for anomaly testing
   const spike = Math.random() < 0.01 ? device.amplitude * (Math.random() > 0.5 ? 3 : -3) : 0;
@@ -122,9 +185,8 @@ export class TelemetryStreamUseCase {
    */
   async *stream(deviceIds: string[], signal: AbortSignal): AsyncGenerator<TelemetryFrame> {
     const traceId = getContext()?.traceId;
-    const activeDevices = deviceIds.length > 0
-      ? DEVICES.filter(d => deviceIds.includes(d.id))
-      : DEVICES;
+    const activeDevices =
+      deviceIds.length > 0 ? DEVICES.filter((d) => deviceIds.includes(d.id)) : DEVICES;
 
     if (activeDevices.length === 0) {
       logger.warn('[Telemetry] No matching devices', { deviceIds, traceId });
@@ -133,18 +195,14 @@ export class TelemetryStreamUseCase {
 
     // Per-device rolling statistics for Z-score anomaly detection
     const stats = new Map<string, RollingStats>(
-      activeDevices.map(d => [d.id, new RollingStats(20)])
+      activeDevices.map((d) => [d.id, new RollingStats(20)]),
     );
 
     // Per-device tick counter for sinusoidal simulation
-    const ticks = new Map<string, number>(
-      activeDevices.map(d => [d.id, 0])
-    );
+    const ticks = new Map<string, number>(activeDevices.map((d) => [d.id, 0]));
 
     // Per-device next-emit timestamp
-    const nextEmit = new Map<string, number>(
-      activeDevices.map(d => [d.id, Date.now()])
-    );
+    const nextEmit = new Map<string, number>(activeDevices.map((d) => [d.id, Date.now()]));
 
     logger.info('[Telemetry] Stream started', {
       deviceCount: activeDevices.length,
@@ -169,8 +227,7 @@ export class TelemetryStreamUseCase {
         rollingStats.add(value);
 
         const z = rollingStats.zScore(value);
-        const alertLevel: AlertLevel =
-          z > 4.0 ? 'CRITICAL' : z > 2.5 ? 'WARNING' : 'NORMAL';
+        const alertLevel: AlertLevel = z > 4.0 ? 'CRITICAL' : z > 2.5 ? 'WARNING' : 'NORMAL';
 
         const frame: TelemetryFrame = {
           frameId: randomUUID(),

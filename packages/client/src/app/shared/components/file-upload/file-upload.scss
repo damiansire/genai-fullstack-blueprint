@@ -40,7 +40,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(236,72,153,0.05) 100%);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%);
     opacity: 0;
     transition: opacity 0.4s ease;
   }
@@ -50,7 +50,7 @@
     background: var(--upload-bg-hover);
     box-shadow: var(--upload-glow), var(--upload-shadow);
     transform: translateY(-2px);
-    
+
     &::before {
       opacity: 1;
     }
@@ -92,7 +92,7 @@
   opacity: 0;
   cursor: pointer;
   z-index: 10;
-  
+
   &:focus-visible + .file-upload-placeholder {
     outline: 3px solid var(--color-purple);
     outline-offset: 4px;
@@ -112,7 +112,7 @@
   .upload-icon {
     font-size: 3.5rem;
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
   }
 
   p {
@@ -125,7 +125,7 @@
   small {
     font-size: 0.8rem;
     color: var(--color-text-secondary, #6b7280);
-    background: rgba(0,0,0,0.04);
+    background: rgba(0, 0, 0, 0.04);
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
     font-weight: 500;
@@ -147,15 +147,15 @@
   align-items: center;
   gap: 1rem;
   flex: 1;
-  background: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.5);
   padding: 0.75rem 1rem;
   border-radius: 1rem;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .file-icon {
   font-size: 2.5rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .image-preview {
@@ -163,7 +163,7 @@
   height: 3.5rem;
   object-fit: cover;
   border-radius: 0.75rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   border: 2px solid white;
 }
 
@@ -221,12 +221,22 @@
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-.processing .upload-icon, .processing .file-icon {
+.processing .upload-icon,
+.processing .file-icon {
   animation: pulse 1.5s infinite ease-in-out;
   display: inline-block;
 }

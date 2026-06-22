@@ -8,11 +8,11 @@ import { DynamicToolRenderer } from '../../../../shared/components/dynamic-tool-
   imports: [DynamicToolRenderer],
   templateUrl: './text-model-response.html',
   styleUrl: './text-model-response.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TextModelResponse {
   response = input<ModelInvocationResponse | null>(null);
-  
+
   // Unique ID for popover accessibility and targeting
   uniqueId = crypto.randomUUID();
 
@@ -21,7 +21,6 @@ export class TextModelResponse {
     magic: '✨',
     settings: '⚙️',
     info: 'ℹ️',
-    close: '✕'
+    close: '✕',
   };
 }
-

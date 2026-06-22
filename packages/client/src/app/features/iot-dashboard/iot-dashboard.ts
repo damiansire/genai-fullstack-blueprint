@@ -39,14 +39,19 @@ interface DeviceConfig {
 interface DeviceState {
   config: DeviceConfig;
   latest: TelemetryFrame | null;
-  history: number[];  // last 20 values for sparkline
+  history: number[]; // last 20 values for sparkline
   frameCount: number;
 }
 
 const HISTORY_SIZE = 20;
 const DEVICE_TYPE_ICONS: Record<string, string> = {
-  temperature: '🌡️', humidity: '💧', pressure: '🔵',
-  vibration: '〰️', power: '⚡', gps: '📍', default: '📡',
+  temperature: '🌡️',
+  humidity: '💧',
+  pressure: '🔵',
+  vibration: '〰️',
+  power: '⚡',
+  gps: '📍',
+  default: '📡',
 };
 
 @Component({
@@ -70,8 +75,8 @@ export class IotDashboard implements OnDestroy {
   // ─── Computed ────────────────────────────────────────────────────────────
   readonly deviceList = computed(() => Array.from(this.devices().values()));
   readonly alertCount = computed(() => this.alerts().length);
-  readonly criticalCount = computed(() =>
-    this.alerts().filter(a => a.alertLevel === 'CRITICAL').length
+  readonly criticalCount = computed(
+    () => this.alerts().filter((a) => a.alertLevel === 'CRITICAL').length,
   );
   readonly hasAlerts = computed(() => this.alertCount() > 0);
 
@@ -92,7 +97,8 @@ export class IotDashboard implements OnDestroy {
   /** Generates an SVG polyline path from history values for a sparkline. */
   sparklinePath(history: number[]): string {
     if (history.length < 2) return '';
-    const w = 120, h = 32;
+    const w = 120,
+      h = 32;
     const min = Math.min(...history);
     const max = Math.max(...history) || min + 1;
     const points = history.map((v, i) => {
@@ -132,7 +138,7 @@ export class IotDashboard implements OnDestroy {
     // Default events: telemetry frames
     this.eventSource.onmessage = (e) => {
       const frame: TelemetryFrame = JSON.parse(e.data);
-      this.totalFrames.update(n => n + 1);
+      this.totalFrames.update((n) => n + 1);
 
       // Update device state immutably (new Map for Signal change detection)
       const map = new Map(this.devices());
@@ -150,7 +156,7 @@ export class IotDashboard implements OnDestroy {
 
       // Track alerts
       if (frame.alertLevel !== 'NORMAL') {
-        this.alerts.update(prev => [frame, ...prev].slice(0, 50));
+        this.alerts.update((prev) => [frame, ...prev].slice(0, 50));
       }
     };
 

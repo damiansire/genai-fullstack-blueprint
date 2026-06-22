@@ -6,7 +6,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './navigation.html',
   styleUrl: './navigation.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Navigation {
   icons = {
@@ -20,4 +20,3 @@ export class Navigation {
     codeGen: '⚡',
   };
 }
-

@@ -8,13 +8,7 @@
  *   4. On submit: executes the tool via POST /api/models (or /api/tools/search for search_tools)
  *   5. Response rendered via <app-model-response> + AiStreamService
  */
-import {
-  Component,
-  signal,
-  computed,
-  inject,
-  ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { API_CONFIG } from '../../core/tokens/api-config';
 import { AiStreamService } from '../../core/services/ai-stream.service';
@@ -68,9 +62,7 @@ export class ToolExplorer {
     return map;
   });
 
-  groupedCategories = computed<string[]>(() =>
-    Array.from(this.groupedTools().keys()).sort()
-  );
+  groupedCategories = computed<string[]>(() => Array.from(this.groupedTools().keys()).sort());
 
   // ─── Selection ─────────────────────────────────────────────────────────────
 
@@ -131,7 +123,7 @@ export class ToolExplorer {
   readonly isToolListLoading = computed(() => this.toolListResource.isLoading());
 
   readonly shouldShowResult = computed(
-    () => this.executionResult() !== null || this.executionError() !== null || this.isExecuting()
+    () => this.executionResult() !== null || this.executionError() !== null || this.isExecuting(),
   );
 
   trackByName(_: number, tool: ToolSummary): string {

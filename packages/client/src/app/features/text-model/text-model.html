@@ -1,5 +1,5 @@
 <div class="chat-layout">
-  <app-chat-sidebar 
+  <app-chat-sidebar
     [activeSessionId]="activeSessionId()"
     (onSelectSession)="loadSession($event)"
     (onNewChat)="resetForm()"
@@ -7,54 +7,57 @@
 
   <div class="feature-container">
     <header class="feature-header">
-    <h1><span aria-hidden="true">{{ icons.robot }}</span> Text Model - Google Text Bison</h1>
-    <p>Generate text using Google's Text Bison AI model</p>
-  </header>
+      <h1>
+        <span aria-hidden="true">{{ icons.robot }}</span> Text Model - Google Text Bison
+      </h1>
+      <p>Generate text using Google's Text Bison AI model</p>
+    </header>
 
-  <div class="feature-content">
-    <app-text-model-form
-      [form]="textForm"
-      [loading]="isLoading()"
-      (submitForm)="onSubmit()"
-      (resetForm)="resetForm()"
-    />
+    <div class="feature-content">
+      <app-text-model-form
+        [form]="textForm"
+        [loading]="isLoading()"
+        (submitForm)="onSubmit()"
+        (resetForm)="resetForm()"
+      />
 
-    <!--
+      <!--
       Patrón 4: @defer trigger is now a single unified computed Signal.
       The skeleton proxy holds the layout space (CLS = 0) while the
       heavy <app-model-response> module is deferred.
     -->
-    <section class="ai-module-viewport-trigger" aria-live="polite" aria-atomic="false">
-      @defer (when shouldShowResponse()) {
-        <app-model-response
-          [loading]="isLoading()"
-          [error]="activeError()"
-          [response]="activeResponse()"
-          [isStreaming]="aiStream.isStreaming()"
-          [streamText]="aiStream.streamText()"
-          loadingMessage="Generating text response..."
-          (retry)="onSubmit()"
-        >
-          @if (activeResponse()) {
-            <app-text-model-response [response]="activeResponse()" />
-          }
-        </app-model-response>
-      } @placeholder (minimum 400ms) {
-        <!-- Native skeletal proxy: reserves layout space, prevents CLS -->
-        <div class="native-skeletal-proxy" aria-hidden="true">
-          <div class="skeleton-header-strip"></div>
-          <div class="skeleton-content-block"></div>
-        </div>
-      } @loading (after 150ms; minimum 1s) {
-        <div class="native-skeletal-proxy is-loading-active" aria-hidden="true">
-          <div class="skeleton-header-strip pulse-animation"></div>
-          <div class="skeleton-content-block pulse-animation"></div>
-        </div>
-      } @error {
-        <div role="alert" class="error-boundary-panel">
-          Se ha producido un error durante el ensamblado del módulo dinámico.
-        </div>
-      }
-    </section>
+      <section class="ai-module-viewport-trigger" aria-live="polite" aria-atomic="false">
+        @defer (when shouldShowResponse()) {
+          <app-model-response
+            [loading]="isLoading()"
+            [error]="activeError()"
+            [response]="activeResponse()"
+            [isStreaming]="aiStream.isStreaming()"
+            [streamText]="aiStream.streamText()"
+            loadingMessage="Generating text response..."
+            (retry)="onSubmit()"
+          >
+            @if (activeResponse()) {
+              <app-text-model-response [response]="activeResponse()" />
+            }
+          </app-model-response>
+        } @placeholder (minimum 400ms) {
+          <!-- Native skeletal proxy: reserves layout space, prevents CLS -->
+          <div class="native-skeletal-proxy" aria-hidden="true">
+            <div class="skeleton-header-strip"></div>
+            <div class="skeleton-content-block"></div>
+          </div>
+        } @loading (after 150ms; minimum 1s) {
+          <div class="native-skeletal-proxy is-loading-active" aria-hidden="true">
+            <div class="skeleton-header-strip pulse-animation"></div>
+            <div class="skeleton-content-block pulse-animation"></div>
+          </div>
+        } @error {
+          <div role="alert" class="error-boundary-panel">
+            Se ha producido un error durante el ensamblado del módulo dinámico.
+          </div>
+        }
+      </section>
+    </div>
   </div>
 </div>
