@@ -6,7 +6,6 @@
     "packages/api",
     "packages/client"
   ],
-  "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=api\" \"npm run start --workspace=client\"",
     "build": "npm run build --workspace=api && npm run build:prod --workspace=client",

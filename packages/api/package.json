@@ -1,8 +1,9 @@
 {
   "name": "api",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "main": "index.js",
+  "main": "src/server.ts",
   "scripts": {
     "build": "echo 'Build step skipped. Running native TypeScript.'",
     "dev": "node --import tsx --watch --env-file-if-exists=../../env.example --env-file-if-exists=../../.env src/server.ts",
