@@ -1,9 +1,20 @@
 
 # 🚀 Full-Stack Multimodal AI Application: A Reference Blueprint
 
+[![CI](https://github.com/damiansire/genai-fullstack-blueprint/actions/workflows/ci.yml/badge.svg)](https://github.com/damiansire/genai-fullstack-blueprint/actions/workflows/ci.yml)
+
 This repository is a **reference blueprint** (a scaffold to build on, not a turnkey product) for modern, scalable web applications using a cutting-edge tech stack: **Angular** for the frontend, **Node.js** for the backend, and **Google Gemini API** for multimodal AI capabilities.
 
 The project is built from the ground up following strict industry best practices for **TypeScript full-stack development**, focusing on **maintainability**, **developer experience**, and **deployment readiness**.
+
+**What CI verifies on every push** — so "reference" never means "untested":
+
+- Typecheck, lint, and formatting across both workspaces.
+- The full test suite (**97 tests**), including **HTTP integration tests** that boot the real gateway on an ephemeral port and drive the whole chain end-to-end — health probes, the fail-closed auth boundary, and `auth → rate-limit → token-limit → safety → handler`.
+- The **Angular production bundle** compiles.
+- The **entire Docker Compose stack** (API + client) builds from its Dockerfiles and **boots to healthy**, with its live endpoints smoke-tested.
+
+What it deliberately does **not** claim: a hosted deployment with an SLA, load/soak testing, or a security audit — those are the layers you add on top of this foundation.
 
 ---
 
