@@ -36,15 +36,39 @@ jobs:
       - name: Build client (production bundle)
         run: npm run build:client
 
-  # Prove both container images build from the Dockerfiles the compose file ships,
-  # so "deployable" is verified, not assumed. Build only (no registry push).
-  docker-build:
+  # Prove the deployable system actually RUNS, not just that it builds: bring up
+  # the full compose stack (API + client) from the shipped Dockerfiles, wait for
+  # both healthchecks to report healthy, then smoke-test the live endpoints.
+  # Build-only would miss runtime breakage (e.g. a missing flag or bad wiring).
+  # No registry push — nothing leaves CI.
+  docker-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build API image
-        run: docker build -f .docker/Dockerfile.server -t genai-api:ci .
+      # compose needs an env file (env_file: .env) and values for ${...}
+      # interpolation. The env.example placeholders are enough to boot: the health
+      # and /api/info paths need no real secrets (Gemini is only called on real
+      # invoke requests), and API_KEY_1 gets a usable value from the example.
+      - name: Prepare env
+        run: cp env.example .env
 
-      - name: Build client image
-        run: docker build -f .docker/Dockerfile.client -t genai-client:ci .
+      - name: Build images and start the stack (wait for healthchecks)
+        run: docker compose up -d --build --wait --wait-timeout 240
+
+      - name: Smoke-test the live stack
+        run: |
+          set -euo pipefail
+          # API liveness + a free, no-auth, no-Gemini endpoint.
+          curl -fsS http://localhost:3000/health/live | grep -q '"status":"live"'
+          curl -fsS http://localhost:3000/api/info | grep -q 'AI Gateway API'
+          # Client SPA served by nginx.
+          test "$(curl -fsS -o /dev/null -w '%{http_code}' http://localhost:8080/)" = "200"
+
+      - name: Stack logs (on failure)
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

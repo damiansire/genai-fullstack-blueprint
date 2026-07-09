@@ -5,7 +5,11 @@
 # `src/server.ts` through the `tsx` loader (the same runtime the test suite
 # uses). `node --experimental-strip-types` cannot resolve the project's `.js`
 # import specifiers to their `.ts` siblings, so `tsx` is the runtime of record.
-FROM node:22-alpine
+#
+# node:24 (not 22): the API imports `node:sqlite` WITHOUT the --experimental-sqlite
+# flag, which is only flag-free on Node >= 23.4. This also matches the Node the CI
+# test/build job runs on, so "green in CI" and "runs in the container" stay in sync.
+FROM node:24-alpine
 
 WORKDIR /app
 
