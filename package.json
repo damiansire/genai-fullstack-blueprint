@@ -30,7 +30,7 @@
   ],
   "author": "Damian Sire <damiansire@gmail.com>",
   "license": "MIT",
-  "description": "Production-ready full-stack blueprint for building multimodal GenAI apps with an Angular client and Node.js/Express AI Gateway.",
+  "description": "Reference full-stack blueprint (a scaffold to build on) for multimodal GenAI apps with an Angular client and a Node.js/Express AI Gateway.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/damiansire/GenAI-Scaffold.git"

@@ -185,7 +185,7 @@ This platform includes three powerful AI capabilities powered by Google's models
 
 ## 🏢 Enterprise AI Platform Capabilities
 
-Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B SaaS-ready AI Platform**. It includes built-in enterprise features that address the most critical business requirements:
+Beyond a bare starter, this scaffold wires up the **patterns** a B2B SaaS AI platform needs, so you extend and harden them instead of starting from scratch. Each item below is a reference implementation with its current maturity called out — not a turnkey guarantee:
 
 ### 🧠 Integrated RAG Infrastructure (Retrieval-Augmented Generation)
 - **Chat with Private Data**: Seamlessly ingest and query private documents and customer databases without the prohibitive cost of fine-tuning models.
@@ -195,7 +195,7 @@ Beyond being a simple starter template, GenAI-Scaffold is architected as a **B2B
 ### 🛡️ Guardrails & AI Safety Firewall
 - **Prompt Injection Heuristic**: Pre-flight validation of user inputs via a basic keyword/substring check. *(A local SLM such as Phi-3.5 running in a background Worker Thread is on the roadmap — not yet implemented.)*
 - **PII Masking**: Automatic detection and masking of Personally Identifiable Information (emails, credit cards) *before* data leaves your infrastructure to reach public APIs.
-- **Toxicity Filters**: Guarantees brand safety by actively blocking inappropriate or non-compliant generations.
+- **Toxicity Filters**: A hook to actively block inappropriate or non-compliant generations, so you can enforce brand-safety policies at the gateway.
 
 ### 📊 Comprehensive LLMOps & Observability
 - **ROI & Billing Visibility**: Granular tracking of Token Consumption and Latency (TTFT) per user and per tenant, essential for B2B billing models.
