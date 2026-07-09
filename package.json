@@ -33,10 +33,10 @@
   "description": "Reference full-stack blueprint (a scaffold to build on) for multimodal GenAI apps with an Angular client and a Node.js/Express AI Gateway.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/damiansire/GenAI-Scaffold.git"
+    "url": "git+https://github.com/damiansire/genai-fullstack-blueprint.git"
   },
   "bugs": {
-    "url": "https://github.com/damiansire/GenAI-Scaffold/issues"
+    "url": "https://github.com/damiansire/genai-fullstack-blueprint/issues"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

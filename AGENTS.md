@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Canonical instructions for AI coding agents working on **GenAI-Scaffold**.
+Canonical instructions for AI coding agents working on **genai-fullstack-blueprint**.
 This file is the single source of truth: `CLAUDE.md` and `GEMINI.md` are thin
 pointers to this document — keep guidance here, not duplicated elsewhere.
 
