@@ -30,3 +30,21 @@ jobs:
       # typecheck + lint + format:check + test for both workspaces (api, client).
       - name: Verify
         run: npm run ci
+
+      # Prove the deployable client bundle actually compiles in production mode
+      # (the api has no build step — it runs TypeScript natively via tsx).
+      - name: Build client (production bundle)
+        run: npm run build:client
+
+  # Prove both container images build from the Dockerfiles the compose file ships,
+  # so "deployable" is verified, not assumed. Build only (no registry push).
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f .docker/Dockerfile.server -t genai-api:ci .
+
+      - name: Build client image
+        run: docker build -f .docker/Dockerfile.client -t genai-client:ci .
