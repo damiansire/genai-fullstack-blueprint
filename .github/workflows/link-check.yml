@@ -1,0 +1,37 @@
+name: Link Check
+
+# Prevention: keeps the README (and other docs) honest — catches broken links,
+# dead badges, and renamed/moved URLs on every push/PR to main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - '.github/workflows/link-check.yml'
+      - 'lychee.toml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - '.github/workflows/link-check.yml'
+      - 'lychee.toml'
+  # Allow manual re-runs to catch link rot that appears over time.
+  workflow_dispatch:
+
+concurrency:
+  group: link-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check links in Markdown
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Config (accepted status codes, excludes) lives in lychee.toml.
+          args: '--config lychee.toml --no-progress ./README.md ./REGISTRY.md ./AGENTS.md'
+          # Fail the job on broken links — that is the whole point of the gate.
+          fail: true

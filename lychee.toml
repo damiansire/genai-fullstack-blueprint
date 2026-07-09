@@ -1,0 +1,24 @@
+# lychee link-checker config — used by .github/workflows/link-check.yml
+# Docs: https://github.com/lycheeverse/lychee
+
+# Treat redirects and common non-200-but-alive responses as OK so login walls
+# (e.g. Google AI Studio 302) and renamed GitHub repos (301) don't false-fail.
+accept = ["200", "201", "202", "203", "204", "206", "301", "302", "303", "307", "308"]
+
+# Don't verify local dev URLs shown in the getting-started snippets.
+exclude = [
+  "^https?://localhost",
+  "^https?://127\\.0\\.0\\.1",
+  "^https?://0\\.0\\.0\\.0",
+  # Placeholder shown in env setup, not a real endpoint.
+  "YOUR_API_KEY_HERE",
+]
+
+# Anchors within the same file aren't real network links; skip fragment-only checks.
+exclude_mail = true
+include_fragments = false
+
+# Be gentle with rate-limited hosts (GitHub, Google) and flaky networks.
+max_retries = 3
+retry_wait_time = 2
+timeout = 20

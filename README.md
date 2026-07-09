@@ -10,7 +10,7 @@ The project is built from the ground up following strict industry best practices
 **What CI verifies on every push** — so "reference" never means "untested":
 
 - Typecheck, lint, and formatting across both workspaces.
-- The full test suite (**97 tests**), including **HTTP integration tests** that boot the real gateway on an ephemeral port and drive the whole chain end-to-end — health probes, the fail-closed auth boundary, and `auth → rate-limit → token-limit → safety → handler`.
+- The full test suite across both workspaces — the **backend `node:test` suite (97 tests)** plus the frontend Vitest specs — including **HTTP integration tests** that boot the real gateway on an ephemeral port and drive the whole chain end-to-end — health probes, the fail-closed auth boundary, and `auth → rate-limit → token-limit → safety → handler`.
 - The **Angular production bundle** compiles.
 - The **entire Docker Compose stack** (API + client) builds from its Dockerfiles and **boots to healthy**, with its live endpoints smoke-tested.
 
@@ -75,8 +75,8 @@ Make sure you have the following installed:
 Clone the repository:
 
 ```bash
-git clone https://github.com/damiansire/GenAI-Scaffold.git
-cd GenAI-Scaffold
+git clone https://github.com/damiansire/genai-fullstack-blueprint.git
+cd genai-fullstack-blueprint
 ```
 
 Create your environment file by copying the example:
@@ -134,8 +134,8 @@ docker compose logs -f
 **Health Checks:**
 
 ```bash
-curl http://localhost:3000/health  # API
-curl http://localhost:8080/health  # Frontend
+curl http://localhost:3000/health/live   # API liveness  (also: /health/ready)
+curl http://localhost:8080/health         # Frontend (nginx)
 ```
 
 > **Troubleshooting Docker:** Refer to `REGISTRY.md` for current deployment architectures and known edge cases.
@@ -225,7 +225,7 @@ Beyond a bare starter, this scaffold wires up the **patterns** a B2B SaaS AI pla
 Optimized for scalability and clarity:
 
 ```
-/GenAI-Scaffold/
+/genai-fullstack-blueprint/
 ├── packages/               # Monorepo packages
 │   ├── client/            # Angular 21 Application
 │   │   ├── src/app/
@@ -233,12 +233,15 @@ Optimized for scalability and clarity:
 │   │   │   ├── shared/     # Reusable components (file-upload, navigation)
 │   │   │   └── features/   # Functional components (text-model, image-model)
 │   │   └── package.json
-│   └── api/               # Node.js API
+│   └── api/               # Node.js API (Clean Architecture)
 │       ├── src/
-│       │   ├── api/        # Routes, controllers, middleware
-│       │   ├── core/       # Base classes (ApiError)
-│       │   ├── models/     # Factory, Registry, Loader
-│       │   └── plugins/    # AI model strategies
+│       │   ├── api/            # Routes, controllers, middleware
+│       │   ├── application/    # Use cases (business logic orchestration)
+│       │   ├── domain/         # Domain models (AI)
+│       │   ├── infrastructure/ # DB, HTTP, rate-limit, workers, semantic cache, MCP
+│       │   ├── services/       # Embedding, PII masking
+│       │   ├── core/           # Base classes (ApiError, UseCase), circuit-breaker, config
+│       │   └── plugins/        # AI model strategies (google-text-bison, gemini-image-gen, google-vision-ocr)
 │       └── package.json
 ├── .docker/               # Dockerfiles for production
 │   ├── Dockerfile.client  # Angular + Nginx
