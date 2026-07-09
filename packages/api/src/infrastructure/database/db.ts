@@ -58,12 +58,17 @@ export class DatabaseService extends EventEmitter {
     if (this.db) return;
 
     try {
-      const dataDir = path.join(process.cwd(), 'data');
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
+      // The DB location is configurable via DB_PATH so a deployment can point it
+      // at a mounted volume (durable storage) and tests can use an isolated file
+      // or `:memory:`. Defaults to <cwd>/data/gateway.db for local/dev.
+      const dbPath = process.env['DB_PATH'] || path.join(process.cwd(), 'data', 'gateway.db');
+      if (dbPath !== ':memory:') {
+        const dataDir = path.dirname(dbPath);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
       }
 
-      const dbPath = path.join(dataDir, 'gateway.db');
       this.db = new DatabaseSync(dbPath);
 
       // Habilitar Write-Ahead Logging (WAL) para concurrencia masiva (Mitigación de thread bottleneck)

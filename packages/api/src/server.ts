@@ -32,6 +32,9 @@ import { createSessionRoutes } from './api/routes/sessionRoutes.js';
 import { registerTool } from './infrastructure/database/db.js';
 // Stability: 2 - Stable (node:http)
 import type { Server as HttpServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+// Stability: 2 - Stable (node:url)
+import { pathToFileURL } from 'node:url';
 import { logger } from './core/logger.js';
 import { config } from './core/config.js';
 
@@ -41,7 +44,7 @@ type ServerState = 'STOPPED' | 'STARTING' | 'RUNNING' | 'STOPPING';
  * Main Express server configuration
  * Implements State Pattern, Observer Pattern (EventEmitter), and Graceful Shutdown
  */
-class Server extends EventEmitter {
+export class Server extends EventEmitter {
   private app: express.Application;
   private port: number;
   private state: ServerState = 'STOPPED';
@@ -386,6 +389,16 @@ class Server extends EventEmitter {
   }
 
   /**
+   * The TCP port the HTTP server is actually bound to, or null before `start()`.
+   * When started with port 0 the OS assigns an ephemeral port — this is how a
+   * caller (e.g. an integration test) discovers it.
+   */
+  public getPort(): number | null {
+    const addr = this.httpServer?.address();
+    return addr && typeof addr === 'object' ? (addr as AddressInfo).port : null;
+  }
+
+  /**
    * Seeds the SQLite Tool Registry with domain tools at startup.
    * Patrón 1 + Patrón 6 integration: tools appear in Tool Explorer automatically.
    * Uses INSERT OR REPLACE — safe to call on every boot.
@@ -480,7 +493,10 @@ class Server extends EventEmitter {
   }
 }
 
-// Create and start the server
+// The shared server instance. Importing this module never binds a port or
+// installs process-level signal handlers — those side effects only happen when
+// this file is the process entrypoint (see below), so tests can import `Server`
+// / this instance and drive `start()`/`stop()` against an ephemeral port.
 const server = new Server();
 
 // Graceful Shutdown Handler Pattern
@@ -494,13 +510,25 @@ const handleGracefulShutdown = async (signal: string) => {
   process.exit(0);
 };
 
-process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
+/**
+ * True only when this module is the process entrypoint (`node ... src/server.ts`),
+ * not when it is imported by another module (tests, tooling). Compared via file
+ * URL so it works under the `tsx` loader the same as plain Node.
+ */
+function isEntrypoint(): boolean {
+  const entry = process.argv[1];
+  return !!entry && import.meta.url === pathToFileURL(entry).href;
+}
 
-// Start the server
-server.start().catch((error) => {
-  logger.error('Fatal error starting server', {}, error);
-  process.exit(1);
-});
+if (isEntrypoint()) {
+  process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
+
+  // Start the server
+  server.start().catch((error) => {
+    logger.error('Fatal error starting server', {}, error);
+    process.exit(1);
+  });
+}
 
 export default server;
