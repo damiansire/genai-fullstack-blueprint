@@ -28,6 +28,8 @@ export class WorkerPool {
   private taskMap = new Map<number, Task>();
   /** Which task id each worker is currently running, so a crash can settle it. */
   private workerTasks = new Map<Worker, number>();
+  /** Once shutting down, a terminated worker must NOT be auto-replaced. */
+  private isShuttingDown = false;
 
   constructor(
     private poolSize: number,
@@ -54,7 +56,9 @@ export class WorkerPool {
       if (code !== 0) console.error(`Worker stopped with exit code ${code}`);
       // Settle any task still attributed to this worker before replacing it.
       this.failWorkerTask(worker, new Error(`Worker exited with code ${code}`));
-      this.replaceWorker(worker);
+      // During shutdown the exit is intentional (we called terminate()); replacing
+      // the worker here would respawn it forever and the pool would never stop.
+      if (!this.isShuttingDown) this.replaceWorker(worker);
     });
 
     return worker;
@@ -161,6 +165,9 @@ export class WorkerPool {
    * task timers are cleared and queued tasks are rejected; idempotent.
    */
   public async shutdown(): Promise<void> {
+    // Flip the flag FIRST so the workers' `exit` handlers don't respawn the very
+    // workers we're about to terminate (which would leave the pool alive forever).
+    this.isShuttingDown = true;
     // Reject every task (in-flight + queued) so no caller is left hanging once
     // the workers are terminated.
     const pending = [...this.taskMap.values(), ...this.taskQueue];

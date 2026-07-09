@@ -4,7 +4,7 @@
 // worker (testFixtureWorker) that reacts to a `cmd` field, so success,
 // failure, per-task timeout, and crash-recovery can all be driven
 // deterministically without depending on the real CPU/tool/json workers.
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { WorkerPool } from './workerPool.ts';
 
@@ -13,6 +13,12 @@ import { WorkerPool } from './workerPool.ts';
 const pool = new WorkerPool(2, 'testFixtureWorker', 5_000);
 
 describe('WorkerPool', () => {
+  // Terminate the shared pool's worker threads so this file exits on its own
+  // (the suite no longer depends on --test-force-exit to reap leaked workers).
+  after(async () => {
+    await pool.shutdown();
+  });
+
   it('runs a task and resolves with the worker result', async () => {
     const out = await pool.runTask({ cmd: 'echo', value: 123 });
     assert.equal(out, 123);
@@ -34,6 +40,7 @@ describe('WorkerPool', () => {
     // Dedicated pool with a tiny timeout so the hang is settled quickly.
     const hangPool = new WorkerPool(1, 'testFixtureWorker', 150);
     await assert.rejects(hangPool.runTask({ cmd: 'hang' }), /timed out after 150ms/);
+    await hangPool.shutdown();
   });
 
   it('settles the in-flight task and recovers when a worker crashes', async () => {
@@ -43,6 +50,7 @@ describe('WorkerPool', () => {
     // ...and the pool replaces the dead worker, so the next task still works.
     const out = await crashPool.runTask({ cmd: 'echo', value: 'recovered' });
     assert.equal(out, 'recovered');
+    await crashPool.shutdown();
   });
 
   it('shutdown() terminates workers and rejects queued tasks', async () => {
@@ -60,7 +68,7 @@ describe('WorkerPool', () => {
     await inFlight;
   });
 });
-// Note: the worker pools now expose shutdown() (and the module-level pools are
-// torn down via shutdownWorkerPools() in the server's graceful shutdown). The
-// package "test" script still uses --test-force-exit as a belt-and-suspenders
-// guard for any pool a test leaves running.
+// Note: every pool this file creates is shut down (the shared `pool` in `after`,
+// the per-test `hangPool`/`crashPool`/`dummy` at the end of their tests), so no
+// worker thread outlives the suite and the test process exits on its own — no
+// --test-force-exit needed.

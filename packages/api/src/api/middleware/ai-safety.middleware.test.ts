@@ -1,8 +1,16 @@
 // Stability: 1 - Experimental (node:test)
-import { describe, it, mock } from 'node:test';
+import { describe, it, mock, after } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Request, Response, NextFunction } from 'express';
 import { aiSafetyFirewall } from './ai-safety.middleware.js';
+import { shutdownWorkerPools } from '../../infrastructure/workers/workerPool.js';
+
+// The firewall lazily spins up the shared `safetyWorker` pool on first use.
+// Terminate it after the suite so no worker thread lingers and the test process
+// exits on its own (the suite runner no longer relies on --test-force-exit).
+after(async () => {
+  await shutdownWorkerPools();
+});
 
 /** Minimal Express req/res/next doubles for unit-testing the middleware. */
 function harness(body: unknown) {
