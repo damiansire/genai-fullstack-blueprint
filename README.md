@@ -1,7 +1,7 @@
 
-# 🚀 Full-Stack Multimodal AI Application: A Production Blueprint
+# 🚀 Full-Stack Multimodal AI Application: A Reference Blueprint
 
-This repository serves as a **production-ready blueprint** for building modern, scalable, and high-performance web applications using a cutting-edge tech stack: **Angular** for the frontend, **Node.js** for the backend, and **Google Gemini API** for multimodal AI capabilities.
+This repository is a **reference blueprint** (a scaffold to build on, not a turnkey product) for modern, scalable web applications using a cutting-edge tech stack: **Angular** for the frontend, **Node.js** for the backend, and **Google Gemini API** for multimodal AI capabilities.
 
 The project is built from the ground up following strict industry best practices for **TypeScript full-stack development**, focusing on **maintainability**, **developer experience**, and **deployment readiness**.
 
