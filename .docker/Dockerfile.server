@@ -9,9 +9,20 @@
 # node:24 (not 22): the API imports `node:sqlite` WITHOUT the --experimental-sqlite
 # flag, which is only flag-free on Node >= 23.4. This also matches the Node the CI
 # test/build job runs on, so "green in CI" and "runs in the container" stay in sync.
-FROM node:24-alpine
+#
+# Debian slim (glibc), NOT alpine (musl): `onnxruntime-node` ships a prebuilt,
+# glibc-linked native binary (libonnxruntime.so). On alpine it fails to load at
+# startup with `Error loading shared library ld-linux-x86-64.so.2` and the server
+# never boots. slim provides glibc + libstdc++; libgomp1 (OpenMP) is added below
+# because onnxruntime's runtime needs it and slim does not ship it by default.
+FROM node:24-slim
 
 WORKDIR /app
+
+# Runtime shared library required by onnxruntime-node's native binary.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install only production dependencies for the api workspace.
 COPY package*.json ./
@@ -28,13 +39,12 @@ COPY packages/api/src ./packages/api/src
 # the platform's secret manager). Baking the placeholder file would risk
 # shipping fake credentials and masking a missing real configuration.
 
-# Create runtime data/log dirs and a non-root user.
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G nodejs -g nodejs nodejs && \
-    mkdir -p /app/logs /app/data && \
-    chown -R nodejs:nodejs /app
+# Create runtime data/log dirs and run as the non-root `node` user that the
+# official image already ships (uid 1000) — no need to create a custom user.
+RUN mkdir -p /app/logs /app/data && \
+    chown -R node:node /app
 
-USER nodejs
+USER node
 
 EXPOSE 3000
 
