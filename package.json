@@ -1,5 +1,5 @@
 {
-  "name": "ai-gateway",
+  "name": "genai-fullstack-blueprint",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
@@ -31,7 +31,7 @@
   ],
   "author": "Damian Sire <damiansire@gmail.com>",
   "license": "MIT",
-  "description": "Production-ready full-stack blueprint for building multimodal GenAI apps with an Angular 21 client and a Node.js/Express LLM gateway in an npm-workspaces monorepo.",
+  "description": "Production-ready full-stack blueprint for building multimodal GenAI apps with an Angular client and Node.js/Express AI Gateway.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/damiansire/GenAI-Scaffold.git"
