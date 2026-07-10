@@ -31,6 +31,14 @@ jobs:
       - name: Verify
         run: npm run ci
 
+      # The README's test counts (scripts/update-metrics.mjs) must match the
+      # suite that just ran above — catches README drift the moment a test is
+      # added/removed instead of leaving a stale number.
+      - name: Metrics drift check
+        run: |
+          node scripts/update-metrics.mjs
+          git diff --exit-code README.md
+
       # Prove the deployable client bundle actually compiles in production mode
       # (the api has no build step — it runs TypeScript natively via tsx).
       - name: Build client (production bundle)

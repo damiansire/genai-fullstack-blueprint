@@ -10,11 +10,11 @@ The project is built from the ground up following strict industry best practices
 **What CI verifies on every push** — so "reference" never means "untested":
 
 - Typecheck, lint, and formatting across both workspaces.
-- The full test suite across both workspaces — the **backend `node:test` suite (97 tests)** plus the frontend Vitest specs — including **HTTP integration tests** that boot the real gateway on an ephemeral port and drive the whole chain end-to-end — health probes, the fail-closed auth boundary, and `auth → rate-limit → token-limit → safety → handler`.
+- The full test suite across both workspaces — the **backend `node:test` suite (<!--METRICS:BACKEND-->97<!--/METRICS:BACKEND--> tests)** plus the **frontend Vitest specs (<!--METRICS:FRONTEND-->6<!--/METRICS:FRONTEND--> tests)** — including **HTTP integration tests** that boot the real gateway on an ephemeral port and drive the whole chain end-to-end — health probes, the fail-closed auth boundary, and `auth → rate-limit → token-limit → safety → handler`.
 - The **Angular production bundle** compiles.
 - The **entire Docker Compose stack** (API + client) builds from its Dockerfiles and **boots to healthy**, with its live endpoints smoke-tested.
 
-What it deliberately does **not** claim: a hosted deployment with an SLA, load/soak testing, or a security audit — those are the layers you add on top of this foundation.
+What it deliberately does **not** claim: a hosted deployment with an SLA, sustained soak testing, or a formal security audit — those are the layers you add on top of this foundation. It does include one measured load burst and a basic boundary threat model: see [`docs/load-test.md`](./docs/load-test.md).
 
 ---
 
