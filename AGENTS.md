@@ -67,3 +67,26 @@ Read the relevant skill before working in that area instead of re-deriving it:
 - **data-fetching** — where data fetching belongs and what must never call the
   network directly.
 - **testing** — how to write and run tests in this repo without booting the UI.
+
+## World-class standard
+
+Piso transversal de `/fragua` (`fellow-standard.md`) + reglas de los stacks
+`genai`/`node-apis` del corpus (`~/.claude/tools/_audit-tools/refs/`). El
+"Core philosophy" de arriba ya cubre buena parte por construcción; lo explícito:
+
+- **Fail-closed vs fail-open, siempre documentado en el propio código, no en
+  un doc aparte** (ítem i/j): ya es el patrón acá — ver
+  `apiKeyAuth.ts:132` (fail-closed sin keys) y `ai-safety.middleware.ts:15-22`
+  (fail-open deliberado del classifier, con el comentario explicando el
+  tradeoff). Nueva regla que se agrega escrita así, no como excepción tácita.
+- **Boundaries con traza estructurada** (ítem h): `AsyncLocalStorage`
+  (`traceId`) ya cubre esto — todo nuevo boundary (ruta, worker, cola) debe
+  loguear con ese `traceId`, no un `console.log` suelto.
+- **Claim de perf/robustez con prueba reproducible** (ítem l): el conteo de
+  tests del README se genera solo (`scripts/update-metrics.mjs`, gateado en CI)
+  y `docs/load-test.md` mide una carga real, no una cifra tipeada. Cualquier
+  claim nuevo de número (throughput, latencia, tokens/seg) sigue ese patrón:
+  medido con un script reproducible, no escrito a mano.
+- **Framing honesto de límites** (ítem m): el README declara explícito qué NO
+  cubre (soak test, security audit formal, load contra Gemini real). Al sumar
+  una capa nueva, actualizar esa lista en vez de dejarla stale.
