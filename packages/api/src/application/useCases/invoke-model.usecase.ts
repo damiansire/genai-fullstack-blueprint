@@ -104,6 +104,28 @@ export function applySlidingWindow<T extends { role?: unknown }>(
   return messages.slice(messages.length - windowSize);
 }
 
+/**
+ * Ordered fallback chain tried when a provider's circuit breaker is OPEN.
+ * Configurable via `FALLBACK_MODEL_CHAIN` (comma-separated modelIds, highest
+ * priority first) so a deployment can choose its own degrade path without a
+ * code change; defaults to the second real cloud provider
+ * (`openai-gpt-4o-mini`, see `plugins/openai-chat`) and then the local SLM.
+ * Only entries actually registered in the `ModelFactory` are tried — an
+ * unconfigured/unregistered fallback is skipped, not a hard failure, so this
+ * degrades gracefully whether or not a given provider's credentials exist in
+ * the environment (AGENTS.md: "Assume external LLM APIs fail").
+ */
+const DEFAULT_FALLBACK_CHAIN = ['openai-gpt-4o-mini', 'llama-3.1-8b'];
+
+export function getFallbackChain(): string[] {
+  const configured = process.env['FALLBACK_MODEL_CHAIN'];
+  if (!configured) return DEFAULT_FALLBACK_CHAIN;
+  return configured
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+}
+
 export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
   private static breakers: Map<string, CircuitBreaker> = new Map();
 
@@ -132,25 +154,29 @@ export class InvokeModelUseCase extends UseCase<InvokeModelDTO, any> {
     try {
       return await breaker.fire(() => strategy.process(requestData, context));
     } catch (error) {
-      if (
-        breaker.getState() === 'OPEN' &&
-        modelId !== 'llama-3.1-8b' &&
-        this.modelFactory.isRegistered('llama-3.1-8b')
-      ) {
-        logger.warn(`Model ${modelId} circuit is OPEN, falling back to local SLM llama-3.1-8b`);
-        const fallbackStrategy = this.modelFactory.create('llama-3.1-8b');
-        const fallbackReq = { ...requestData };
-        fallbackReq.messages = [
-          ...(fallbackReq.messages || []),
-          {
-            role: 'system',
-            content:
-              '[SYSTEM_FALLBACK]: Degradación Elegante Activa. El modelo primario está fallando.',
-          },
-        ];
-        return await fallbackStrategy.process(fallbackReq, context);
+      if (breaker.getState() !== 'OPEN') {
+        throw error;
       }
-      throw error;
+
+      const fallbackId = getFallbackChain().find(
+        (candidateId) => candidateId !== modelId && this.modelFactory.isRegistered(candidateId),
+      );
+
+      if (!fallbackId) {
+        throw error;
+      }
+
+      logger.warn(`Model ${modelId} circuit is OPEN, falling back to ${fallbackId}`);
+      const fallbackStrategy = this.modelFactory.create(fallbackId);
+      const fallbackReq = { ...requestData };
+      fallbackReq.messages = [
+        ...(fallbackReq.messages || []),
+        {
+          role: 'system',
+          content: `[SYSTEM_FALLBACK]: Degradación Elegante Activa (${fallbackId}). El modelo primario está fallando.`,
+        },
+      ];
+      return await fallbackStrategy.process(fallbackReq, context);
     }
   }
 

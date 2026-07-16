@@ -14,7 +14,7 @@ The project is built from the ground up following strict industry best practices
 - The **Angular production bundle** compiles.
 - The **entire Docker Compose stack** (API + client) builds from its Dockerfiles and **boots to healthy**, with its live endpoints smoke-tested.
 
-What it deliberately does **not** claim: a hosted deployment with an SLA, sustained soak testing, or a formal security audit — those are the layers you add on top of this foundation. It does include one measured load burst and a basic boundary threat model: see [`docs/load-test.md`](./docs/load-test.md).
+What it deliberately does **not** claim: a hosted deployment with an SLA, or a formal penetration test / adversarial fuzzing pass — those are layers you add on top of this foundation. It does include a measured load burst, a sustained soak test, and a basic boundary threat model (see [`docs/load-test.md`](./docs/load-test.md)), plus a scoped security review of credential logging, rate limiting, multimodal input validation, and prompt-injection detection (see [`SECURITY.md`](./SECURITY.md)).
 
 ---
 
@@ -148,7 +148,7 @@ This platform includes three powerful AI capabilities powered by Google's models
 
 ### 📝 Multi-Tiered Generation & Generative UI
 
-- Routing across the **Google** model plugins that ship today (`google-text-bison`, `gemini-image-gen`, `google-vision-ocr`). *Multi-provider routing to other frontier models (e.g. Claude 3.5 Sonnet, Gemini 1.5 Pro) and local SLMs is on the roadmap — there is currently no Anthropic/OpenAI integration in the codebase.*
+- Routing across the plugins that ship today: three **Google** model plugins (`google-text-bison`, `gemini-image-gen`, `google-vision-ocr`) plus a second real provider, **OpenAI** (`openai-chat`, `openai-gpt-4o-mini`). Every plugin implements the same `IModelStrategy` port (see `domain/ai/strategy.interface.ts`) — that port is the provider abstraction, not a separate interface. When a provider's circuit breaker opens, `InvokeModelUseCase` automatically falls back into the next provider in `FALLBACK_MODEL_CHAIN` (default: `openai-gpt-4o-mini`, then the local SLM slot `llama-3.1-8b`). The OpenAI adapter is unit-tested against a mocked `fetch`; end-to-end verification against the real OpenAI API is pending an `OPENAI_API_KEY` (see `env.example`). *Routing to other frontier models (e.g. Claude 3.5 Sonnet) is still on the roadmap.*
 - **Server-Driven Generative UI**: Angular dynamically renders visual components via `@defer` based on LLM Tool Calls.
 - **Iterative Refinement (RCI)**: Recursive generation and quality scoring in worker threads.
 - Token usage tracking and real-time streaming via SSE.
