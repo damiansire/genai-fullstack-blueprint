@@ -33,11 +33,10 @@ jobs:
 
       # The README's test counts (scripts/update-metrics.mjs) must match the
       # suite that just ran above — catches README drift the moment a test is
-      # added/removed instead of leaving a stale number.
+      # added/removed instead of leaving a stale number. --check exits 1 on any
+      # mismatch and names the offending number, without relying on git state.
       - name: Metrics drift check
-        run: |
-          node scripts/update-metrics.mjs
-          git diff --exit-code README.md
+        run: node scripts/update-metrics.mjs --check
 
       # Prove the deployable client bundle actually compiles in production mode
       # (the api has no build step — it runs TypeScript natively via tsx).
