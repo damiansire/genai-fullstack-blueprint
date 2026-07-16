@@ -51,11 +51,19 @@ Monorepo with npm workspaces:
 ## Testing
 
 - Backend: native `node:test` (`npm run test --workspace=api`).
-- Frontend: Vitest (`npm run test --workspace=client`). Specs live under
-  `src/core/**/*.spec.ts` (see `vitest.config.ts`).
+- Frontend: Vitest (`npm run test --workspace=client`). Specs are colocated
+  with their source under `src/**/*.spec.ts` (see `vitest.config.ts`).
+  TestBed works for service/DI specs and inline-template components;
+  external `templateUrl` components cannot be compiled under this JIT setup,
+  and signal inputs (`input()`) are not written by JIT-compiled templates,
+  so keep component specs template-free or inline-template with plain APIs
+  (see `src/test-setup.ts`).
 - When you touch domain/logic, leave a test that covers it. Prefer testing
   domain/util logic without the UI before wiring screens.
 - `npm test` at the root runs both suites.
+- The README test counts regenerate with `node scripts/update-metrics.mjs`;
+  CI runs `--check` and fails on drift, so update the README via the script,
+  never by hand.
 
 ## Skills
 

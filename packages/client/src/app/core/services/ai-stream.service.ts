@@ -190,7 +190,10 @@ export class AiStreamService {
         reader.releaseLock();
       }
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
+      // fetch abort rejects with a DOMException, which is not guaranteed to be
+      // `instanceof Error` in every realm (e.g. JSDOM/worker realms): detect
+      // the intentional cancellation by name, not by prototype chain.
+      if ((err as { name?: unknown } | null)?.name === 'AbortError') {
         // Stream was intentionally cancelled — not an error
         return;
       }

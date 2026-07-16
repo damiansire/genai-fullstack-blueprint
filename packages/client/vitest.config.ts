@@ -10,7 +10,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // Worker threads start much faster than forked processes (the default);
+    // on slower Windows machines fork startup can exceed vitest's internal
+    // worker timeout and abort the run before any test executes.
+    pool: 'threads',
     setupFiles: ['src/test-setup.ts'],
-    include: ['src/core/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts'],
   },
 });
