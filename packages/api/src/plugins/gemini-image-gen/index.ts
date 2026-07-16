@@ -3,6 +3,48 @@ import { performance } from 'node:perf_hooks';
 import { z } from 'zod';
 import { logger } from '../../core/logger.js';
 import { resilientTransport } from '../../infrastructure/http/resilient-transport.js';
+import { ApiError } from '../../core/ApiError.js';
+
+/**
+ * Boundary validation for `inputImages` (request side). The AJV `configSchema`
+ * below only requires `data`/`mimeType` to be present strings — it does not
+ * bound the base64 size, whitelist a MIME type, or cap how many images are
+ * sent (see AGENTS.md: "Validate all boundary input with zod"). This is the
+ * real, request-side counterpart to `geminiResponseSchema` (which only
+ * validates what Gemini sends BACK).
+ *
+ * Limits mirror the file-upload path already enforced for multipart uploads
+ * on this same route (`modelRoutes.ts`: 10MB / 5 files / image mimetypes),
+ * so base64 JSON input can't bypass a limit that binary upload already has.
+ */
+const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
+
+/** 10MB decoded, expressed as a base64-string length bound (base64 is ~4/3 the raw byte size). */
+const MAX_BASE64_IMAGE_LENGTH = Math.ceil((10 * 1024 * 1024 * 4) / 3);
+
+const MAX_INPUT_IMAGES = 5;
+
+/** RFC 4648 base64 alphabet, optional padding — rejects garbage/URLs/data-URI prefixes disguised as "base64". */
+const BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/;
+
+const inputImageRequestSchema = z.object({
+  data: z
+    .string()
+    .min(1, 'inputImages[].data must not be empty')
+    .max(
+      MAX_BASE64_IMAGE_LENGTH,
+      `inputImages[].data exceeds the 10MB decoded image limit (${MAX_BASE64_IMAGE_LENGTH} base64 chars)`,
+    )
+    .refine((v) => BASE64_PATTERN.test(v), 'inputImages[].data must be valid base64'),
+  mimeType: z.enum(ALLOWED_IMAGE_MIME_TYPES, {
+    message: `inputImages[].mimeType must be one of: ${ALLOWED_IMAGE_MIME_TYPES.join(', ')}`,
+  }),
+});
+
+const inputImagesRequestSchema = z
+  .array(inputImageRequestSchema)
+  .max(MAX_INPUT_IMAGES, `inputImages cannot contain more than ${MAX_INPUT_IMAGES} images`)
+  .optional();
 
 /**
  * Boundary schema for the Gemini `generateContent` response. Only the structure
@@ -149,6 +191,15 @@ export class ModelStrategy implements IModelStrategy<
         inputImages: params.inputImages?.length || 0,
       });
 
+      // Boundary validation for multimodal input (size/MIME/count) — the AJV
+      // configSchema does not bound these; see inputImagesRequestSchema above.
+      const parsedImages = inputImagesRequestSchema.safeParse(params.inputImages);
+      if (!parsedImages.success) {
+        throw ApiError.badRequest(
+          `Invalid inputImages: ${parsedImages.error.issues.map((i) => i.message).join('; ')}`,
+        );
+      }
+
       // Check for API key
       if (!process.env['GEMINI_API_KEY']) {
         throw new Error('GEMINI_API_KEY is not configured. Please set it in your .env file.');
@@ -218,6 +269,12 @@ export class ModelStrategy implements IModelStrategy<
       };
     } catch (error) {
       logger.error('Gemini Image Generation error', {}, error);
+
+      // Preserve ApiError's statusCode (e.g. 400 for bad input) instead of
+      // flattening every failure into a generic wrapped Error -> 500.
+      if (error instanceof ApiError) {
+        throw error;
+      }
 
       if (error instanceof Error) {
         throw new Error(`Gemini Image Generation failed: ${error.message}`);
