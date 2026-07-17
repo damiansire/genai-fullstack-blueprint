@@ -11,7 +11,7 @@ shared bridge network, each with a real healthcheck (not just "container is
 running" - `curl`/`http.get` against a live endpoint).
 
 This is exercised end-to-end on **every push and PR** by the `docker-smoke` job
-in `.github/workflows/ci.yml:52-83`:
+in `.github/workflows/ci.yml`, which runs the checked-in [`scripts/smoke.sh`](../scripts/smoke.sh):
 
 1. `cp env.example .env` (the example placeholders are enough to boot: health
    and `/api/info` need no real secrets).
@@ -31,7 +31,14 @@ was checked in this environment (Windows machine, this Claude Code session) and
 Docker is **not installed here** (`docker: command not found` on the shell
 PATH). This session could not independently re-run `docker compose up` as a
 second, local confirmation - the evidence above is CI's, not this session's.
-If Docker is available, reproduce the same check locally with:
+If Docker is available, reproduce the same check locally by running the exact
+script CI runs (it seeds `.env` from `env.example` if missing):
+
+```bash
+bash scripts/smoke.sh --down   # boot the stack, smoke-test every endpoint, tear down
+```
+
+That is equivalent to, and the single source of truth for, the manual sequence:
 
 ```bash
 cp env.example .env

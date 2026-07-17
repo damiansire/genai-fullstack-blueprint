@@ -60,17 +60,12 @@ jobs:
       - name: Prepare env
         run: cp env.example .env
 
-      - name: Build images and start the stack (wait for healthchecks)
-        run: docker compose up -d --build --wait --wait-timeout 240
-
-      - name: Smoke-test the live stack
-        run: |
-          set -euo pipefail
-          # API liveness + a free, no-auth, no-Gemini endpoint.
-          curl -fsS http://localhost:3000/health/live | grep -q '"status":"live"'
-          curl -fsS http://localhost:3000/api/info | grep -q 'AI Gateway API'
-          # Client SPA served by nginx.
-          test "$(curl -fsS -o /dev/null -w '%{http_code}' http://localhost:8080/)" = "200"
+      # scripts/smoke.sh is the single source of truth for this claim: it builds
+      # + boots the stack (--wait for both healthchecks) and curls every declared
+      # endpoint, failing if any is unhealthy. The README references the same
+      # script, so the "smoke-tested" claim and the gate can never drift apart.
+      - name: Build, boot and smoke-test the live stack
+        run: bash scripts/smoke.sh
 
       - name: Stack logs (on failure)
         if: failure()
