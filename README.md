@@ -241,7 +241,7 @@ Optimized for scalability and clarity:
 │       │   ├── infrastructure/ # DB, HTTP, rate-limit, workers, semantic cache, MCP
 │       │   ├── services/       # Embedding, PII masking
 │       │   ├── core/           # Base classes (ApiError, UseCase), circuit-breaker, config
-│       │   └── plugins/        # AI model strategies (google-text-bison, gemini-image-gen, google-vision-ocr)
+│       │   └── plugins/        # AI model strategies (google-text-bison, gemini-image-gen, google-vision-ocr, openai-chat)
 │       └── package.json
 ├── .docker/               # Dockerfiles for production
 │   ├── Dockerfile.client  # Angular + Nginx
