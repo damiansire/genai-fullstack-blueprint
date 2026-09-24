@@ -14,10 +14,11 @@ exclude = [
   "YOUR_API_KEY_HERE",
 ]
 
-# Anchors within the same file aren't real network links; skip fragment-only checks.
-# (mailto: links are already skipped by default; `exclude_mail` was removed from
-# lychee's config and made the whole file fail to parse.)
-include_fragments = false
+# Anchors within the same file aren't real network links, so fragments are not
+# checked: that is lychee's default, so there is no `include_fragments` key (in
+# v0.24 it takes a mode string like "full", and the old `false` fails to parse).
+# mailto: links are skipped by default too; the removed `exclude_mail` key made
+# the whole file fail to parse.
 
 # Be gentle with rate-limited hosts (GitHub, Google) and flaky networks.
 max_retries = 3
