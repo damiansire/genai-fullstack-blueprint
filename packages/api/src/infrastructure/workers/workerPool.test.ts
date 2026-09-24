@@ -36,25 +36,26 @@ describe('WorkerPool', () => {
     assert.deepEqual(results, [0, 1, 2, 3, 4, 5]);
   });
 
-  it('rejects a hung task once the per-task timeout elapses', async () => {
-    // Dedicated pool with a tiny timeout so the hang is settled quickly.
+  it('rejects a hung task once the per-task timeout elapses', async (t) => {
+    // Dedicated pool with a tiny timeout so the hang is settled quickly. No task
+    // runs after the timeout: the replacement worker boots from scratch and, on a
+    // loaded machine, takes longer than 150ms, so a follow-up task here would time
+    // out too. Recovery after a dead worker is covered by the crash test below,
+    // whose timeout leaves room for the boot.
     const hangPool = new WorkerPool(1, 'testFixtureWorker', 150);
+    // Shut down even if an assertion fails, or the live thread keeps the file running.
+    t.after(() => hangPool.shutdown());
     await assert.rejects(hangPool.runTask({ cmd: 'hang' }), /timed out after 150ms/);
-    // The wedged worker was recycled; the replacement serves the next task. This
-    // also lets the replacement finish booting before shutdown, instead of being
-    // terminated mid-bootstrap.
-    assert.equal(await hangPool.runTask({ cmd: 'echo', value: 'after-timeout' }), 'after-timeout');
-    await hangPool.shutdown();
   });
 
-  it('settles the in-flight task and recovers when a worker crashes', async () => {
+  it('settles the in-flight task and recovers when a worker crashes', async (t) => {
     const crashPool = new WorkerPool(1, 'testFixtureWorker', 5_000);
+    t.after(() => crashPool.shutdown());
     // The crash rejects the in-flight task...
     await assert.rejects(crashPool.runTask({ cmd: 'crash' }), /crashed|exited with code/);
     // ...and the pool replaces the dead worker, so the next task still works.
     const out = await crashPool.runTask({ cmd: 'echo', value: 'recovered' });
     assert.equal(out, 'recovered');
-    await crashPool.shutdown();
   });
 
   it('shutdown() terminates workers and rejects queued tasks', async () => {
@@ -73,6 +74,6 @@ describe('WorkerPool', () => {
   });
 });
 // Note: every pool this file creates is shut down (the shared `pool` in `after`,
-// the per-test `hangPool`/`crashPool`/`dummy` at the end of their tests), so no
-// worker thread outlives the suite and the test process exits on its own — no
-// --test-force-exit needed.
+// `hangPool`/`crashPool` in `t.after` so it happens even when the test fails,
+// `dummy` inside its own test), so no worker thread outlives the suite and the
+// test process exits on its own — no --test-force-exit needed.
