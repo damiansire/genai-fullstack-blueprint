@@ -1,12 +1,16 @@
 # Multi-stage Dockerfile for Angular Client Application
 # Stage 1: Build the Angular application
-FROM node:20-alpine AS builder
+# node:24 matches the root `engines` (>=24), the server image and the CI job;
+# Angular 22 itself needs ^22.22.3 || ^24.15.0 || >=26.
+FROM node:24-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy root package files for workspace support
-COPY package*.json ./
+# Copy root package files for workspace support, plus the monorepo's strict
+# tsconfig base that packages/client/tsconfig.json extends (without it the
+# Angular compiler fails with TS5012 and loses skipLibCheck).
+COPY package*.json tsconfig.base.json ./
 
 # Copy client package files for dependency installation
 COPY packages/client/package*.json ./packages/client/
