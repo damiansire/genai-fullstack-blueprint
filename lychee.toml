@@ -15,7 +15,8 @@ exclude = [
 ]
 
 # Anchors within the same file aren't real network links; skip fragment-only checks.
-exclude_mail = true
+# (mailto: links are already skipped by default; `exclude_mail` was removed from
+# lychee's config and made the whole file fail to parse.)
 include_fragments = false
 
 # Be gentle with rate-limited hosts (GitHub, Google) and flaky networks.
