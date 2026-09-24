@@ -46,7 +46,7 @@ The Angular app abandons NgModules in favor of a **100% Standalone Component arc
 
 | Area           | Technology         | Description                                                                                                                                                |
 | -------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**   | **Angular 21**     | Modern framework for building UIs using Standalone Components, Signal Forms, Signals for state management, and `ChangeDetectionStrategy.OnPush` for optimal performance. |
+| **Frontend**   | **Angular 22**     | Modern framework for building UIs using Standalone Components, Signal Forms, Signals for state management, and `ChangeDetectionStrategy.OnPush` for optimal performance. |
 | **Backend**    | **Node.js v22+**   | Uses "Built-in over dependencies" strategy: native SQLite, Worker Threads for CPU tasks, `fetch` API, and native test runner.                              |
 |                | **Express.js**     | Minimalist framework for building RESTful APIs.                                                                                                            |
 |                | **Multer**         | Middleware for handling file uploads (multipart/form-data).                                                                                                |
@@ -227,7 +227,7 @@ Optimized for scalability and clarity:
 ```
 /genai-fullstack-blueprint/
 ├── packages/               # Monorepo packages
-│   ├── client/            # Angular 21 Application
+│   ├── client/            # Angular 22 Application
 │   │   ├── src/app/
 │   │   │   ├── core/       # Singleton services, DI tokens
 │   │   │   ├── shared/     # Reusable components (file-upload, navigation)
@@ -264,10 +264,10 @@ Optimized for scalability and clarity:
 - **File Uploads**: `multer` configured per route to efficiently and securely handle multipart/form-data.
 - **Strict CORS Policy**: Only trusted origins are allowed in production.
 
-### Frontend (Angular 21)
+### Frontend (Angular 22)
 
 - **100% Standalone Components**: No NgModules — less boilerplate, simpler dependency management.
-- **Signal Forms**: Uses Angular 21's `form()` / `FormField` API from `@angular/forms/signals` for type-safe, model-driven forms.
+- **Signal Forms**: Uses Angular's `form()` / `FormField` API from `@angular/forms/signals` for type-safe, model-driven forms.
 - **Reactive State with Signals**: Uses `signal()`, `computed()`, and `httpResource()` for high-performance state management.
 - **Zoneless Change Detection**: Runs without `zone.js` via `provideZonelessChangeDetection()` for smaller bundles and better performance.
 - **OnPush Change Detection**: All components use `ChangeDetectionStrategy.OnPush`.

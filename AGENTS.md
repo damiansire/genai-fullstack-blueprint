@@ -21,7 +21,7 @@ Monorepo with npm workspaces:
 
 - `packages/api` — Node.js (v22+) / Express backend. Runs TypeScript natively
   via `node --experimental-strip-types` (no build step). Clean Architecture.
-- `packages/client` — Angular 21 frontend. Standalone components, Signals,
+- `packages/client` — Angular 22 frontend. Standalone components, Signals,
   zoneless, `@defer`, `inject()`.
 
 ## Backend conventions (`packages/api`)
