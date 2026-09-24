@@ -40,6 +40,10 @@ describe('WorkerPool', () => {
     // Dedicated pool with a tiny timeout so the hang is settled quickly.
     const hangPool = new WorkerPool(1, 'testFixtureWorker', 150);
     await assert.rejects(hangPool.runTask({ cmd: 'hang' }), /timed out after 150ms/);
+    // The wedged worker was recycled; the replacement serves the next task. This
+    // also lets the replacement finish booting before shutdown, instead of being
+    // terminated mid-bootstrap.
+    assert.equal(await hangPool.runTask({ cmd: 'echo', value: 'after-timeout' }), 'after-timeout');
     await hangPool.shutdown();
   });
 

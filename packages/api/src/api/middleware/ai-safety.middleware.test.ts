@@ -1,15 +1,24 @@
 // Stability: 1 - Experimental (node:test)
-import { describe, it, mock, after } from 'node:test';
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Request, Response, NextFunction } from 'express';
 import { aiSafetyFirewall } from './ai-safety.middleware.js';
-import { shutdownWorkerPools } from '../../infrastructure/workers/workerPool.js';
+import { CPUWorkerService } from '../../infrastructure/workers/workerPool.js';
+import { classify } from '../../infrastructure/workers/safetyWorker.js';
 
-// The firewall lazily spins up the shared `safetyWorker` pool on first use.
-// Terminate it after the suite so no worker thread lingers and the test process
-// exits on its own (the suite runner no longer relies on --test-force-exit).
-after(async () => {
-  await shutdownWorkerPools();
+// This is a unit test of the middleware, so the worker hop is replaced by the
+// same pure classify() the worker runs, in-process. Letting the real pool boot
+// here spawned one thread per CPU for a single classification, and terminating
+// threads still bootstrapping at teardown made this process's V8 coverage
+// output unreliable (occasionally the whole file's coverage went missing, which
+// swung the suite's branch percentage). The worker path itself is covered by
+// workerPool.test.ts and the server.*.integration tests.
+beforeEach(() => {
+  mock.method(CPUWorkerService, 'classifySafety', async (text: string) => classify(text));
+});
+
+afterEach(() => {
+  mock.restoreAll();
 });
 
 /** Minimal Express req/res/next doubles for unit-testing the middleware. */
@@ -67,5 +76,19 @@ describe('aiSafetyFirewall', () => {
 
     assert.equal((next as unknown as { mock: { callCount(): number } }).mock.callCount(), 1);
     assert.equal(statusFn.mock.callCount(), 0);
+  });
+
+  it('fails open (next, PII still masked) when classification errors', async () => {
+    mock.method(CPUWorkerService, 'classifySafety', async () => {
+      throw new Error('worker timed out');
+    });
+    mock.method(console, 'error', () => undefined);
+    const { req, res, next, statusFn } = harness({ prompt: 'mail me at a@b.co' });
+
+    await aiSafetyFirewall(req, res, next);
+
+    assert.equal((next as unknown as { mock: { callCount(): number } }).mock.callCount(), 1);
+    assert.equal(statusFn.mock.callCount(), 0, 'a classifier hiccup must not block the request');
+    assert.match((req.body as { prompt: string }).prompt, /\[REDACTED_EMAIL\]/);
   });
 });
